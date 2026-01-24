@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  app:
+    volumes:
+      - ./:/var/www
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+    command: php artisan serve --host=0.0.0.0 --port=9000
+
+  webserver:
+    ports:
+      - "8006:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
+
+  db:
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_DATABASE: dashboard_addresses
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_PASSWORD: password
+      MYSQL_USER: dashboard_addresses
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  queue_messages:
+    volumes:
+      - ./:/var/www
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+
+  queue_events:
+    volumes:
+      - ./:/var/www
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true 

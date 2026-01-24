@@ -1,0 +1,160 @@
+version: '3.8'
+
+services:
+  # Serviço da aplicação Laravel
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dashboard_addresses_app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./app:/var/www/app
+      - ./config:/var/www/config
+      - ./database:/var/www/database
+      - ./routes:/var/www/routes
+      - ./resources:/var/www/resources
+      - ./public:/var/www/public
+      - ./storage:/var/www/storage
+      - ./bootstrap:/var/www/bootstrap
+      - ./artisan:/var/www/artisan
+      - ./composer.json:/var/www/composer.json
+      - ./composer.lock:/var/www/composer.lock
+      - ./package.json:/var/www/package.json
+      - ./package-lock.json:/var/www/package-lock.json
+      - ./vite.config.js:/var/www/vite.config.js
+      - vendor_data:/var/www/vendor
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+      - vendor_data:/var/www/vendor
+    networks:
+      - dashboard_addresses_network
+    depends_on:
+      - db
+      - redis
+    command: php artisan serve --host=0.0.0.0 --port=9000
+
+  # Servidor web Nginx
+  webserver:
+    image: nginx:alpine
+    container_name: dashboard_addresses_nginx
+    restart: unless-stopped
+    ports:
+      - "8006:80"
+    volumes:
+      - ./public:/var/www/public
+      - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - dashboard_addresses_network
+    depends_on:
+      - app
+
+  # Banco de dados MySQL
+  db:
+    image: mysql:8.0
+    container_name: dashboard_addresses_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-dashboard_addresses}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-password}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-password}
+      MYSQL_USER: ${DB_USERNAME:-dashboard_addresses}
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    ports:
+      - "3307:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+      - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
+    networks:
+      - dashboard_addresses_network
+
+  # Redis para cache e sessões
+  redis:
+    image: redis:alpine
+    container_name: dashboard_addresses_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - dashboard_addresses_network
+
+  # Queue Worker para mensagens (ProcessMessageJob)
+  queue_messages:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dashboard_addresses_queue_messages
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./app:/var/www/app
+      - ./config:/var/www/config
+      - ./database:/var/www/database
+      - ./routes:/var/www/routes
+      - ./resources:/var/www/resources
+      - ./public:/var/www/public
+      - ./storage:/var/www/storage
+      - ./bootstrap:/var/www/bootstrap
+      - ./artisan:/var/www/artisan
+      - ./composer.json:/var/www/composer.json
+      - ./composer.lock:/var/www/composer.lock
+      - ./package.json:/var/www/package.json
+      - ./package-lock.json:/var/www/package-lock.json
+      - ./vite.config.js:/var/www/vite.config.js
+      - vendor_data:/var/www/vendor
+    networks:
+      - dashboard_addresses_network
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DB_PASSWORD=${DB_PASSWORD:-password}
+      - DB_DATABASE=${DB_DATABASE:-dashboard_addresses}
+      - DB_USERNAME=${DB_USERNAME:-dashboard_addresses}
+    command: ./docker/wait-for-db.sh php artisan queue:work --queue=message_processing --sleep=3 --tries=3 --max-time=3600 --verbose
+
+  # Queue Worker para eventos (MessageSent, BroadcastEvent)
+  queue_events:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dashboard_addresses_queue_events
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./app:/var/www/app
+      - ./config:/var/www/config
+      - ./database:/var/www/database
+      - ./routes:/var/www/routes
+      - ./resources:/var/www/resources
+      - ./public:/var/www/public
+      - ./storage:/var/www/storage
+      - ./bootstrap:/var/www/bootstrap
+      - ./artisan:/var/www/artisan
+      - ./composer.json:/var/www/composer.json
+      - ./composer.lock:/var/www/composer.lock
+      - ./package.json:/var/www/package.json
+      - ./package-lock.json:/var/www/package-lock.json
+      - ./vite.config.js:/var/www/vite.config.js
+      - vendor_data:/var/www/vendor
+    networks:
+      - dashboard_addresses_network
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DB_PASSWORD=${DB_PASSWORD:-password}
+      - DB_DATABASE=${DB_DATABASE:-dashboard_addresses}
+      - DB_USERNAME=${DB_USERNAME:-dashboard_addresses}
+    command: ./docker/wait-for-db.sh php artisan queue:work --queue=default --sleep=3 --tries=3 --max-time=3600 --verbose
+
+networks:
+  dashboard_addresses_network:
+    driver: bridge
+
+volumes:
+  dbdata:
+    driver: local
+  vendor_data:
+    driver: local 
