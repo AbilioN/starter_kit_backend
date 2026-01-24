@@ -21,10 +21,10 @@ services:
     ports:
       - "3307:3306"
     environment:
-      MYSQL_DATABASE: dashboard_addresses
+      MYSQL_DATABASE: starter_kit_backend
       MYSQL_ROOT_PASSWORD: password
       MYSQL_PASSWORD: password
-      MYSQL_USER: dashboard_addresses
+      MYSQL_USER: starter_kit_backend
 
   redis:
     ports:

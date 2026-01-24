@@ -6,7 +6,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: dashboard_addresses_app
+    container_name: starter_kit_backend_app
     restart: unless-stopped
     working_dir: /var/www
     volumes:
@@ -28,7 +28,7 @@ services:
       - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
       - vendor_data:/var/www/vendor
     networks:
-      - dashboard_addresses_network
+      - starter_kit_backend_network
     depends_on:
       - db
       - redis
@@ -37,7 +37,7 @@ services:
   # Servidor web Nginx
   webserver:
     image: nginx:alpine
-    container_name: dashboard_addresses_nginx
+    container_name: starter_kit_backend_nginx
     restart: unless-stopped
     ports:
       - "8006:80"
@@ -45,20 +45,20 @@ services:
       - ./public:/var/www/public
       - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
     networks:
-      - dashboard_addresses_network
+      - starter_kit_backend_network
     depends_on:
       - app
 
   # Banco de dados MySQL
   db:
     image: mysql:8.0
-    container_name: dashboard_addresses_db
+    container_name: starter_kit_backend_db
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: ${DB_DATABASE:-dashboard_addresses}
+      MYSQL_DATABASE: ${DB_DATABASE:-starter_kit_backend}
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-password}
       MYSQL_PASSWORD: ${DB_PASSWORD:-password}
-      MYSQL_USER: ${DB_USERNAME:-dashboard_addresses}
+      MYSQL_USER: ${DB_USERNAME:-starter_kit_backend}
       SERVICE_TAGS: dev
       SERVICE_NAME: mysql
     ports:
@@ -67,24 +67,24 @@ services:
       - dbdata:/var/lib/mysql
       - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
     networks:
-      - dashboard_addresses_network
+      - starter_kit_backend_network
 
   # Redis para cache e sessões
   redis:
     image: redis:alpine
-    container_name: dashboard_addresses_redis
+    container_name: starter_kit_backend_redis
     restart: unless-stopped
     ports:
       - "6379:6379"
     networks:
-      - dashboard_addresses_network
+      - starter_kit_backend_network
 
   # Queue Worker para mensagens (ProcessMessageJob)
   queue_messages:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: dashboard_addresses_queue_messages
+    container_name: starter_kit_backend_queue_messages
     restart: unless-stopped
     working_dir: /var/www
     volumes:
@@ -104,14 +104,14 @@ services:
       - ./vite.config.js:/var/www/vite.config.js
       - vendor_data:/var/www/vendor
     networks:
-      - dashboard_addresses_network
+      - starter_kit_backend_network
     depends_on:
       - db
       - redis
     environment:
       - DB_PASSWORD=${DB_PASSWORD:-password}
-      - DB_DATABASE=${DB_DATABASE:-dashboard_addresses}
-      - DB_USERNAME=${DB_USERNAME:-dashboard_addresses}
+      - DB_DATABASE=${DB_DATABASE:-starter_kit_backend}
+      - DB_USERNAME=${DB_USERNAME:-starter_kit_backend}
     command: ./docker/wait-for-db.sh php artisan queue:work --queue=message_processing --sleep=3 --tries=3 --max-time=3600 --verbose
 
   # Queue Worker para eventos (MessageSent, BroadcastEvent)
@@ -119,7 +119,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: dashboard_addresses_queue_events
+    container_name: starter_kit_backend_queue_events
     restart: unless-stopped
     working_dir: /var/www
     volumes:
@@ -139,18 +139,18 @@ services:
       - ./vite.config.js:/var/www/vite.config.js
       - vendor_data:/var/www/vendor
     networks:
-      - dashboard_addresses_network
+      - starter_kit_backend_network
     depends_on:
       - db
       - redis
     environment:
       - DB_PASSWORD=${DB_PASSWORD:-password}
-      - DB_DATABASE=${DB_DATABASE:-dashboard_addresses}
-      - DB_USERNAME=${DB_USERNAME:-dashboard_addresses}
+      - DB_DATABASE=${DB_DATABASE:-starter_kit_backend}
+      - DB_USERNAME=${DB_USERNAME:-starter_kit_backend}
     command: ./docker/wait-for-db.sh php artisan queue:work --queue=default --sleep=3 --tries=3 --max-time=3600 --verbose
 
 networks:
-  dashboard_addresses_network:
+  starter_kit_backend_network:
     driver: bridge
 
 volumes:
