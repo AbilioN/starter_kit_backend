@@ -210,6 +210,33 @@ Exemplo: `/api/admin/audit/tag/security`
 
 ## 🔒 Segurança
 
+### **⚠️ IMUTABILIDADE DOS AUDIT LOGS**
+
+**IMPORTANTE:** Audit logs são **IMUTÁVEIS** por segurança e compliance:
+
+- ❌ **NÃO existe** permissão para deletar audit logs
+- ❌ **NÃO existe** permissão para editar audit logs
+- ❌ **NÃO existe** endpoint de DELETE
+- ❌ **NÃO existe** endpoint de UPDATE
+- ✅ **APENAS** permissão de leitura: `audit-read`
+- ✅ **Mesmo Super Admin** não pode deletar ou modificar logs
+
+**Por quê?**
+- ✅ Compliance LGPD/GDPR (logs não podem ser alterados)
+- ✅ Non-repudiation (impossível negar ações)
+- ✅ Integridade do histórico (rastreabilidade completa)
+- ✅ Segurança (impossível esconder ações maliciosas)
+
+### **Permissões de Auditoria**
+
+Apenas uma permissão existe:
+- `audit-read`: Permite visualizar audit logs
+
+**NÃO existem:**
+- ❌ `audit-create` (logs são criados automaticamente)
+- ❌ `audit-update` (logs são imutáveis)
+- ❌ `audit-delete` (logs são imutáveis)
+
 ### **Campos Sensíveis Sanitizados**
 
 O sistema automaticamente remove campos sensíveis dos valores:
@@ -297,7 +324,14 @@ GET /api/admin/audit?date_from=2025-01-01&date_to=2025-01-31
 ### **Permissões**
 
 Para acessar os endpoints de auditoria, o admin precisa da permissão:
-- `admin-read` (já implementada no sistema)
+- `audit-read` (permissão específica para audit logs)
+
+**Como atribuir:**
+1. Execute o seeder: `php artisan db:seed --class=PermissionSeeder`
+2. A permissão `audit-read` será criada
+3. Atribua a permissão à role desejada via admin panel ou seeder
+
+**Nota:** A permissão `audit-read` é automaticamente atribuída às roles `super-admin` e `admin` quando você executa o `AdminRolePermissionSeeder`.
 
 ### **Desabilitar Auditoria**
 

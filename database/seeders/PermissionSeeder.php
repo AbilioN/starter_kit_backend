@@ -176,5 +176,17 @@ class PermissionSeeder extends Seeder
             'route' => 'role/unassign',
         ]);
 
+        // Audit Log permissions
+        // IMPORTANT: Audit logs are IMMUTABLE for security and compliance
+        // Only READ permission exists - NO create, update, or delete permissions
+        Permission::create([
+            'slug' => 'audit-read',
+            'name' => 'View Audit Logs',
+            'description' => 'Allows viewing audit logs and system activity history',
+            'resource' => 'audit',
+            'action' => 'read',
+            'route' => 'audit/read',
+        ]);
+
     }
 }

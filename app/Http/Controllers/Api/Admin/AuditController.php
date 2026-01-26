@@ -9,6 +9,21 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+/**
+ * Audit Controller
+ * 
+ * IMPORTANT SECURITY NOTE:
+ * Audit logs are IMMUTABLE for security and compliance reasons.
+ * - NO delete endpoints exist (and never will)
+ * - NO update/edit endpoints exist (and never will)
+ * - Only READ permission exists: 'audit-read'
+ * - Even Super Admin cannot delete or modify audit logs
+ * 
+ * This ensures:
+ * - Compliance with LGPD/GDPR
+ * - Non-repudiation (logs cannot be tampered with)
+ * - Complete audit trail integrity
+ */
 class AuditController extends Controller
 {
     public function __construct(
@@ -26,8 +41,9 @@ class AuditController extends Controller
             $adminModel = $request->user();
             $admin = AdminFactory::createFromModel($adminModel);
             
-            // Requer permissão para ver audit logs
-            $this->authorizeActionUseCase->execute($admin, 'admin-read');
+            // Requer permissão específica para ver audit logs
+            // IMPORTANT: Audit logs are IMMUTABLE - only read permission exists
+            $this->authorizeActionUseCase->execute($admin, 'audit-read');
 
             // Filtros da query string
             $filters = [
@@ -71,7 +87,7 @@ class AuditController extends Controller
             $adminModel = $request->user();
             $admin = AdminFactory::createFromModel($adminModel);
             
-            $this->authorizeActionUseCase->execute($admin, 'admin-read');
+            $this->authorizeActionUseCase->execute($admin, 'audit-read');
 
             $log = $this->getAuditLogsUseCase->getById($id);
 
@@ -104,7 +120,7 @@ class AuditController extends Controller
             $adminModel = $request->user();
             $admin = AdminFactory::createFromModel($adminModel);
             
-            $this->authorizeActionUseCase->execute($admin, 'admin-read');
+            $this->authorizeActionUseCase->execute($admin, 'audit-read');
 
             $logs = $this->getAuditLogsUseCase->getForModel($type, $id);
 
@@ -130,7 +146,7 @@ class AuditController extends Controller
             $adminModel = $request->user();
             $admin = AdminFactory::createFromModel($adminModel);
             
-            $this->authorizeActionUseCase->execute($admin, 'admin-read');
+            $this->authorizeActionUseCase->execute($admin, 'audit-read');
 
             $perPage = min(max((int) $request->query('per_page', 50), 1), 100);
 
@@ -159,7 +175,7 @@ class AuditController extends Controller
             $adminModel = $request->user();
             $admin = AdminFactory::createFromModel($adminModel);
             
-            $this->authorizeActionUseCase->execute($admin, 'admin-read');
+            $this->authorizeActionUseCase->execute($admin, 'audit-read');
 
             $perPage = min(max((int) $request->query('per_page', 50), 1), 100);
 
@@ -188,7 +204,7 @@ class AuditController extends Controller
             $adminModel = $request->user();
             $admin = AdminFactory::createFromModel($adminModel);
             
-            $this->authorizeActionUseCase->execute($admin, 'admin-read');
+            $this->authorizeActionUseCase->execute($admin, 'audit-read');
 
             $perPage = min(max((int) $request->query('per_page', 50), 1), 100);
 
