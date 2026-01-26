@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\Admin\RoleController;
 use App\Http\Controllers\Api\Admin\ChatController as AdminChatController;
+use App\Http\Controllers\Api\Admin\AuditController;
 use App\Http\Controllers\Api\Chat\ChatController;
 use Illuminate\Support\Facades\Broadcast;
 
@@ -83,6 +84,16 @@ Route::prefix('admin')->group(function () {
         
         // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'index']);
+        
+        // Audit routes
+        Route::prefix('audit')->group(function () {
+            Route::get('/', [AuditController::class, 'index']);
+            Route::get('/{id}', [AuditController::class, 'show']);
+            Route::get('/model/{type}/{id}', [AuditController::class, 'modelHistory']);
+            Route::get('/user/{type}/{id}', [AuditController::class, 'userActivity']);
+            Route::get('/action/{action}', [AuditController::class, 'byAction']);
+            Route::get('/tag/{tag}', [AuditController::class, 'byTag']);
+        });
 
     });
 });

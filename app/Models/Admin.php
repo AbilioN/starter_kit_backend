@@ -10,10 +10,11 @@ use App\Domain\Entities\Admin as AdminEntity;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Traits\HasAuditLog;
 
 class Admin extends Authenticatable implements ChatUser
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, HasAuditLog;
 
     /**
      * The attributes that are mass assignable.
