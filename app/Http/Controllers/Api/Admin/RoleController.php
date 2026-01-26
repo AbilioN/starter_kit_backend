@@ -54,7 +54,7 @@ class RoleController extends Controller
             $user = AdminFactory::createFromModel($adminModel);
             $this->authorizeActionUseCase->execute($user, 'role-create');
             $name = $request->input('name');
-            $description = $request->input('description');
+            $description = $request->input('description') ?? '';
             $permissionsIds = $request->input('permissions') ?? [];
             $role = $this->createRoleUseCase->execute($name, $description);
             if(count($permissionsIds) > 0){
@@ -83,7 +83,7 @@ class RoleController extends Controller
             $this->authorizeActionUseCase->execute($user, 'role-update');
             $id = $request->input('id');
             $name = $request->input('name');
-            $description = $request->input('description');
+            $description = $request->input('description') ?? '';
             $role = $this->updateRoleUseCase->execute($id, $name, $description);
             
             return response()->json([

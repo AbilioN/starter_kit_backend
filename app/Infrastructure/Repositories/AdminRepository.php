@@ -123,6 +123,11 @@ class AdminRepository implements AdminRepositoryInterface
 
     public function updateLastLogin(int $id): void
     {
-        AdminModel::where('id', $id)->update(['last_login_at' => now()]);
+        // Usar find()->update() para disparar eventos do Eloquent (audit log)
+        // Nota: updateLastLogin não precisa de audit log, mas mantemos consistência
+        $admin = AdminModel::find($id);
+        if ($admin) {
+            $admin->update(['last_login_at' => now()]);
+        }
     }
 } 

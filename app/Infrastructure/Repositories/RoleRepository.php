@@ -60,20 +60,21 @@ class RoleRepository implements RoleRepositoryInterface
 
     public function update(int $id, string $slug, string $name, string $description): Role
     {
-        RoleModel::where('id', $id)->update([
+        // Usar findOrFail()->update() para disparar eventos do Eloquent (audit log)
+        $role = RoleModel::findOrFail($id);
+        $role->update([
             'slug' => $slug,
             'name' => $name,
             'description' => $description,
         ]);
         
-        // Find the updated role and return as entity
-        $role = RoleModel::findOrFail($id);
-        return $role->toEntity();
+        return $role->fresh()->toEntity();
     }
 
     public function delete(int $id): void
     {
-        RoleModel::where('id', $id)->delete();
+        // Usar findOrFail()->delete() para disparar eventos do Eloquent (audit log)
+        RoleModel::findOrFail($id)->delete();
     }
 
     public function updatePermissions(int $roleId, array $permissionIds): Role

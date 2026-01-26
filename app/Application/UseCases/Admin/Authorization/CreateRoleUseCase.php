@@ -11,7 +11,7 @@ class CreateRoleUseCase
         private RoleRepositoryInterface $roleRepository
     ) {}
 
-    public function execute(string $name, string $description): Role
+    public function execute(string $name, string $description = ''): Role
     {
         return $this->roleRepository->create($name, $description);
     }

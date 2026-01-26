@@ -52,7 +52,8 @@ class PermissionRepository implements PermissionRepositoryInterface
 
     public function delete(int $id): void
     {
-        PermissionModel::where('id', $id)->delete();
+        // Usar findOrFail()->delete() para disparar eventos do Eloquent (audit log)
+        PermissionModel::findOrFail($id)->delete();
     }
 
     public function attachRoles(int $id, array $roles): void
