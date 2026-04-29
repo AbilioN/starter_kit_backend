@@ -14,7 +14,11 @@ use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\Admin\RoleController;
 use App\Http\Controllers\Api\Admin\AuditController;
+use App\Http\Controllers\Api\Admin\FileController;
+use App\Http\Controllers\Api\Admin\NotificationController as AdminNotificationController;
+use App\Http\Controllers\Api\Admin\SettingController;
 use App\Http\Controllers\Api\Chat\ChatController;
+use App\Http\Controllers\Api\NotificationController;
 use Illuminate\Support\Facades\Broadcast;
 
 /*
@@ -32,11 +36,22 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+// Public settings (no auth required)
+Route::get('/settings/public', [SettingController::class, 'public']);
+
 // Auth routes
-Route::post('/login', LoginController::class);  
+Route::post('/login', LoginController::class);
 Route::post('/register', RegisterController::class);
 Route::post('/verify-email', VerifyEmailController::class);
 Route::post('/resend-verification-code', ResendVerificationCodeController::class);
+
+// User notifications
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
+});
 
 // Chat routes
 Route::middleware(['auth:sanctum'])->group(function () {
@@ -84,6 +99,23 @@ Route::prefix('admin')->group(function () {
         // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'index']);
         
+        // Settings routes
+        Route::get('/settings', [SettingController::class, 'index']);
+        Route::get('/settings/{key}', [SettingController::class, 'show']);
+        Route::put('/settings/{key}', [SettingController::class, 'update']);
+        Route::put('/settings', [SettingController::class, 'updateMany']);
+
+        // Admin notifications
+        Route::get('/notifications', [AdminNotificationController::class, 'index']);
+        Route::get('/notifications/unread-count', [AdminNotificationController::class, 'unreadCount']);
+        Route::post('/notifications/{id}/read', [AdminNotificationController::class, 'markRead']);
+        Route::post('/notifications/read-all', [AdminNotificationController::class, 'markAllRead']);
+
+        // File management
+        Route::get('/files', [FileController::class, 'index']);
+        Route::post('/files', [FileController::class, 'upload']);
+        Route::delete('/files/{id}', [FileController::class, 'delete']);
+
         // Audit routes
         Route::prefix('audit')->group(function () {
             Route::get('/', [AuditController::class, 'index']);

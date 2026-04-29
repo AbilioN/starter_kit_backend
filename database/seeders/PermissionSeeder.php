@@ -188,5 +188,51 @@ class PermissionSeeder extends Seeder
             'route' => 'audit/read',
         ]);
 
+        // Settings permissions
+        Permission::create([
+            'slug' => 'setting-read',
+            'name' => 'View Settings',
+            'description' => 'Allows viewing application settings',
+            'resource' => 'setting',
+            'action' => 'read',
+            'route' => 'setting/read',
+        ]);
+
+        Permission::create([
+            'slug' => 'setting-update',
+            'name' => 'Update Settings',
+            'description' => 'Allows updating application settings',
+            'resource' => 'setting',
+            'action' => 'update',
+            'route' => 'setting/update',
+        ]);
+
+        // File permissions
+        Permission::create([
+            'slug' => 'file-read',
+            'name' => 'View Files',
+            'description' => 'Allows viewing and listing uploaded files',
+            'resource' => 'file',
+            'action' => 'read',
+            'route' => 'file/read',
+        ]);
+
+        Permission::create([
+            'slug' => 'file-upload',
+            'name' => 'Upload Files',
+            'description' => 'Allows uploading files',
+            'resource' => 'file',
+            'action' => 'upload',
+            'route' => 'file/upload',
+        ]);
+
+        Permission::create([
+            'slug' => 'file-delete',
+            'name' => 'Delete Files',
+            'description' => 'Allows deleting files',
+            'resource' => 'file',
+            'action' => 'delete',
+            'route' => 'file/delete',
+        ]);
     }
 }

@@ -1,0 +1,84 @@
+<?php
+
+namespace App\Infrastructure\Repositories;
+
+use App\Domain\Entities\Setting;
+use App\Domain\Repositories\SettingRepositoryInterface;
+use App\Models\Setting as SettingModel;
+use Illuminate\Support\Facades\Cache;
+
+class SettingRepository implements SettingRepositoryInterface
+{
+    private const CACHE_TTL = 3600;
+    private const CACHE_PREFIX = 'setting:';
+    private const CACHE_ALL = 'settings:all';
+
+    public function all(): array
+    {
+        return Cache::remember(self::CACHE_ALL, self::CACHE_TTL, function () {
+            return SettingModel::orderBy('group')->orderBy('key')
+                ->get()
+                ->map(fn($m) => $m->toEntity())
+                ->all();
+        });
+    }
+
+    public function allPublic(): array
+    {
+        return Cache::remember('settings:public', self::CACHE_TTL, function () {
+            return SettingModel::where('is_public', true)
+                ->orderBy('group')->orderBy('key')
+                ->get()
+                ->map(fn($m) => $m->toEntity())
+                ->all();
+        });
+    }
+
+    public function byGroup(string $group): array
+    {
+        return SettingModel::where('group', $group)
+            ->orderBy('key')
+            ->get()
+            ->map(fn($m) => $m->toEntity())
+            ->all();
+    }
+
+    public function findByKey(string $key): ?Setting
+    {
+        return Cache::remember(self::CACHE_PREFIX . $key, self::CACHE_TTL, function () use ($key) {
+            $model = SettingModel::where('key', $key)->first();
+            return $model?->toEntity();
+        });
+    }
+
+    public function update(string $key, mixed $value): Setting
+    {
+        $model = SettingModel::where('key', $key)->firstOrFail();
+
+        $raw = match ($model->type) {
+            'boolean' => $value ? 'true' : 'false',
+            'array', 'json' => json_encode($value),
+            default => (string) $value,
+        };
+
+        $model->update(['value' => $raw]);
+
+        $this->bustCache($key);
+
+        return $model->fresh()->toEntity();
+    }
+
+    public function updateMany(array $keyValuePairs): void
+    {
+        foreach ($keyValuePairs as $key => $value) {
+            $this->update($key, $value);
+        }
+    }
+
+    private function bustCache(string $key): void
+    {
+        Cache::forget(self::CACHE_PREFIX . $key);
+        Cache::forget(self::CACHE_ALL);
+        Cache::forget('settings:public');
+    }
+}

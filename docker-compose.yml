@@ -25,6 +25,8 @@ services:
       - ./package-lock.json:/var/www/package-lock.json
       - ./vite.config.js:/var/www/vite.config.js
       - vendor_data:/var/www/vendor
+      # SQLite only for PHPUnit (container volume, not host)
+      - sqlite_data:/var/www/storage/app/sqlite
       - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
       - vendor_data:/var/www/vendor
     networks:
@@ -79,12 +81,12 @@ services:
     networks:
       - starter_kit_backend_network
 
-  # Queue Worker para mensagens (ProcessMessageJob)
-  queue_messages:
+  # Horizon — unified queue dashboard (replaces queue_messages + queue_events)
+  horizon:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: starter_kit_backend_queue_messages
+    container_name: starter_kit_backend_horizon
     restart: unless-stopped
     working_dir: /var/www
     volumes:
@@ -112,42 +114,7 @@ services:
       - DB_PASSWORD=${DB_PASSWORD:-password}
       - DB_DATABASE=${DB_DATABASE:-starter_kit_backend}
       - DB_USERNAME=${DB_USERNAME:-starter_kit_backend}
-    command: ./docker/wait-for-db.sh php artisan queue:work --queue=message_processing --sleep=3 --tries=3 --max-time=3600 --verbose
-
-  # Queue Worker para eventos (MessageSent, BroadcastEvent)
-  queue_events:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: starter_kit_backend_queue_events
-    restart: unless-stopped
-    working_dir: /var/www
-    volumes:
-      - ./app:/var/www/app
-      - ./config:/var/www/config
-      - ./database:/var/www/database
-      - ./routes:/var/www/routes
-      - ./resources:/var/www/resources
-      - ./public:/var/www/public
-      - ./storage:/var/www/storage
-      - ./bootstrap:/var/www/bootstrap
-      - ./artisan:/var/www/artisan
-      - ./composer.json:/var/www/composer.json
-      - ./composer.lock:/var/www/composer.lock
-      - ./package.json:/var/www/package.json
-      - ./package-lock.json:/var/www/package-lock.json
-      - ./vite.config.js:/var/www/vite.config.js
-      - vendor_data:/var/www/vendor
-    networks:
-      - starter_kit_backend_network
-    depends_on:
-      - db
-      - redis
-    environment:
-      - DB_PASSWORD=${DB_PASSWORD:-password}
-      - DB_DATABASE=${DB_DATABASE:-starter_kit_backend}
-      - DB_USERNAME=${DB_USERNAME:-starter_kit_backend}
-    command: ./docker/wait-for-db.sh php artisan queue:work --queue=default --sleep=3 --tries=3 --max-time=3600 --verbose
+    command: ./docker/wait-for-db.sh php artisan horizon
 
 networks:
   starter_kit_backend_network:
@@ -158,3 +125,5 @@ volumes:
     driver: local
   vendor_data:
     driver: local 
+  sqlite_data:
+    driver: local

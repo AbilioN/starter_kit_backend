@@ -50,5 +50,17 @@ class AppServiceProvider extends ServiceProvider
     {
         // Habilitar broadcasting
         \Illuminate\Support\Facades\Broadcast::routes();
+
+        // Horizon dashboard — only accessible by super admin in production
+        if (class_exists(\Laravel\Horizon\Horizon::class)) {
+            \Laravel\Horizon\Horizon::auth(function ($request) {
+                if (app()->environment('local')) {
+                    return true;
+                }
+
+                $user = $request->user();
+                return $user && method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin();
+            });
+        }
     }
 }

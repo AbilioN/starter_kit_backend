@@ -36,6 +36,7 @@ class DatabaseSeeder extends Seeder
             // ChatSeeder::class,
             TestUserSeeder::class,
             AssistantSeeder::class,
+            SettingSeeder::class,
         ]);
     }
 }
