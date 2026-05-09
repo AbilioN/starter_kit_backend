@@ -41,8 +41,9 @@ USER akerfeels
 # Copiar .env.example para .env se não existir
 RUN if [ ! -f .env ]; then cp .env.example .env; fi
 
-# Instalar dependências do PHP (incluindo dev dependencies)
-RUN composer install --optimize-autoloader --verbose
+# Instalar dependências do PHP — composer update regenerates the lock file
+# when composer.json and composer.lock drift out of sync (e.g. laravel/horizon).
+RUN composer update --no-interaction --optimize-autoloader
 
 # Instalar dependências do Node.js
 RUN npm install
