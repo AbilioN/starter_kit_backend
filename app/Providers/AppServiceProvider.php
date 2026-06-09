@@ -49,7 +49,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // Habilitar broadcasting
-        \Illuminate\Support\Facades\Broadcast::routes();
+        \Illuminate\Support\Facades\Broadcast::routes(['middleware' => ['auth:sanctum']]);
 
         // Horizon dashboard — only accessible by super admin in production
         if (class_exists(\Laravel\Horizon\Horizon::class)) {

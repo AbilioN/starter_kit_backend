@@ -3,11 +3,12 @@
 namespace App\Events;
 
 use App\Domain\Entities\Message;
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class MessageSent implements ShouldBroadcast
@@ -16,47 +17,51 @@ class MessageSent implements ShouldBroadcast
 
     public $message;
 
-    /**
-     * Create a new event instance.
-     */
+    private array $participantChannels = [];
+
     public function __construct(Message $message)
     {
         $this->message = $message;
+        $this->participantChannels = $this->buildParticipantChannels($message->chatId);
     }
 
-    /**
-     * Get the channels the event should broadcast on.
-     *
-     * @return \Illuminate\Broadcasting\Channel
-     */
-    public function broadcastOn()
+    private function buildParticipantChannels(int $chatId): array
     {
-        $channelName = 'chat.' . $this->message->chatId;
-        Log::info('MessageSent event broadcasting on channel: ' . $channelName);
-        return new Channel($channelName);
+        return DB::table('chat_user')
+            ->where('chat_id', $chatId)
+            ->where('is_active', true)
+            ->whereIn('user_type', ['user', 'admin'])
+            ->get(['user_id', 'user_type'])
+            ->map(fn ($row) => new PrivateChannel("user.{$row->user_type}.{$row->user_id}"))
+            ->all();
     }
 
-    /**
-     * The event's broadcast name.
-     */
+    public function broadcastOn(): array
+    {
+        $channels = array_merge(
+            [new PrivateChannel('chat.' . $this->message->chatId)],
+            $this->participantChannels
+        );
+
+        Log::info('MessageSent broadcasting on channels', [
+            'chat_id' => $this->message->chatId,
+            'participant_channels' => count($this->participantChannels),
+        ]);
+
+        return $channels;
+    }
+
     public function broadcastAs(): string
     {
         return 'MessageSent';
     }
 
-    /**
-     * Determine if this event should broadcast.
-     */
     public function broadcastWhen(): bool
     {
-        // Sempre broadcast
         return true;
     }
 
-    /**
-     * Get the data to broadcast.
-     */
-    public function broadcastWith()
+    public function broadcastWith(): array
     {
         return [
             'id' => $this->message->id,
@@ -65,7 +70,7 @@ class MessageSent implements ShouldBroadcast
             'sender_type' => $this->message->sender->getType(),
             'sender_id' => $this->message->sender->getId(),
             'is_read' => $this->message->isRead,
-            'created_at' => $this->message->createdAt?->format('Y-m-d H:i:s') ?? now()->format('Y-m-d H:i:s')
+            'created_at' => $this->message->createdAt?->format('Y-m-d H:i:s') ?? now()->format('Y-m-d H:i:s'),
         ];
     }
 }

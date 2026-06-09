@@ -16,7 +16,9 @@ class AdminLoginUseCase
         $adminRoles = $this->adminAuthService->getAdminRolesWithPermissions($admin);
         
         return [
-            'admin' => $admin->toDto()->toArray(),
+            'admin' => array_merge($admin->toDto()->toArray(), [
+                'channel' => 'user.admin.' . $admin->id,
+            ]),
             'token' => $token,
             'roles' => $adminRoles
         ];
