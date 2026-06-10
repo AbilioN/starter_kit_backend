@@ -5,7 +5,7 @@ namespace App\Application\DTOs\Admin\Authorization;
 class AdminDto
 {
     public function __construct(
-        public readonly int $id,
+        public readonly string $id,
         public readonly string $name,
         public readonly string $email,
         public readonly bool $is_active,

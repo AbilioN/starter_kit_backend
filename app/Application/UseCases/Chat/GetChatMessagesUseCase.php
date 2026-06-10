@@ -16,7 +16,7 @@ class GetChatMessagesUseCase
         private MessageRepositoryInterface $messageRepository
     ) {}
 
-    public function execute(ChatUser $user, int $chatId, int $page = 1, int $perPage = 50): ChatMessagesResponseDto
+    public function execute(ChatUser $user, string $chatId, int $page = 1, int $perPage = 50): ChatMessagesResponseDto
     {
         if (!$this->chatRepository->hasParticipant($chatId, $user)) {
             throw new \Exception('Access denied', 403);
@@ -34,7 +34,7 @@ class GetChatMessagesUseCase
     /**
      * Enriquece as mensagens com o tipo do remetente
      */
-    private function enrichMessagesWithSenderType(array $messages, int $chatId): array
+    private function enrichMessagesWithSenderType(array $messages, string $chatId): array
     {
         return array_map(function ($message) use ($chatId) {
             // Busca o tipo do usuário na tabela chat_user

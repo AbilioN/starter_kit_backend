@@ -8,7 +8,7 @@ use DateTime;
 class SudoAdmin implements SudoAdminInterface
 {
     public function __construct(
-        public readonly int $id,
+        public readonly string $id,
         public readonly string $name,
         public readonly string $email,
         public readonly string $password,
@@ -18,7 +18,7 @@ class SudoAdmin implements SudoAdminInterface
         public readonly ?DateTime $updatedAt = null
     ) {}
 
-    public function getId(): int
+    public function getId(): string
     {
         return $this->id;
     }

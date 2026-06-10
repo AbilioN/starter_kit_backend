@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Domain\Entities\Role as RoleEntity;
@@ -10,7 +11,7 @@ use App\Traits\HasAuditLog;
 class Role extends Model
 {
     /** @use HasFactory<\Database\Factories\RoleFactory> */
-    use HasFactory, HasAuditLog;
+    use HasUuids, HasFactory, HasAuditLog;
 
     protected $fillable = [
         'slug',

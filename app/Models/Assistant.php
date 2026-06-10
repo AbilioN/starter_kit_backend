@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Domain\Entities\Assistant as AssistantEntity;
@@ -9,6 +10,8 @@ use App\Domain\Entities\ChatUser;
 
 class Assistant extends Model
 {
+    use HasUuids;
+
     protected $fillable = [
         'name',
         'description',

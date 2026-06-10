@@ -5,7 +5,7 @@ namespace App\Domain\Entities;
 class Assistant implements ChatUser
 {
     public function __construct(
-        private int $id,
+        private string $id,
         private string $name,
         private ?string $description,
         private ?string $avatar,
@@ -13,7 +13,7 @@ class Assistant implements ChatUser
         private bool $isActive
     ) {}
 
-    public function getId(): int
+    public function getId(): string
     {
         return $this->id;
     }

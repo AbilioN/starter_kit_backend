@@ -5,11 +5,11 @@ namespace App\Application\DTOs;
 class ChatDto
 {
     public function __construct(
-        public readonly int $id,
+        public readonly string $id,
         public readonly string $name,
         public readonly string $type,
         public readonly string $description,
-        public readonly int $created_by,
+        public readonly string $created_by,
         public readonly ?string $created_by_type = null,
         public readonly ?string $created_at = null,
         public readonly ?string $updated_at = null

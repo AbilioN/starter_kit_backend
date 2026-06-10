@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Role
 {
     public function __construct(
-        public readonly int $id,
+        public readonly string $id,
         public readonly string $slug,
         public readonly string $name,
         public readonly string $description,
@@ -18,7 +18,7 @@ class Role
         public readonly ?string $updated_at = null,    
     ) {}
 
-    public function getId(): int
+    public function getId(): string
     {
         return $this->id;
     }

@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('chat_user', function (Blueprint $table) {
-            $table->uuid('id')->primary();
+            $table->id(); // bigint auto-increment — uuid not used here because BelongsToMany::attach() does not supply a pivot id
             $table->foreignUuid('chat_id')->constrained('chats')->cascadeOnDelete();
             $table->string('user_id', 36); // polymorphic - user/admin/assistant, no FK constraint
             $table->enum('user_type', ['user', 'admin', 'assistant']);

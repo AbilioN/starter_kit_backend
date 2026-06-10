@@ -78,7 +78,7 @@ class ChatUserFactory
     /**
      * Cria uma entidade de domínio a partir de dados da tabela chat_user
      */
-    public static function createFromChatUserData(int $userId, string $userType): ChatUser
+    public static function createFromChatUserData(string $userId, string $userType): ChatUser
     {
         switch ($userType) {
             case 'user':

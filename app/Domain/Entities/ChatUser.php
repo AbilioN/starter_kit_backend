@@ -7,7 +7,7 @@ interface ChatUser
     /**
      * Obtém o ID único do usuário
      */
-    public function getId(): int;
+    public function getId(): string;
 
     /**
      * Obtém o nome do usuário

@@ -5,10 +5,10 @@ namespace App\Application\DTOs;
 class LastMessageDto
 {
     public function __construct(
-        public readonly int $id,
+        public readonly string $id,
         public readonly string $content,
         public readonly string $senderType,
-        public readonly int $senderId,
+        public readonly string $senderId,
         public readonly string $createdAt
     ) {}
 

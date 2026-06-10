@@ -8,8 +8,8 @@ use DateTime;
 class Message
 {
     public function __construct(
-        public readonly int $id,
-        public readonly int $chatId,
+        public readonly string $id,
+        public readonly string $chatId,
         public readonly string $content,
         public readonly ChatUser $sender,
         public readonly string $messageType,
@@ -101,7 +101,7 @@ class Message
         return $this->sender->getType();
     }
 
-    public function getSenderId(): int
+    public function getSenderId(): string
     {
         return $this->sender->getId();
     }

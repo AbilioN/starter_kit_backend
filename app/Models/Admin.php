@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Domain\Entities\ChatUser;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -14,7 +15,7 @@ use App\Traits\HasAuditLog;
 
 class Admin extends Authenticatable implements ChatUser
 {
-    use HasApiTokens, HasFactory, Notifiable, HasAuditLog;
+    use HasUuids, HasApiTokens, HasFactory, Notifiable, HasAuditLog;
 
     /**
      * The attributes that are mass assignable.
@@ -100,7 +101,7 @@ class Admin extends Authenticatable implements ChatUser
 
     // Implementação da interface ChatUser
 
-    public function getId(): int
+    public function getId(): string
     {
         return $this->id;
     }

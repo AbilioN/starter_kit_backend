@@ -28,8 +28,8 @@ class ProcessOpenAIResponse implements ShouldQueue
      */
     public function __construct(
         private string $requestId,
-        private int $chatId,
-        private int $userId,
+        private string $chatId,
+        private string $userId,
         private string $response
     ) {
         //

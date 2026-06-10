@@ -26,8 +26,8 @@ class ProcessMessageJob implements ShouldQueue
      * Create a new job instance.
      */
     public function __construct(
-        private int $chatId,
-        private int $userId,
+        private string $chatId,
+        private string $userId,
         private string $userType,
         private string $content,
         private string $messageType,
@@ -143,7 +143,7 @@ class ProcessMessageJob implements ShouldQueue
     /**
      * Determine the user type based on the user ID
      */
-    private function determineUserType(int $userId, AssistantRepositoryInterface $assistantRepository): string
+    private function determineUserType(string $userId, AssistantRepositoryInterface $assistantRepository): string
     {
         // Verifica se é um assistente
         if ($assistantRepository->findById($userId)) {

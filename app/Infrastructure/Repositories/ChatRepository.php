@@ -16,7 +16,7 @@ class ChatRepository implements ChatRepositoryInterface
         return $chatModel->toEntityFromReciever($reciever);
     }
 
-    public function findById(int $id): ?Chat
+    public function findById(string $id): ?Chat
     {
         $chatModel = ChatModel::find($id);
         if (!$chatModel) {
@@ -93,7 +93,7 @@ class ChatRepository implements ChatRepositoryInterface
         );
     }
 
-    public function addParticipantToChat(int $chatId, ChatUser $user): void
+    public function addParticipantToChat(string $chatId, ChatUser $user): void
     {
         $chatModel = ChatModel::find($chatId);
         if ($chatModel) {
@@ -101,7 +101,7 @@ class ChatRepository implements ChatRepositoryInterface
         }
     }
 
-    public function removeParticipantFromChat(int $chatId, ChatUser $user): void
+    public function removeParticipantFromChat(string $chatId, ChatUser $user): void
     {
         $chatModel = ChatModel::find($chatId);
         if ($chatModel) {
@@ -109,7 +109,7 @@ class ChatRepository implements ChatRepositoryInterface
         }
     }
 
-    public function markChatAsReadForUser(int $chatId, ChatUser $user): void
+    public function markChatAsReadForUser(string $chatId, ChatUser $user): void
     {
         $chatModel = ChatModel::find($chatId);
         if ($chatModel) {
@@ -128,7 +128,7 @@ class ChatRepository implements ChatRepositoryInterface
         ->count();
     }
 
-    public function hasParticipant(int $chatId, ChatUser $user): bool
+    public function hasParticipant(string $chatId, ChatUser $user): bool
     {
         $chatModel = ChatModel::find($chatId);
         if (!$chatModel) {
@@ -138,7 +138,7 @@ class ChatRepository implements ChatRepositoryInterface
         return $chatModel->hasParticipant($user);
     }
 
-    public function hasAssistant(int $chatId): bool
+    public function hasAssistant(string $chatId): bool
     {
         return ChatModel::where('id', $chatId)
             ->whereHas('users', function ($query) {

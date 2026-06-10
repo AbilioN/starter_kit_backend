@@ -8,17 +8,17 @@ use DateTime;
 class Chat
 {
     public function __construct(
-        public readonly int $id,
+        public readonly string $id,
         public readonly string $name,
         public readonly string $type,
         public readonly string $description,
-        public readonly int $createdBy,
+        public readonly string $createdBy,
         public readonly ?string $createdByType = null,
         public readonly ?DateTime $createdAt = null,
         public readonly ?DateTime $updatedAt = null
     ) {}
 
-    public function getId(): int
+    public function getId(): string
     {
         return $this->id;
     }
@@ -40,7 +40,7 @@ class Chat
     
     
     
-    public function getCreatedBy(): int
+    public function getCreatedBy(): string
     {
         return $this->createdBy;
     }

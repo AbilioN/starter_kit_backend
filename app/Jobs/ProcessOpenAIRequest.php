@@ -25,8 +25,8 @@ class ProcessOpenAIRequest implements ShouldQueue
      * Create a new job instance.
      */
     public function __construct(
-        private int $chatId,
-        private int $userId,
+        private string $chatId,
+        private string $userId,
         private string $userMessage,
         private string $queueName = 'openai_requests'
     ) {

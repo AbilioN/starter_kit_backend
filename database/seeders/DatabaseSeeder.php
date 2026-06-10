@@ -33,8 +33,8 @@ class DatabaseSeeder extends Seeder
             AdminRolePermissionSeeder::class,
             
             // Outros seeders
-            // ChatSeeder::class,
             TestUserSeeder::class,
+            ChatSeeder::class,
             AssistantSeeder::class,
             SettingSeeder::class,
         ]);

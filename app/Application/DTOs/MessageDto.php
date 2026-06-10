@@ -5,10 +5,10 @@ namespace App\Application\DTOs;
 class MessageDto
 {
     public function __construct(
-        public readonly int $id,
-        public readonly int $chat_id,
+        public readonly string $id,
+        public readonly string $chat_id,
         public readonly string $content,
-        public readonly int $sender_id,
+        public readonly string $sender_id,
         public readonly string $sender_type,
         public readonly string $message_type,
         public readonly ?array $metadata,

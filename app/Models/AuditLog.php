@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Domain\Entities\AuditLog as AuditLogEntity;
@@ -9,7 +10,7 @@ use DateTime;
 
 class AuditLog extends Model
 {
-    use HasFactory;
+    use HasUuids, HasFactory;
 
     /**
      * Indicates if the model should be timestamped.

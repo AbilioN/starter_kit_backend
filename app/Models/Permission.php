@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Application\DTOs\Admin\Authorization\PermissionDto;
@@ -10,7 +11,7 @@ use App\Domain\Entities\Permission as PermissionEntity;
 class Permission extends Model
 {
     /** @use HasFactory<\Database\Factories\PermissionFactory> */
-    use HasFactory;
+    use HasUuids, HasFactory;
 
     protected $fillable = [
         'slug',

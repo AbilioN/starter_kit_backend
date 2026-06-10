@@ -31,7 +31,7 @@ class ChatController extends Controller
         $request->validate([
             'content' => 'required|string|max:1000',
             'receiver_type' => 'required|in:user,admin',
-            'receiver_id' => 'required|integer|min:1'
+            'receiver_id' => 'required|string'
         ]);
 
         $user = $request->user();
@@ -139,7 +139,7 @@ class ChatController extends Controller
     {
         $request->validate([
             'other_user_type' => 'required|in:user,admin',
-            'other_user_id' => 'required|integer|min:1',
+            'other_user_id' => 'required|string',
             'page' => 'integer|min:1',
             'per_page' => 'integer|min:1|max:100'
         ]);
@@ -177,7 +177,7 @@ class ChatController extends Controller
         try {
             DB::beginTransaction();
             $request->validate([
-                'other_user_id' => 'required|integer',
+                'other_user_id' => 'required|string',
                 'other_user_type' => 'required|in:user,admin,assistant'
             ]);
     
@@ -217,7 +217,7 @@ class ChatController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
             'participants' => 'required|array|min:1',
-            'participants.*.user_id' => 'required|integer',
+            'participants.*.user_id' => 'required|string',
             'participants.*.user_type' => 'required|in:user,admin'
         ]);
 

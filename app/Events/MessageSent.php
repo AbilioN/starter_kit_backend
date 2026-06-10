@@ -25,7 +25,7 @@ class MessageSent implements ShouldBroadcast
         $this->participantChannels = $this->buildParticipantChannels($message->chatId);
     }
 
-    private function buildParticipantChannels(int $chatId): array
+    private function buildParticipantChannels(string $chatId): array
     {
         return DB::table('chat_user')
             ->where('chat_id', $chatId)

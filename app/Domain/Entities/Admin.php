@@ -9,7 +9,7 @@ use DateTime;
 class Admin implements ChatUser, AuthorizableUser
 {
     public function __construct(
-        public readonly int $id,
+        public readonly string $id,
         public readonly string $name,
         public readonly string $email,
         public readonly string $password,
@@ -38,7 +38,7 @@ class Admin implements ChatUser, AuthorizableUser
 
     // Implementação da interface ChatUser
 
-    public function getId(): int
+    public function getId(): string
     {
         return $this->id;
     }

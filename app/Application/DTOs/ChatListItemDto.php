@@ -5,7 +5,7 @@ namespace App\Application\DTOs;
 class ChatListItemDto
 {
     public function __construct(
-        public readonly int $id,
+        public readonly string $id,
         public readonly string $name,
         public readonly string $type,
         public readonly string $description,

@@ -7,7 +7,7 @@ use App\Application\DTOs\Admin\Authorization\PermissionDto;
 class Permission
 {
     public function __construct(
-        public readonly int $id,
+        public readonly string $id,
         public readonly string $slug,
         public readonly string $name,
         public readonly string $description,
@@ -18,7 +18,7 @@ class Permission
     ) {}
 
 
-    public function getId(): int
+    public function getId(): string
     {
         return $this->id;
     }

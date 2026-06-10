@@ -4,7 +4,7 @@ namespace App\Domain\Interfaces;
 
 interface AuthorizableUser
 {
-    public function getId(): int;
+    public function getId(): string;
     public function getName(): string;
     public function getEmail(): string;
     public function isSuperAdmin(): bool;

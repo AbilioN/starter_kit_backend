@@ -5,13 +5,14 @@ namespace App\Models;
 use App\Domain\Entities\ChatUser;
 use App\Domain\Entities\ChatUserFactory;
 use App\Domain\Entities\Message as MessageEntity;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Message extends Model
 {
-    use HasFactory;
+    use HasUuids, HasFactory;
 
     protected $fillable = [
         'chat_id',

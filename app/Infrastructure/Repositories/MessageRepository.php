@@ -9,7 +9,7 @@ use App\Models\Message as MessageModel;
 
 class MessageRepository implements MessageRepositoryInterface
 {
-    public function create(int $chatId, string $content, ChatUser $sender, string $messageType = 'text', ?array $metadata = null): Message
+    public function create(string $chatId, string $content, ChatUser $sender, string $messageType = 'text', ?array $metadata = null): Message
     {
         $messageModel = MessageModel::create([
             'chat_id' => $chatId,
@@ -23,7 +23,7 @@ class MessageRepository implements MessageRepositoryInterface
         return $messageModel->toEntity();
     }
 
-    public function findById(int $id): ?Message
+    public function findById(string $id): ?Message
     {
         $messageModel = MessageModel::find($id);
         if (!$messageModel) {
@@ -48,7 +48,7 @@ class MessageRepository implements MessageRepositoryInterface
         );
     }
 
-    public function getChatMessages(int $chatId, int $page = 1, int $perPage = 50): array
+    public function getChatMessages(string $chatId, int $page = 1, int $perPage = 50): array
     {
         $paginator = MessageModel::with(['sender'])
             ->where('chat_id', $chatId)
@@ -85,7 +85,7 @@ class MessageRepository implements MessageRepositoryInterface
         ];
     }
 
-    public function markAsRead(int $messageId): void
+    public function markAsRead(string $messageId): void
     {
         MessageModel::where('id', $messageId)->update([
             'is_read' => true,
@@ -93,7 +93,7 @@ class MessageRepository implements MessageRepositoryInterface
         ]);
     }
 
-    public function getUnreadCount(int $chatId, ChatUser $user): int
+    public function getUnreadCount(string $chatId, ChatUser $user): int
     {
         return MessageModel::where('chat_id', $chatId)
             ->where('sender_id', '!=', $user->getId())

@@ -16,7 +16,7 @@ class SendMessageToChatUseCase
         private ChatRepositoryInterface $chatRepository
     ) {}
 
-    public function execute(int $chatId, string $content, ChatUser $sender, string $messageType = 'text', ?array $metadata = null): Message
+    public function execute(string $chatId, string $content, ChatUser $sender, string $messageType = 'text', ?array $metadata = null): Message
     {
         Log::info('Creating message', [
             'chat_id' => $chatId,
@@ -52,7 +52,7 @@ class SendMessageToChatUseCase
         return $message;
     }
 
-    private function dispatchOpenAIRequest(int $chatId, int $userId, string $content): void
+    private function dispatchOpenAIRequest(string $chatId, string $userId, string $content): void
     {
         try {
             \App\Jobs\ProcessOpenAIRequest::dispatch($chatId, $userId, $content);
