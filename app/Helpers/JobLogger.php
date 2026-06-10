@@ -50,7 +50,7 @@ class JobLogger
     /**
      * Log de verificação de chat
      */
-    public function checkingChat(int $chatId): void
+    public function checkingChat(string $chatId): void
     {
         $this->log('🔍 Checking if chat exists', ['chat_id' => $chatId]);
     }
@@ -58,7 +58,7 @@ class JobLogger
     /**
      * Log de chat encontrado
      */
-    public function chatFound(int $chatId, ?string $chatName = null): void
+    public function chatFound(string $chatId, ?string $chatName = null): void
     {
         $this->log('✅ Chat found', ['chat_id' => $chatId, 'chat_name' => $chatName ?? 'N/A']);
     }
@@ -66,7 +66,7 @@ class JobLogger
     /**
      * Log de chat não encontrado
      */
-    public function chatNotFound(int $chatId): void
+    public function chatNotFound(string $chatId): void
     {
         $this->log('❌ Chat not found', ['chat_id' => $chatId]);
     }
@@ -74,7 +74,7 @@ class JobLogger
     /**
      * Log de determinação de tipo de usuário
      */
-    public function determiningUserType(int $userId): void
+    public function determiningUserType(string $userId): void
     {
         $this->log('👤 Determining user type', ['user_id' => $userId]);
     }
@@ -82,7 +82,7 @@ class JobLogger
     /**
      * Log de tipo de usuário determinado
      */
-    public function userTypeDetermined(int $userId, string $userType): void
+    public function userTypeDetermined(string $userId, string $userType): void
     {
         $this->log('✅ User type determined', ['user_id' => $userId, 'user_type' => $userType]);
     }
@@ -90,7 +90,7 @@ class JobLogger
     /**
      * Log de criação de ChatUser
      */
-    public function creatingChatUser(int $userId, string $userType): void
+    public function creatingChatUser(string $userId, string $userType): void
     {
         $this->log('🏗️ Creating ChatUser entity', ['user_id' => $userId, 'user_type' => $userType]);
     }
@@ -98,7 +98,7 @@ class JobLogger
     /**
      * Log de ChatUser criado
      */
-    public function chatUserCreated(int $userId, string $userType): void
+    public function chatUserCreated(string $userId, string $userType): void
     {
         $this->log('✅ ChatUser entity created', ['user_id' => $userId, 'user_type' => $userType]);
     }
@@ -106,7 +106,7 @@ class JobLogger
     /**
      * Log de verificação de participante
      */
-    public function checkingParticipant(int $userId, int $chatId): void
+    public function checkingParticipant(string $userId, string $chatId): void
     {
         $this->log('🔍 Checking if user is participant', ['user_id' => $userId, 'chat_id' => $chatId]);
     }
@@ -114,7 +114,7 @@ class JobLogger
     /**
      * Log de participante encontrado
      */
-    public function participantFound(int $userId, int $chatId): void
+    public function participantFound(string $userId, string $chatId): void
     {
         $this->log('✅ User is participant', ['user_id' => $userId, 'chat_id' => $chatId]);
     }
@@ -122,7 +122,7 @@ class JobLogger
     /**
      * Log de participante não encontrado
      */
-    public function participantNotFound(int $userId, int $chatId): void
+    public function participantNotFound(string $userId, string $chatId): void
     {
         $this->log('❌ User is not participant', ['user_id' => $userId, 'chat_id' => $chatId]);
     }
@@ -130,7 +130,7 @@ class JobLogger
     /**
      * Log de processamento de mensagem
      */
-    public function processingMessage(int $chatId, int $userId, string $messageType): void
+    public function processingMessage(string $chatId, string $userId, string $messageType): void
     {
         $this->log('📝 Processing message with use case', ['chat_id' => $chatId, 'user_id' => $userId, 'message_type' => $messageType]);
     }
@@ -138,11 +138,11 @@ class JobLogger
     /**
      * Log de mensagem processada
      */
-    public function messageProcessed(int $chatId, int $userId, int $messageId, string $messageType): void
+    public function messageProcessed(string $chatId, string $userId, string $messageId, string $messageType): void
     {
         $this->log('✅ Message processed successfully', [
-            'chat_id' => $chatId, 
-            'user_id' => $userId, 
+            'chat_id' => $chatId,
+            'user_id' => $userId,
             'message_id' => $messageId,
             'message_type' => $messageType
         ]);

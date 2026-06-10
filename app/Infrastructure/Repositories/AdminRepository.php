@@ -8,7 +8,7 @@ use App\Models\Admin as AdminModel;
 
 class AdminRepository implements AdminRepositoryInterface
 {
-    public function findById(int $id): ?Admin
+    public function findById(string $id): ?Admin
     {
         $admin = AdminModel::find($id);
         if (!$admin) {
@@ -85,7 +85,7 @@ class AdminRepository implements AdminRepositoryInterface
     }
 
     public function update(
-        int $id,
+        string $id,
         ?string $name = null,
         ?string $email = null,
         ?string $password = null,
@@ -104,12 +104,12 @@ class AdminRepository implements AdminRepositoryInterface
         return $admin->fresh()->toEntity();
     }
 
-    public function delete(int $id): void
+    public function delete(string $id): void
     {
         AdminModel::findOrFail($id)->delete();
     }
 
-    public function findByIdWithRolesAndPermissions(int $id): ?Admin
+    public function findByIdWithRolesAndPermissions(string $id): ?Admin
     {
         $admin = AdminModel::with(['roles.permissions'])->find($id);
         
@@ -121,7 +121,7 @@ class AdminRepository implements AdminRepositoryInterface
 
     }
 
-    public function updateLastLogin(int $id): void
+    public function updateLastLogin(string $id): void
     {
         // Usar find()->update() para disparar eventos do Eloquent (audit log)
         // Nota: updateLastLogin não precisa de audit log, mas mantemos consistência

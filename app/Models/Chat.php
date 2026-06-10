@@ -249,23 +249,29 @@ class Chat extends Model
      */
     public static function findOrCreatePrivateChat(ChatUser $user1, ChatUser $user2): self
     {
+        // Query chat_user directly — the users() relation is User-only and misses admins/assistants.
         $chat = self::where('type', 'private')
-            ->whereHas('users', function ($query) use ($user1) {
-                $query->where('user_id', $user1->getId())
-                      ->where('user_type', $user1->getType());
+            ->whereIn('id', function ($q) use ($user1) {
+                $q->select('chat_id')->from('chat_user')
+                  ->where('user_id', $user1->getId())
+                  ->where('user_type', $user1->getType());
             })
-            ->whereHas('users', function ($query) use ($user2) {
-                $query->where('user_id', $user2->getId())
-                      ->where('user_type', $user2->getType());
+            ->whereIn('id', function ($q) use ($user2) {
+                $q->select('chat_id')->from('chat_user')
+                  ->where('user_id', $user2->getId())
+                  ->where('user_type', $user2->getType());
             })
-            ->whereDoesntHave('users', function ($query) use ($user1, $user2) {
-                $query->where(function ($subQuery) use ($user1, $user2) {
-                    $subQuery->where('user_id', '!=', $user1->getId())
-                             ->orWhere('user_type', '!=', $user1->getType());
-                })->where(function ($subQuery) use ($user1, $user2) {
-                    $subQuery->where('user_id', '!=', $user2->getId())
-                             ->orWhere('user_type', '!=', $user2->getType());
-                });
+            ->whereNotIn('id', function ($q) use ($user1, $user2) {
+                // Exclude chats that have any participant other than user1 and user2.
+                $q->select('chat_id')->from('chat_user')
+                  ->where(function ($sub) use ($user1) {
+                      $sub->where('user_id', '!=', $user1->getId())
+                          ->orWhere('user_type', '!=', $user1->getType());
+                  })
+                  ->where(function ($sub) use ($user2) {
+                      $sub->where('user_id', '!=', $user2->getId())
+                          ->orWhere('user_type', '!=', $user2->getType());
+                  });
             })
             ->first();
         if (!$chat) {

@@ -18,6 +18,8 @@ class DatabaseSeeder extends Seeder
         User::factory()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',
+            'password' => \Illuminate\Support\Facades\Hash::make('password123'),
+            'email_verified_at' => now(),
         ]);
 
         // Executar seeders na ordem correta
