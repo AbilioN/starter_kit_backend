@@ -21,6 +21,9 @@ return new class extends Migration
             $table->json('metadata')->nullable();
             $table->boolean('is_read')->default(false);
             $table->timestamp('read_at')->nullable();
+            $table->timestamp('edited_at')->nullable();
+            $table->uuid('reply_to_id')->nullable();
+            $table->foreign('reply_to_id')->references('id')->on('messages')->nullOnDelete();
             $table->timestamps();
             
             // Índices para melhor performance

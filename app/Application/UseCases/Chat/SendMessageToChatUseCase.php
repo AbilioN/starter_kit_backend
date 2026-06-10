@@ -16,7 +16,7 @@ class SendMessageToChatUseCase
         private ChatRepositoryInterface $chatRepository
     ) {}
 
-    public function execute(string $chatId, string $content, ChatUser $sender, string $messageType = 'text', ?array $metadata = null): Message
+    public function execute(string $chatId, string $content, ChatUser $sender, string $messageType = 'text', ?array $metadata = null, ?string $replyToId = null): Message
     {
         Log::info('Creating message', [
             'chat_id' => $chatId,
@@ -29,7 +29,8 @@ class SendMessageToChatUseCase
             $content,
             $sender,
             $messageType,
-            $metadata
+            $metadata,
+            $replyToId
         );
         Log::info('Dispatching MessageSent event for message ID: ' . $message->id);
         MessageSent::dispatch($message);

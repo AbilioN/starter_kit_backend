@@ -32,7 +32,8 @@ class ProcessMessageJob implements ShouldQueue
         private string $content,
         private string $messageType,
         private ?array $metadata,
-        private string $queueName = 'message_processing'
+        private string $queueName = 'message_processing',
+        private ?string $replyToId = null,
     ) {
         $this->onQueue($this->queueName);
     }
@@ -86,7 +87,8 @@ class ProcessMessageJob implements ShouldQueue
                 $this->content,
                 $chatUser,
                 $this->messageType,
-                $this->metadata
+                $this->metadata,
+                $this->replyToId
             );
 
             $logger->messageProcessed($this->chatId, $this->userId, $message->id, $this->messageType);

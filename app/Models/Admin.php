@@ -30,7 +30,7 @@ class Admin extends Authenticatable implements ChatUser
         'is_active',
         'is_super_admin',
         'last_login_at',
-        'is_super_admin',
+        'last_seen_at',
     ];
 
     /**
@@ -53,6 +53,7 @@ class Admin extends Authenticatable implements ChatUser
         return [
             'is_active' => 'boolean',
             'last_login_at' => 'datetime',
+            'last_seen_at' => 'datetime',
             'password' => 'hashed',
             'is_super_admin' => 'boolean',
         ];

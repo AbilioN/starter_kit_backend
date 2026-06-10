@@ -43,17 +43,20 @@ class GetChatMessagesUseCase
                 ->where('user_id', $message['sender_id'])
                 ->value('user_type');
             return [
-                'id' => $message['id'],
-                'chat_id' => $message['chat_id'],
-                'content' => $message['content'],
-                'sender_id' => $message['sender_id'],
-                'sender_type' => $senderType ?? $message['sender_type'] ?? 'user',
+                'id'           => $message['id'],
+                'chat_id'      => $message['chat_id'],
+                'content'      => $message['content'],
+                'sender_id'    => $message['sender_id'],
+                'sender_type'  => $senderType ?? $message['sender_type'] ?? 'user',
                 'message_type' => $message['message_type'] ?? 'text',
-                'metadata' => $message['metadata'] ?? null,
-                'is_read' => $message['is_read'] ?? false,
-                'read_at' => $message['read_at'] ?? null,
-                'created_at' => $message['created_at'] ?? null,
-                'updated_at' => $message['updated_at'] ?? null
+                'metadata'     => $message['metadata'] ?? null,
+                'is_read'      => $message['is_read'] ?? false,
+                'read_at'      => $message['read_at'] ?? null,
+                'edited_at'    => $message['edited_at'] ?? null,
+                'reply_to_id'  => $message['reply_to_id'] ?? null,
+                'reply'        => $message['reply'] ?? null,
+                'created_at'   => $message['created_at'] ?? null,
+                'updated_at'   => $message['updated_at'] ?? null,
             ];
         }, $messages);
     }

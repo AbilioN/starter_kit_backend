@@ -10,7 +10,15 @@ use App\Application\UseCases\Chat\CreatePrivateChatUseCase;
 use App\Application\UseCases\Chat\CreateGroupChatUseCase;
 use App\Application\UseCases\Chat\SendMessageToChatUseCase;
 use App\Application\UseCases\Chat\GetChatMessagesUseCase;
+use App\Application\UseCases\Chat\EditMessageUseCase;
+use App\Application\UseCases\Chat\DeleteMessageUseCase;
+use App\Application\UseCases\Chat\AddParticipantUseCase;
+use App\Application\UseCases\Chat\RemoveParticipantUseCase;
+use App\Application\UseCases\Chat\LeaveChatUseCase;
+use App\Application\UseCases\Chat\RenameChatUseCase;
+use App\Application\UseCases\User\SearchUsersUseCase;
 use App\Domain\Entities\ChatUserFactory;
+use App\Events\MessageRead;
 use App\Jobs\ProcessMessageJob;
 use App\Models\Chat;
 use Illuminate\Http\JsonResponse;
@@ -53,7 +61,8 @@ class ChatController extends Controller
         $request->validate([
             'content' => 'required|string|max:1000',
             'message_type' => 'required|in:text,image,file',
-            'metadata' => 'nullable|array'
+            'metadata' => 'nullable|array',
+            'reply_to_id' => 'nullable|uuid|exists:messages,id',
         ]);
         $user = $request->user();
         $chatUser = ChatUserFactory::createFromModel($user);
@@ -68,7 +77,9 @@ class ChatController extends Controller
             $chatUserType,
             $request->content,
             $request->message_type,
-            $request->metadata
+            $request->metadata,
+            'message_processing',
+            $request->reply_to_id,
         );
         return response()->json([
             'success' => true,
@@ -106,10 +117,97 @@ class ChatController extends Controller
             return response()->json(['error' => 'Access denied'], 403);
         }
         $chat->markAsReadForChatUser($chatUser);
+
+        broadcast(new MessageRead(
+            chatId: $chatId,
+            readerId: $chatUser->getId(),
+            readerType: $chatUser->getType(),
+        ))->toOthers();
+
         return response()->json([
             'success' => true,
             'data' => ['message' => 'Messages marked as read']
         ], 200);
+    }
+
+    public function editMessage(Request $request, string $chatId, string $messageId, EditMessageUseCase $useCase): JsonResponse
+    {
+        $request->validate(['content' => 'required|string|max:1000']);
+        $chatUser = ChatUserFactory::createFromModel($request->user());
+        try {
+            $result = $useCase->execute($chatUser, $chatId, $messageId, $request->content);
+            return response()->json($result, 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], $e->getCode() ?: 500);
+        }
+    }
+
+    public function deleteMessage(Request $request, string $chatId, string $messageId, DeleteMessageUseCase $useCase): JsonResponse
+    {
+        $chatUser = ChatUserFactory::createFromModel($request->user());
+        try {
+            $useCase->execute($chatUser, $chatId, $messageId);
+            return response()->json(['success' => true, 'data' => ['message' => 'Message deleted']], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], $e->getCode() ?: 500);
+        }
+    }
+
+    public function searchUsers(Request $request, SearchUsersUseCase $useCase): JsonResponse
+    {
+        $request->validate(['q' => 'required|string|min:1|max:100']);
+        $results = $useCase->execute($request->q);
+        return response()->json(['success' => true, 'data' => $results], 200);
+    }
+
+    public function addParticipant(Request $request, string $chatId, AddParticipantUseCase $useCase): JsonResponse
+    {
+        $request->validate([
+            'user_id'   => 'required|string',
+            'user_type' => 'required|in:user,admin',
+        ]);
+        $chatUser = ChatUserFactory::createFromModel($request->user());
+        try {
+            $result = $useCase->execute($chatUser, $chatId, $request->user_id, $request->user_type);
+            return response()->json($result, 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], $e->getCode() ?: 500);
+        }
+    }
+
+    public function removeParticipant(Request $request, string $chatId, string $userId, RemoveParticipantUseCase $useCase): JsonResponse
+    {
+        $chatUser = ChatUserFactory::createFromModel($request->user());
+        $userType = $request->query('user_type', 'user');
+        try {
+            $result = $useCase->execute($chatUser, $chatId, $userId, $userType);
+            return response()->json($result, 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], $e->getCode() ?: 500);
+        }
+    }
+
+    public function leaveChat(Request $request, string $chatId, LeaveChatUseCase $useCase): JsonResponse
+    {
+        $chatUser = ChatUserFactory::createFromModel($request->user());
+        try {
+            $result = $useCase->execute($chatUser, $chatId);
+            return response()->json($result, 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], $e->getCode() ?: 500);
+        }
+    }
+
+    public function renameChat(Request $request, string $chatId, RenameChatUseCase $useCase): JsonResponse
+    {
+        $request->validate(['name' => 'required|string|max:255']);
+        $chatUser = ChatUserFactory::createFromModel($request->user());
+        try {
+            $result = $useCase->execute($chatUser, $chatId, $request->name);
+            return response()->json($result, 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], $e->getCode() ?: 500);
+        }
     }
 
     public function getUnreadCount(Request $request, $chatId): JsonResponse

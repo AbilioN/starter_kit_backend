@@ -24,15 +24,23 @@ class Message extends Model
         'metadata',
         'is_read',
         'read_at',
+        'edited_at',
+        'reply_to_id',
     ];
 
     protected $casts = [
         'is_read' => 'boolean',
         'read_at' => 'datetime',
+        'edited_at' => 'datetime',
         'metadata' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+
+    public function replyTo(): BelongsTo
+    {
+        return $this->belongsTo(Message::class, 'reply_to_id');
+    }
 
     /**
      * Relacionamento com o chat

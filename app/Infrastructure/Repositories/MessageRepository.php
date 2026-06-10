@@ -9,7 +9,7 @@ use App\Models\Message as MessageModel;
 
 class MessageRepository implements MessageRepositoryInterface
 {
-    public function create(string $chatId, string $content, ChatUser $sender, string $messageType = 'text', ?array $metadata = null): Message
+    public function create(string $chatId, string $content, ChatUser $sender, string $messageType = 'text', ?array $metadata = null, ?string $replyToId = null): Message
     {
         $messageModel = MessageModel::create([
             'chat_id' => $chatId,
@@ -19,6 +19,7 @@ class MessageRepository implements MessageRepositoryInterface
             'message_type' => $messageType,
             'metadata' => $metadata,
             'is_read' => false,
+            'reply_to_id' => $replyToId,
         ]);
         return $messageModel->toEntity();
     }
@@ -58,17 +59,32 @@ class MessageRepository implements MessageRepositoryInterface
         $messages = $paginator->items();
         $messageEntities = array_map(function ($messageModel) {
             $sender = $messageModel->sender ?? $messageModel->senderAdmin;
-            
+
+            $reply = null;
+            if ($messageModel->reply_to_id) {
+                $parent = MessageModel::find($messageModel->reply_to_id);
+                if ($parent) {
+                    $reply = [
+                        'id'      => $parent->id,
+                        'content' => $parent->deleted_at ? null : $parent->content,
+                        'sender_id' => $parent->sender_id,
+                    ];
+                }
+            }
+
             return [
-                'id' => $messageModel->id,
-                'chat_id' => $messageModel->chat_id,
-                'content' => $messageModel->content,
+                'id'          => $messageModel->id,
+                'chat_id'     => $messageModel->chat_id,
+                'content'     => $messageModel->content,
                 'sender_type' => $messageModel->sender_type,
-                'sender_id' => $messageModel->sender_id,
+                'sender_id'   => $messageModel->sender_id,
                 'sender_name' => $sender ? $sender->name : 'Usuário',
-                'is_read' => (bool) $messageModel->is_read,
-                'read_at' => $messageModel->read_at?->format('Y-m-d H:i:s'),
-                'created_at' => $messageModel->created_at->format('Y-m-d H:i:s'),
+                'is_read'     => (bool) $messageModel->is_read,
+                'read_at'     => $messageModel->read_at?->format('Y-m-d H:i:s'),
+                'edited_at'   => $messageModel->edited_at?->format('Y-m-d H:i:s'),
+                'reply_to_id' => $messageModel->reply_to_id,
+                'reply'       => $reply,
+                'created_at'  => $messageModel->created_at->format('Y-m-d H:i:s'),
             ];
         }, $messages);
 

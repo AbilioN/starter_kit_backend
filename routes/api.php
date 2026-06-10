@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\UserProfileController;
 use App\Http\Controllers\Api\Auth\ForgotPasswordController;
 use App\Http\Controllers\Api\Auth\ResetPasswordController;
 use App\Http\Controllers\Api\Admin\AdminProfileController;
+use App\Http\Controllers\Api\Admin\ChatController as AdminChatController;
 use Illuminate\Support\Facades\Broadcast;
 
 /*
@@ -64,10 +65,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
 });
 
 // Chat routes
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum', 'update.last.seen'])->group(function () {
     Route::post('/chat/create-private', [ChatController::class, 'createPrivateChat']);
     Route::post('/chat/create-group', [ChatController::class, 'createGroupChat']);
-    // Route::post('/chat/send', [ChatController::class, 'sendMessage']);
     Route::post('/chat/{chatId}/send', [ChatController::class, 'sendMessageToChat']);
     Route::get('/chat/{chatId}/messages', [ChatController::class, 'getChatMessages']);
     Route::post('/chat/{chatId}/read', [ChatController::class, 'markMessagesAsRead']);
@@ -75,6 +75,19 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/chat/conversation/{otherUserId}/{otherUserType}', [ChatController::class, 'getConversation']);
     Route::get('/chats', [ChatController::class, 'getChats']);
     Route::post('/broadcasting/auth', [ChatController::class, 'broadcastAuth']);
+
+    // Message edit / delete
+    Route::patch('/chat/{chatId}/messages/{messageId}', [ChatController::class, 'editMessage']);
+    Route::delete('/chat/{chatId}/messages/{messageId}', [ChatController::class, 'deleteMessage']);
+
+    // User search
+    Route::get('/users/search', [ChatController::class, 'searchUsers']);
+
+    // Group chat management
+    Route::post('/chat/{chatId}/participants', [ChatController::class, 'addParticipant']);
+    Route::delete('/chat/{chatId}/participants/{userId}', [ChatController::class, 'removeParticipant']);
+    Route::delete('/chat/{chatId}/leave', [ChatController::class, 'leaveChat']);
+    Route::patch('/chat/{chatId}/name', [ChatController::class, 'renameChat']);
 });
 
 // Admin Auth routes
@@ -83,7 +96,7 @@ Route::prefix('admin')->group(function () {
     Route::post('/register', AdminRegisterController::class);
     
     // Protected admin routes
-    Route::middleware(['auth:sanctum', 'admin.auth'])->group(function () {
+    Route::middleware(['auth:sanctum', 'admin.auth', 'update.last.seen'])->group(function () {
         // Role management routes
         Route::get('/roles', [RoleController::class, 'index']);
         Route::post('/role/create', [RoleController::class, 'create']);
@@ -125,6 +138,10 @@ Route::prefix('admin')->group(function () {
         Route::get('/notifications/unread-count', [AdminNotificationController::class, 'unreadCount']);
         Route::post('/notifications/{id}/read', [AdminNotificationController::class, 'markRead']);
         Route::post('/notifications/read-all', [AdminNotificationController::class, 'markAllRead']);
+
+        // Admin chat management (requires chat-manage permission)
+        Route::get('/chats', [AdminChatController::class, 'allChats']);
+        Route::get('/chats/{chatId}/messages', [AdminChatController::class, 'chatMessages']);
 
         // File management
         Route::get('/files', [FileController::class, 'index']);
