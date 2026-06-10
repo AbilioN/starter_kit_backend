@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Domain\Entities\ChatUser;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Domain\Entities\Admin as AdminEntity;
@@ -15,7 +16,7 @@ use App\Traits\HasAuditLog;
 
 class Admin extends Authenticatable implements ChatUser
 {
-    use HasUuids, HasApiTokens, HasFactory, Notifiable, HasAuditLog;
+    use HasUuids, HasApiTokens, HasFactory, Notifiable, HasAuditLog, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.

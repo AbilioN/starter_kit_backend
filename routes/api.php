@@ -19,6 +19,10 @@ use App\Http\Controllers\Api\Admin\NotificationController as AdminNotificationCo
 use App\Http\Controllers\Api\Admin\SettingController;
 use App\Http\Controllers\Api\Chat\ChatController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\UserProfileController;
+use App\Http\Controllers\Api\Auth\ForgotPasswordController;
+use App\Http\Controllers\Api\Auth\ResetPasswordController;
+use App\Http\Controllers\Api\Admin\AdminProfileController;
 use Illuminate\Support\Facades\Broadcast;
 
 /*
@@ -44,13 +48,19 @@ Route::post('/login', LoginController::class);
 Route::post('/register', RegisterController::class);
 Route::post('/verify-email', VerifyEmailController::class);
 Route::post('/resend-verification-code', ResendVerificationCodeController::class);
+Route::post('/forgot-password', ForgotPasswordController::class);
+Route::post('/reset-password', ResetPasswordController::class);
 
-// User notifications
+// User notifications + profile
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead']);
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
+
+    Route::get('/user/me', [UserProfileController::class, 'show']);
+    Route::patch('/user/me', [UserProfileController::class, 'update']);
+    Route::patch('/user/password', [UserProfileController::class, 'changePassword']);
 });
 
 // Chat routes
@@ -83,6 +93,11 @@ Route::prefix('admin')->group(function () {
         Route::get('/permissions', [PermissionController::class, 'index']);
         
         
+        // Admin self-profile (current authenticated admin)
+        Route::get('/me', [AdminProfileController::class, 'show']);
+        Route::patch('/me', [AdminProfileController::class, 'update']);
+        Route::patch('/me/password', [AdminProfileController::class, 'changePassword']);
+
         // Admin management routes
         Route::get('/admins', [AdminController::class, 'index']);
         Route::post('/admins', [AdminController::class, 'create']);
