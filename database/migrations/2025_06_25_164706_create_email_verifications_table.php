@@ -12,9 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('email_verifications', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('user_id');
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->uuid('id')->primary();
+            $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->string('email');
             $table->string('code', 6);
             $table->timestamp('expires_at');

@@ -12,19 +12,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('messages', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('chat_id');
+            $table->uuid('id')->primary();
+            $table->foreignUuid('chat_id')->constrained('chats')->cascadeOnDelete();
             $table->text('content');
-            $table->unsignedBigInteger('sender_id'); // Apenas o ID, sem sender_type
+            $table->string('sender_id', 36); // polymorphic - user/admin/assistant, no FK constraint
             $table->enum('sender_type', ['user', 'admin', 'assistant'])->default('user');
             $table->enum('message_type', ['text', 'image', 'file'])->default('text');
             $table->json('metadata')->nullable();
             $table->boolean('is_read')->default(false);
             $table->timestamp('read_at')->nullable();
             $table->timestamps();
-            
-            // Chaves estrangeiras
-            $table->foreign('chat_id')->references('id')->on('chats')->onDelete('cascade');
             
             // Índices para melhor performance
             $table->index(['chat_id', 'created_at']);

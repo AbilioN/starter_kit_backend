@@ -12,11 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('admin_roles', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('admin_id');
-            $table->unsignedBigInteger('role_id');
+            $table->uuid('id')->primary();
+            $table->string('admin_id', 36);
+            $table->string('role_id', 36);
             $table->DateTime('assigned_at');
-            $table->unsignedBigInteger('assigned_by');
+            $table->string('assigned_by', 36);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });

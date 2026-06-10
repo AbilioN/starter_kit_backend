@@ -12,17 +12,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('audit_logs', function (Blueprint $table) {
-            $table->id();
-            
+            $table->uuid('id')->primary();
+
             // Quem fez a ação
-            $table->unsignedBigInteger('user_id');
+            $table->string('user_id', 36);
             $table->string('user_type'); // Admin, User
             $table->string('user_name')->nullable(); // Cache do nome
             
             // O que foi feito
             $table->string('action', 50); // created, updated, deleted, viewed, login
             $table->string('model_type'); // App\Models\User
-            $table->unsignedBigInteger('model_id')->nullable();
+            $table->string('model_id', 36)->nullable();
             
             // Detalhes da mudança
             $table->json('old_values')->nullable(); // Estado anterior

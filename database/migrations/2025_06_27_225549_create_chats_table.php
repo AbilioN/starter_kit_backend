@@ -12,11 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('chats', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->string('name')->nullable(); // Para chats em grupo
             $table->enum('type', ['private', 'group'])->default('private');
             $table->text('description')->nullable(); // Para chats em grupo
-            $table->unsignedBigInteger('created_by')->nullable(); // Quem criou o chat
+            $table->string('created_by', 36)->nullable(); // Quem criou o chat
             $table->timestamps();
             
             // Índices
