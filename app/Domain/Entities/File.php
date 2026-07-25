@@ -8,7 +8,7 @@ use DateTime;
 class File
 {
     public function __construct(
-        public readonly int $id,
+        public readonly string $id,
         public readonly string $originalName,
         public readonly string $storedName,
         public readonly string $disk,
@@ -16,7 +16,7 @@ class File
         public readonly string $mimeType,
         public readonly int $size,
         public readonly ?string $uploadableType,
-        public readonly ?int $uploadableId,
+        public readonly int|string|null $uploadableId,
         public readonly ?string $folder,
         public readonly bool $isPublic,
         public readonly ?array $meta,

@@ -5,7 +5,7 @@ namespace App\Application\DTOs\File;
 class FileDto
 {
     public function __construct(
-        public readonly int $id,
+        public readonly string $id,
         public readonly string $original_name,
         public readonly string $mime_type,
         public readonly int $size,

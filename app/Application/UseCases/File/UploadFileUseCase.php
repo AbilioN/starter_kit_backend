@@ -19,7 +19,7 @@ class UploadFileUseCase
         string $disk = 'local',
         bool $isPublic = false,
         ?string $uploadableType = null,
-        ?int $uploadableId = null,
+        int|string|null $uploadableId = null,
         ?array $meta = null,
     ): array {
         $stored = $this->storageService->store($file, $folder, $disk);

@@ -2,20 +2,23 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Application\UseCases\Admin\GetDashboardMetricsUseCase;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 
 class DashboardController extends Controller
 {
+    public function __construct(
+        private readonly GetDashboardMetricsUseCase $getDashboardMetrics,
+    ) {}
+
     public function index(): JsonResponse
     {
+        $metrics = $this->getDashboardMetrics->execute();
+
         return response()->json([
-            'message' => 'Welcome to Admin Dashboard',
-            'data' => [
-                'total_users' => 0,
-                'total_admins' => 1,
-                'system_status' => 'active'
-            ]
+            'success' => true,
+            'data' => $metrics,
         ]);
     }
 }
