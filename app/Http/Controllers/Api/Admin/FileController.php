@@ -12,6 +12,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\UploadFileRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class FileController extends Controller
 {
@@ -62,7 +64,23 @@ class FileController extends Controller
         }
     }
 
-    public function delete(int $id, Request $request): JsonResponse
+    public function serve(string $encodedPath): StreamedResponse|\Illuminate\Http\JsonResponse
+    {
+        $len = strlen($encodedPath);
+        $padded = str_pad(strtr($encodedPath, '-_', '+/'), $len + (4 - $len % 4) % 4, '=');
+        $path = base64_decode($padded, strict: true);
+
+        if ($path === false || !Storage::disk('local')->exists($path)) {
+            return response()->json(['message' => 'File not found.'], 404);
+        }
+
+        return Storage::disk('local')->response($path, basename($path), [
+            'Content-Disposition' => 'inline; filename="' . addslashes(basename($path)) . '"',
+            'Cache-Control' => 'private, max-age=3600',
+        ]);
+    }
+
+    public function delete(string $id, Request $request): JsonResponse
     {
         try {
             $admin = AdminFactory::createFromModel($request->user());

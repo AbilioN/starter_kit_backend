@@ -13,7 +13,7 @@ class DeleteFileUseCase
         private StorageServiceInterface $storageService,
     ) {}
 
-    public function execute(int $id): void
+    public function execute(string $id): void
     {
         $entity = $this->fileRepository->findById($id);
 

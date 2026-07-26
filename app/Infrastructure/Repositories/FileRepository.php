@@ -8,7 +8,7 @@ use App\Models\File as FileModel;
 
 class FileRepository implements FileRepositoryInterface
 {
-    public function findById(int $id): ?File
+    public function findById(string $id): ?File
     {
         $model = FileModel::find($id);
         return $model?->toEntity();
@@ -42,7 +42,7 @@ class FileRepository implements FileRepositoryInterface
         return FileModel::create($data)->toEntity();
     }
 
-    public function delete(int $id): void
+    public function delete(string $id): void
     {
         FileModel::findOrFail($id)->delete();
     }

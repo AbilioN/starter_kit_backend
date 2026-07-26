@@ -14,10 +14,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'admin.auth'   => \App\Http\Middleware\AdminAuthMiddleware::class,
-            'update.last.seen' => \App\Http\Middleware\UpdateLastSeen::class,
+            'admin.auth'        => \App\Http\Middleware\AdminAuthMiddleware::class,
+            'update.last.seen'  => \App\Http\Middleware\UpdateLastSeen::class,
         ]);
-        
+
         // Adiciona CORS globalmente
         $middleware->append(\App\Http\Middleware\CorsMiddleware::class);
     })

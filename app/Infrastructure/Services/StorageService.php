@@ -36,7 +36,9 @@ class StorageService implements StorageServiceInterface
             return Storage::disk('s3')->url($path);
         }
 
-        return url('/api/files/serve/' . base64_encode($path));
+        // Use APP_URL explicitly — url() inside Docker reads the proxied Host header
+        // which may omit the port, generating a wrong URL.
+        return rtrim(config('app.url'), '/') . '/api/files/serve/' . rtrim(strtr(base64_encode($path), '+/', '-_'), '=');
     }
 
     public function temporaryUrl(string $path, string $disk = 's3', int $minutes = 60): string

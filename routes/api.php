@@ -161,6 +161,10 @@ Route::prefix('admin')->group(function () {
     });
 });
 
+// File serve — authenticated download/stream for local-disk files
+Route::middleware('auth:sanctum')->get('/files/serve/{encodedPath}', [FileController::class, 'serve'])
+    ->where('encodedPath', '.+');
+
 // Broadcast routes for private channels
 Route::middleware('auth:sanctum')->post('/broadcasting/auth', function (Request $request) {
     return \Illuminate\Support\Facades\Broadcast::auth($request);
