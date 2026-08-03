@@ -17,6 +17,14 @@ use App\Domain\Services\AdminAuthServiceInterface;
 use App\Infrastructure\Services\AdminAuthService;
 use App\Domain\Repositories\MessageRepositoryInterface;
 use App\Infrastructure\Repositories\MessageRepository;
+use App\Domain\Repositories\GodAdminRepositoryInterface;
+use App\Infrastructure\Repositories\GodAdminRepository;
+use App\Domain\Repositories\SubscriptionPlanRepositoryInterface;
+use App\Infrastructure\Repositories\SubscriptionPlanRepository;
+use App\Domain\Repositories\TenantRepositoryInterface;
+use App\Infrastructure\Repositories\TenantRepository;
+use App\Domain\Repositories\LandlordAuditLogRepositoryInterface;
+use App\Infrastructure\Repositories\LandlordAuditLogRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -38,7 +46,13 @@ class AppServiceProvider extends ServiceProvider
         // Chat dependencies
         $this->app->bind(\App\Domain\Repositories\ChatRepositoryInterface::class, \App\Infrastructure\Repositories\ChatRepository::class);
         $this->app->bind(\App\Domain\Repositories\MessageRepositoryInterface::class, \App\Infrastructure\Repositories\MessageRepository::class);
-        
+
+        // Landlord dependencies
+        $this->app->bind(GodAdminRepositoryInterface::class, GodAdminRepository::class);
+        $this->app->bind(SubscriptionPlanRepositoryInterface::class, SubscriptionPlanRepository::class);
+        $this->app->bind(TenantRepositoryInterface::class, TenantRepository::class);
+        $this->app->bind(LandlordAuditLogRepositoryInterface::class, LandlordAuditLogRepository::class);
+
         // Services
         $this->app->singleton(\App\Services\PusherApiService::class);
     }
