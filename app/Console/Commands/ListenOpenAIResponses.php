@@ -93,13 +93,20 @@ class ListenOpenAIResponses extends Command
                             $userId = $responseData['user_id'];
                             $responseText = $responseData['response'];
                             $this->info("💬 Chat ID: {$chatId}, User ID: {$userId}");
-                            
+
+                            // tenant_id isn't trusted from whatever the Python
+                            // worker echoes back - look it up from our own
+                            // bookkeeping (set by ProcessOpenAIRequest).
+                            $storedRequest = Redis::get("openai_request:{$responseData['id']}");
+                            $tenantId = $storedRequest ? (json_decode($storedRequest, true)['tenant_id'] ?? null) : null;
+
                             // Dispatch job to process the response with the full response data
                             ProcessOpenAIResponse::dispatch(
                                 $responseData['id'],
                                 $chatId,
                                 $userId,
-                                $responseText // Pass the full response string
+                                $responseText, // Pass the full response string
+                                $tenantId,
                             );
                             
                             $this->info("✅ Job dispatched for response: {$responseData['id']}");

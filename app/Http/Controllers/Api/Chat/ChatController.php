@@ -80,6 +80,7 @@ class ChatController extends Controller
             $request->metadata,
             'message_processing',
             $request->reply_to_id,
+            app()->bound('currentTenant') ? app('currentTenant')->id : null,
         );
         return response()->json([
             'success' => true,

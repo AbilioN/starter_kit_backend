@@ -9,6 +9,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Log;
+use App\Jobs\Middleware\EstablishTenantConnection;
 use App\Models\Message;
 use App\Models\Chat;
 use App\Models\User;
@@ -28,9 +29,15 @@ class ProcessOpenAIRequest implements ShouldQueue
         private string $chatId,
         private string $userId,
         private string $userMessage,
-        private string $queueName = 'openai_requests'
+        private string $queueName = 'openai_requests',
+        private ?string $tenantId = null,
     ) {
         //
+    }
+
+    public function middleware(): array
+    {
+        return [new EstablishTenantConnection($this->tenantId)];
     }
 
     /**
@@ -54,18 +61,24 @@ class ProcessOpenAIRequest implements ShouldQueue
                 'chat_id' => $this->chatId,
                 'user_id' => $this->userId,
                 'message' => $this->userMessage,
+                'tenant_id' => $this->tenantId,
                 'timestamp' => now()->toISOString(),
                 'status' => 'pending'
             ];
 
             // Send request to Redis queue for Python worker
             Redis::lpush($this->queueName, json_encode($requestData));
-            
-            // Store request data for later retrieval when processing response
+
+            // Store request data for later retrieval when processing response.
+            // tenant_id is looked up from here (not trusted from whatever the
+            // Python worker echoes back) so ListenOpenAIResponses can
+            // re-establish the correct tenant connection before dispatching
+            // ProcessOpenAIResponse.
             Redis::setex("openai_request:{$requestId}", 3600, json_encode([
                 'chat_id' => $this->chatId,
                 'user_id' => $this->userId,
                 'message' => $this->userMessage,
+                'tenant_id' => $this->tenantId,
                 'timestamp' => now()->toISOString()
             ]));
             

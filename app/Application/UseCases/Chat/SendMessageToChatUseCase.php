@@ -56,7 +56,13 @@ class SendMessageToChatUseCase
     private function dispatchOpenAIRequest(string $chatId, string $userId, string $content): void
     {
         try {
-            \App\Jobs\ProcessOpenAIRequest::dispatch($chatId, $userId, $content);
+            \App\Jobs\ProcessOpenAIRequest::dispatch(
+                $chatId,
+                $userId,
+                $content,
+                'openai_requests',
+                app()->bound('currentTenant') ? app('currentTenant')->id : null,
+            );
         } catch (\Exception $e) {
             Log::error('Failed to dispatch OpenAI request', ['error' => $e->getMessage()]);
         }

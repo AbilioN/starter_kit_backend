@@ -10,6 +10,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Jobs\Middleware\EstablishTenantConnection;
 use App\Models\Message;
 use App\Application\UseCases\Chat\SendMessageToChatUseCase;
 use App\Domain\Entities\ChatUserFactory;
@@ -30,9 +31,15 @@ class ProcessOpenAIResponse implements ShouldQueue
         private string $requestId,
         private string $chatId,
         private string $userId,
-        private string $response
+        private string $response,
+        private ?string $tenantId = null,
     ) {
         //
+    }
+
+    public function middleware(): array
+    {
+        return [new EstablishTenantConnection($this->tenantId)];
     }
 
     /**

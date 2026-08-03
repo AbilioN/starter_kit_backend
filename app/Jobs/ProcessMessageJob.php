@@ -7,6 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use App\Jobs\Middleware\EstablishTenantConnection;
 use App\Helpers\JobLogger;
 use App\Application\UseCases\Chat\SendMessageToChatUseCase;
 use App\Domain\Entities\ChatUserFactory;
@@ -34,8 +35,14 @@ class ProcessMessageJob implements ShouldQueue
         private ?array $metadata,
         private string $queueName = 'message_processing',
         private ?string $replyToId = null,
+        private ?string $tenantId = null,
     ) {
         $this->onQueue($this->queueName);
+    }
+
+    public function middleware(): array
+    {
+        return [new EstablishTenantConnection($this->tenantId)];
     }
 
     /**
