@@ -25,17 +25,30 @@ Useful for quickly testing a new tenant without editing `/etc/hosts` each time.
 
 ## Provisioning a tenant to test against
 
-Tenants aren't seeded automatically — see `docs/03-multitenancy-plan.md` for the provisioning flow (Sprint 0.2). Until that lands, create one directly:
+Use the `tenant:provision` artisan command (see `app/Console/Commands/ProvisionTenantCommand.php`) — it creates the database, migrates it, seeds roles/permissions, and creates the first (tenant-owner) admin in one step:
 
 ```bash
-docker compose exec app php artisan tinker
->>> $tenant = \App\Models\Tenant::create([
-...     'name' => 'Tenant A',
-...     'subdomain' => 'tenant-a',
-...     'database_name' => 'starter_kit_tenant_a',
-...     'status' => 'active',
-...     'created_via' => 'godadmin',
-... ]);
+docker compose exec app php artisan tenant:provision "Tenant A" tenant-a \
+    --admin-email=owner@tenant-a.test --admin-password=password123
 ```
 
-Note `database_name` must point at a MySQL database that actually exists (`CREATE DATABASE starter_kit_tenant_a;`) with the tenant schema migrated (`php artisan migrate --database=tenant --path=database/migrations/tenant`, after pointing the `tenant` connection at it — see `IdentifyTenant`'s connection-switching logic for the exact mechanism).
+Then log in as that admin against the resolved subdomain: `POST http://tenant-a.starterkit.test:8006/api/admin/login`.
+
+### One-time MySQL grant
+
+The app's DB user (`DB_USERNAME`, default `starter_kit_backend`) only has privileges on its own single database out of the box — `CREATE DATABASE` for a new tenant will fail with `Access denied` until it's granted broader privileges. `docker-setup.sh` does this automatically on a fresh setup; if you're working against an existing container, run it manually once:
+
+```bash
+docker compose exec db mysql -uroot -ppassword \
+    -e "GRANT ALL PRIVILEGES ON *.* TO 'starter_kit_backend'@'%'; FLUSH PRIVILEGES;"
+```
+
+## GodAdmin
+
+`docker-setup.sh` seeds a default GodAdmin (`god@starterkit.test` / `password123`) after migrating the landlord DB. To (re)seed it manually:
+
+```bash
+docker compose exec app php artisan db:seed --class=GodAdminSeeder --force
+```
+
+Log in at `http://localhost:8006/god/login` — GodAdmin routes are never subdomain-resolved (they live outside `tenant.identify`).

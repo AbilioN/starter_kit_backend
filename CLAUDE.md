@@ -95,8 +95,23 @@ From repo root:
 # build + start
 sudo docker compose up -d --build
 
-# migrations + seed (MySQL runtime)
-sudo docker compose exec app php artisan migrate:fresh --seed
+# one-time: grant the app's DB user privileges to create/use arbitrary
+# databases (database-per-tenant needs this; MYSQL_DATABASE only ever
+# creates the legacy single DB_DATABASE) - docker-setup.sh does this
+# automatically on a fresh setup
+sudo docker compose exec db mysql -uroot -ppassword \
+    -e "GRANT ALL PRIVILEGES ON *.* TO 'starter_kit_backend'@'%'; FLUSH PRIVILEGES;"
+
+# landlord DB: always exists, migrate it directly (there is no single
+# "the" runtime database anymore - see docs/03-multitenancy-plan.md)
+sudo docker compose exec db mysql -uroot -ppassword \
+    -e "CREATE DATABASE IF NOT EXISTS starter_kit_landlord;"
+sudo docker compose exec app php artisan migrate --database=landlord --path=database/migrations/landlord --force
+sudo docker compose exec app php artisan db:seed --class=GodAdminSeeder --force
+
+# tenant DBs are created on demand, never via a blanket migrate:fresh
+sudo docker compose exec app php artisan tenant:provision "Tenant A" tenant-a \
+    --admin-email=owner@tenant-a.test --admin-password=password123
 
 # run all tests (PHPUnit w/ sqlite from phpunit.xml)
 sudo docker compose exec app php artisan test
@@ -104,6 +119,8 @@ sudo docker compose exec app php artisan test
 # run a subset
 sudo docker compose exec app php artisan test --filter=AdminsTest
 ```
+
+See `docs/04-local-dev-tenants.md` for subdomain resolution setup (`/etc/hosts` or `nip.io`) needed to actually hit a provisioned tenant.
 
 ## Testing conventions
 

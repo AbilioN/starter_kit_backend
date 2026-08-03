@@ -13,7 +13,8 @@ class ProvisionTenantCommand extends Command
         {subdomain : Unique subdomain, e.g. "tenant-a"}
         {--plan= : Subscription plan ID to assign}
         {--admin-email=owner@example.com : Email for the first (tenant owner) admin}
-        {--admin-password=password123 : Password for the first admin}';
+        {--admin-password=password123 : Password for the first admin}
+        {--admin-name= : Name for the first admin (defaults to "{name} Owner")}';
 
     protected $description = 'Provision a new tenant: creates its database, runs migrations, seeds roles/permissions, creates the first admin';
 
@@ -27,6 +28,7 @@ class ProvisionTenantCommand extends Command
                 createdVia: 'godadmin',
                 adminEmail: $this->option('admin-email'),
                 adminPassword: $this->option('admin-password'),
+                adminName: $this->option('admin-name'),
             );
         } catch (DomainException $e) {
             $this->error($e->getMessage());

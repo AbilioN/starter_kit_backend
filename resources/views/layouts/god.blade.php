@@ -1,40 +1,51 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full bg-slate-50">
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title ?? 'GodAdmin' }}</title>
+    @vite(['resources/css/app.css'])
     @livewireStyles
-    <style>
-        body { font-family: system-ui, sans-serif; margin: 0; background: #f4f4f5; color: #18181b; }
-        header { background: #18181b; color: #fff; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; }
-        header a { color: #fff; text-decoration: none; margin-right: 1rem; }
-        main { padding: 1.5rem; max-width: 960px; margin: 0 auto; }
-        table { width: 100%; border-collapse: collapse; background: #fff; }
-        th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid #e4e4e7; }
-        form { display: flex; flex-direction: column; gap: 0.75rem; max-width: 360px; }
-        input, select, textarea { padding: 0.5rem; border: 1px solid #d4d4d8; border-radius: 4px; }
-        button { padding: 0.5rem 1rem; background: #18181b; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
-        .error { color: #dc2626; font-size: 0.875rem; }
-        .card { background: #fff; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
-    </style>
 </head>
-<body>
+<body class="h-full font-sans antialiased text-slate-900">
     @auth('godadmin')
-        <header>
-            <div>
-                <a href="{{ url('/god/dashboard') }}">Dashboard</a>
-                <a href="{{ url('/god/tenants') }}">Tenants</a>
-                <a href="{{ url('/god/subscription-plans') }}">Subscription Plans</a>
-            </div>
-            <form method="POST" action="{{ url('/god/logout') }}">
-                @csrf
-                <button type="submit">Log out</button>
-            </form>
-        </header>
+        <div class="min-h-full">
+            <header class="bg-slate-900">
+                <nav class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+                    <div class="flex h-16 items-center justify-between">
+                        <div class="flex items-center gap-8">
+                            <a href="{{ url('/god/dashboard') }}" class="flex items-center gap-2 text-white font-semibold tracking-tight">
+                                <span class="inline-flex h-7 w-7 items-center justify-center rounded-md bg-indigo-500 text-sm">⚡</span>
+                                GodAdmin
+                            </a>
+                            <div class="hidden sm:flex sm:gap-1">
+                                <a href="{{ url('/god/dashboard') }}"
+                                   class="rounded-md px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition">Dashboard</a>
+                                <a href="{{ url('/god/tenants') }}"
+                                   class="rounded-md px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition">Tenants</a>
+                                <a href="{{ url('/god/subscription-plans') }}"
+                                   class="rounded-md px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition">Subscription Plans</a>
+                            </div>
+                        </div>
+                        <form method="POST" action="{{ url('/god/logout') }}">
+                            @csrf
+                            <button type="submit"
+                                    class="rounded-md bg-slate-800 px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-700 transition">
+                                Log out
+                            </button>
+                        </form>
+                    </div>
+                </nav>
+            </header>
+            <main class="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+                {{ $slot }}
+            </main>
+        </div>
+    @else
+        <main class="flex min-h-full items-center justify-center px-4 py-12">
+            {{ $slot }}
+        </main>
     @endauth
-    <main>
-        {{ $slot }}
-    </main>
     @livewireScripts
 </body>
 </html>

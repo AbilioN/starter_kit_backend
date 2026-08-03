@@ -30,6 +30,7 @@ class ProvisionTenantUseCase
         string $createdVia,
         string $adminEmail,
         string $adminPassword,
+        ?string $adminName = null,
     ): Tenant {
         if ($this->tenantRepository->findBySubdomain($subdomain)) {
             throw new DomainException("Subdomain '{$subdomain}' is already taken.");
@@ -60,7 +61,7 @@ class ProvisionTenantUseCase
         (new PermissionSeeder())->run();
 
         Admin::create([
-            'name' => "{$name} Owner",
+            'name' => $adminName ?? "{$name} Owner",
             'email' => $adminEmail,
             'password' => $adminPassword,
             'is_active' => true,
