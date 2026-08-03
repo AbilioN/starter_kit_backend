@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\Auth\ForgotPasswordController;
 use App\Http\Controllers\Api\Auth\ResetPasswordController;
 use App\Http\Controllers\Api\Admin\AdminProfileController;
 use App\Http\Controllers\Api\Admin\ChatController as AdminChatController;
+use App\Http\Controllers\Api\Admin\TenantController;
 use Illuminate\Support\Facades\Broadcast;
 
 /*
@@ -50,6 +51,10 @@ Route::middleware(['tenant.identify'])->group(function () {
 
     // Public settings (no auth required)
     Route::get('/settings/public', [SettingController::class, 'public']);
+
+    // Public tenant branding - resolved by tenant.identify above, no login
+    // required so Nuxt can theme the login page before auth.
+    Route::get('/tenant/theme', [TenantController::class, 'theme']);
 
     // Auth routes
     Route::post('/login', LoginController::class);
@@ -154,6 +159,12 @@ Route::middleware(['tenant.identify'])->group(function () {
             Route::get('/files', [FileController::class, 'index']);
             Route::post('/files', [FileController::class, 'upload']);
             Route::delete('/files/{id}', [FileController::class, 'delete']);
+
+            // Tenant subscription plan / branding (tenant owner only)
+            Route::middleware('tenant.owner')->group(function () {
+                Route::patch('/tenant/subscription-plan', [TenantController::class, 'updateSubscriptionPlan']);
+                Route::patch('/tenant/branding', [TenantController::class, 'updateBranding']);
+            });
 
             // Audit routes
             Route::prefix('audit')->group(function () {

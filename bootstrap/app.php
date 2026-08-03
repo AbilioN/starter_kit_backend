@@ -23,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin.auth'        => \App\Http\Middleware\AdminAuthMiddleware::class,
             'update.last.seen'  => \App\Http\Middleware\UpdateLastSeen::class,
             'tenant.identify'   => \App\Http\Middleware\IdentifyTenant::class,
+            'tenant.owner'      => \App\Http\Middleware\RequireTenantOwner::class,
         ]);
 
         // Laravel's default $middlewarePriority list reorders framework
