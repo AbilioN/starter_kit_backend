@@ -1,6 +1,6 @@
 # Claude Coding Guide (starter_kit_backend)
 
-This repository is a **Laravel 11** backend (PHP 8.2) designed as a **BtoB starter kit** with **Clean Architecture + DDD-ish layering**. Follow the conventions below when making changes.
+This repository is a **Laravel 12** backend (PHP 8.2) designed as a **BtoB starter kit** with **Clean Architecture + DDD-ish layering**. Follow the conventions below when making changes.
 
 ## Architecture (non-negotiable boundaries)
 
