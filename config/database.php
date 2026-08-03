@@ -112,6 +112,53 @@ return [
             // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
         ],
 
+        'landlord' => array_merge(
+            ['driver' => env('LANDLORD_DB_CONNECTION', 'mysql')],
+            env('LANDLORD_DB_CONNECTION', 'mysql') === 'sqlite'
+                ? [
+                    'database' => env('LANDLORD_DB_DATABASE', database_path('landlord.sqlite')),
+                    'prefix' => '',
+                    'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
+                ]
+                : [
+                    'host' => env('LANDLORD_DB_HOST', env('DB_HOST', '127.0.0.1')),
+                    'port' => env('LANDLORD_DB_PORT', env('DB_PORT', '3306')),
+                    'database' => env('LANDLORD_DB_DATABASE', 'starter_kit_landlord'),
+                    'username' => env('LANDLORD_DB_USERNAME', env('DB_USERNAME', 'root')),
+                    'password' => env('LANDLORD_DB_PASSWORD', env('DB_PASSWORD', '')),
+                    'charset' => env('DB_CHARSET', 'utf8mb4'),
+                    'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
+                    'prefix' => '',
+                    'prefix_indexes' => true,
+                    'strict' => true,
+                    'engine' => null,
+                ]
+        ),
+
+        'tenant' => array_merge(
+            ['driver' => env('TENANT_DB_CONNECTION', 'mysql')],
+            env('TENANT_DB_CONNECTION', 'mysql') === 'sqlite'
+                ? [
+                    'database' => env('TENANT_DB_DATABASE', database_path('tenant.sqlite')),
+                    'prefix' => '',
+                    'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
+                ]
+                : [
+                    'host' => env('TENANT_DB_HOST', env('DB_HOST', '127.0.0.1')),
+                    'port' => env('TENANT_DB_PORT', env('DB_PORT', '3306')),
+                    // Filled at runtime by IdentifyTenant middleware / tenant provisioning.
+                    'database' => env('TENANT_DB_DATABASE'),
+                    'username' => env('TENANT_DB_USERNAME', env('DB_USERNAME', 'root')),
+                    'password' => env('TENANT_DB_PASSWORD', env('DB_PASSWORD', '')),
+                    'charset' => env('DB_CHARSET', 'utf8mb4'),
+                    'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
+                    'prefix' => '',
+                    'prefix_indexes' => true,
+                    'strict' => true,
+                    'engine' => null,
+                ]
+        ),
+
     ],
 
     /*
