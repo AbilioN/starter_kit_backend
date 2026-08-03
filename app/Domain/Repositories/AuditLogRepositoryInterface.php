@@ -10,11 +10,11 @@ interface AuditLogRepositoryInterface
      * Registra um log de auditoria
      */
     public function log(
-        int $userId,
+        string $userId,
         string $userType,
         string $action,
         string $modelType,
-        ?int $modelId = null,
+        ?string $modelId = null,
         ?array $oldValues = null,
         ?array $newValues = null,
         ?string $description = null,
@@ -37,17 +37,17 @@ interface AuditLogRepositoryInterface
     /**
      * Busca logs por modelo
      */
-    public function findByModel(string $modelType, int $modelId): array;
+    public function findByModel(string $modelType, string $modelId): array;
 
     /**
      * Busca logs por usuário
      */
-    public function findByUser(int $userId, string $userType, int $perPage = 50): array;
+    public function findByUser(string $userId, string $userType, int $perPage = 50): array;
 
     /**
      * Busca log por ID
      */
-    public function findById(int $id): ?AuditLog;
+    public function findById(string $id): ?AuditLog;
 
     /**
      * Busca logs por ação

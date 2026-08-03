@@ -8,13 +8,13 @@ use DateTime;
 class AuditLog
 {
     public function __construct(
-        public readonly int $id,
-        public readonly int $userId,
+        public readonly string $id,
+        public readonly string $userId,
         public readonly string $userType,
         public readonly string $userName,
         public readonly string $action,
         public readonly string $modelType,
-        public readonly ?int $modelId,
+        public readonly ?string $modelId,
         public readonly ?array $oldValues,
         public readonly ?array $newValues,
         public readonly ?string $description,

@@ -30,7 +30,7 @@ class GetAuditLogsUseCase
     /**
      * Busca logs por modelo
      */
-    public function getForModel(string $modelType, int $modelId): array
+    public function getForModel(string $modelType, string $modelId): array
     {
         $logs = $this->auditRepository->findByModel($modelType, $modelId);
 
@@ -43,7 +43,7 @@ class GetAuditLogsUseCase
     /**
      * Busca logs por usuário
      */
-    public function getForUser(int $userId, string $userType, int $perPage = 50): array
+    public function getForUser(string $userId, string $userType, int $perPage = 50): array
     {
         $result = $this->auditRepository->findByUser($userId, $userType, $perPage);
 
@@ -59,7 +59,7 @@ class GetAuditLogsUseCase
     /**
      * Busca log por ID
      */
-    public function getById(int $id): ?array
+    public function getById(string $id): ?array
     {
         $log = $this->auditRepository->findById($id);
         return $log ? $log->toDto()->toArray() : null;

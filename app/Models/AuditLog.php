@@ -88,7 +88,7 @@ class AuditLog extends Model
     /**
      * Scope para filtrar por usuário
      */
-    public function scopeForUser($query, int $userId, string $userType)
+    public function scopeForUser($query, string $userId, string $userType)
     {
         return $query->where('user_id', $userId)
                     ->where('user_type', $userType);
@@ -97,7 +97,7 @@ class AuditLog extends Model
     /**
      * Scope para filtrar por modelo
      */
-    public function scopeForModel($query, string $modelType, ?int $modelId = null)
+    public function scopeForModel($query, string $modelType, ?string $modelId = null)
     {
         $query->where('model_type', $modelType);
         

@@ -11,11 +11,11 @@ class LogAuditUseCase
     ) {}
 
     public function execute(
-        int $userId,
+        string $userId,
         string $userType,
         string $action,
         string $modelType,
-        ?int $modelId = null,
+        ?string $modelId = null,
         ?array $oldValues = null,
         ?array $newValues = null,
         ?string $description = null,

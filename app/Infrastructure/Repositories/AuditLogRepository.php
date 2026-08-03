@@ -10,11 +10,11 @@ use Illuminate\Support\Facades\DB;
 class AuditLogRepository implements AuditLogRepositoryInterface
 {
     public function log(
-        int $userId,
+        string $userId,
         string $userType,
         string $action,
         string $modelType,
-        ?int $modelId = null,
+        ?string $modelId = null,
         ?array $oldValues = null,
         ?array $newValues = null,
         ?string $description = null,
@@ -104,7 +104,7 @@ class AuditLogRepository implements AuditLogRepositoryInterface
         ];
     }
 
-    public function findByModel(string $modelType, int $modelId): array
+    public function findByModel(string $modelType, string $modelId): array
     {
         return AuditLogModel::forModel($modelType, $modelId)
             ->orderBy('created_at', 'desc')
@@ -113,7 +113,7 @@ class AuditLogRepository implements AuditLogRepositoryInterface
             ->toArray();
     }
 
-    public function findByUser(int $userId, string $userType, int $perPage = 50): array
+    public function findByUser(string $userId, string $userType, int $perPage = 50): array
     {
         $paginator = AuditLogModel::forUser($userId, $userType)
             ->orderBy('created_at', 'desc')
@@ -132,7 +132,7 @@ class AuditLogRepository implements AuditLogRepositoryInterface
         ];
     }
 
-    public function findById(int $id): ?AuditLog
+    public function findById(string $id): ?AuditLog
     {
         $model = AuditLogModel::find($id);
         return $model ? $model->toEntity() : null;
@@ -218,7 +218,7 @@ class AuditLogRepository implements AuditLogRepositoryInterface
     /**
      * Obtém o nome do usuário
      */
-    private function getUserName(int $userId, string $userType): ?string
+    private function getUserName(string $userId, string $userType): ?string
     {
         try {
             if ($userType === 'Admin') {

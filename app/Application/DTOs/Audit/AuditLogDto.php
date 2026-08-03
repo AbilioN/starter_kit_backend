@@ -5,7 +5,7 @@ namespace App\Application\DTOs\Audit;
 class AuditLogDto
 {
     public function __construct(
-        public readonly int $id,
+        public readonly string $id,
         public readonly array $user,
         public readonly string $action,
         public readonly array $model,
