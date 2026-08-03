@@ -121,4 +121,16 @@ abstract class TenantTestCase extends TestCase
 
         return $tenant;
     }
+
+    /**
+     * Points subsequent HTTP requests at an already-provisioned tenant's
+     * subdomain (e.g. one created via ProvisionTenantUseCase), without
+     * creating a new Tenant row or touching database.default - useful for
+     * tests that need to simulate real, separate requests hitting distinct
+     * tenants and rely on IdentifyTenant itself to do the connection switch.
+     */
+    protected function useTenantHost(string $subdomain): void
+    {
+        $this->actingTenantHost = "{$subdomain}.example.test";
+    }
 }
