@@ -40,6 +40,11 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        'godadmin' => [
+            'driver' => 'session',
+            'provider' => 'godadmins',
+        ],
     ],
 
     /*
@@ -69,6 +74,11 @@ return [
         //     'driver' => 'database',
         //     'table' => 'users',
         // ],
+
+        'godadmins' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\GodAdmin::class,
+        ],
     ],
 
     /*

@@ -1,0 +1,43 @@
+<?php
+
+namespace App\Application\UseCases\GodAdmin;
+
+use App\Application\UseCases\Landlord\LogLandlordAuditUseCase;
+use App\Domain\Entities\SubscriptionPlan;
+use App\Domain\Repositories\SubscriptionPlanRepositoryInterface;
+
+class CreateSubscriptionPlanUseCase
+{
+    public function __construct(
+        private SubscriptionPlanRepositoryInterface $subscriptionPlanRepository,
+        private LogLandlordAuditUseCase $logLandlordAudit,
+    ) {}
+
+    public function execute(
+        string $actorId,
+        string $name,
+        string $slug,
+        ?int $priceCents,
+        array $features,
+        array $limits,
+        bool $isActive = true,
+    ): SubscriptionPlan {
+        $plan = $this->subscriptionPlanRepository->create(
+            name: $name,
+            slug: $slug,
+            priceCents: $priceCents,
+            features: $features,
+            limits: $limits,
+            isActive: $isActive,
+        );
+
+        $this->logLandlordAudit->execute(
+            actorId: $actorId,
+            action: 'subscription_plan_created',
+            model: 'SubscriptionPlan',
+            modelId: $plan->id,
+        );
+
+        return $plan;
+    }
+}

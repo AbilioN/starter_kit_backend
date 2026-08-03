@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Support\Facades\Route;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -11,6 +12,11 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         channels: __DIR__.'/../routes/channels.php',
         health: '/up',
+        then: function () {
+            // GodAdmin's own routes - session-guarded, never wrapped by
+            // tenant.identify (routes/api.php owns that wrapper entirely).
+            Route::middleware('web')->prefix('god')->group(base_path('routes/god.php'));
+        },
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
@@ -33,6 +39,12 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Adiciona CORS globalmente
         $middleware->append(\App\Http\Middleware\CorsMiddleware::class);
+
+        // auth:sanctum requests already short-circuit to a 401 JSON response
+        // (expectsJson()) before this is ever consulted - this only affects
+        // auth:godadmin's web/Livewire routes, the only guest-redirectable
+        // 'web' guard in the app right now.
+        $middleware->redirectGuestsTo('/god/login');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
