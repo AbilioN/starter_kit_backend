@@ -10,19 +10,17 @@ use Database\Seeders\AdminSeeder;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Database\Seeders\SettingSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
+use Tests\TenantTestCase;
 
-class SettingTest extends TestCase
+class SettingTest extends TenantTestCase
 {
-    use RefreshDatabase;
-
     private Admin $superAdmin;
     private Admin $adminWithPermissions;
 
     public function setUp(): void
     {
         parent::setUp();
+        $this->actingAsTenant();
 
         $this->seed(RoleSeeder::class);
         $this->seed(PermissionSeeder::class);

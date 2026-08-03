@@ -35,137 +35,146 @@ use Illuminate\Support\Facades\Broadcast;
 | routes are loaded by the RouteServiceProvider and all of them will
 | be assigned to the "api" middleware group. Make something great!
 |
+| Everything below is wrapped in `tenant.identify`, which resolves the
+| tenant from the request's subdomain before anything else runs (Admin/
+| User data itself lives per-tenant). GodAdmin's own routes (routes/god.php,
+| Sprint 0.3) are registered separately and are never wrapped by this.
+|
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
+Route::middleware(['tenant.identify'])->group(function () {
 
-// Public settings (no auth required)
-Route::get('/settings/public', [SettingController::class, 'public']);
-
-// Auth routes
-Route::post('/login', LoginController::class);
-Route::post('/register', RegisterController::class);
-Route::post('/verify-email', VerifyEmailController::class);
-Route::post('/resend-verification-code', ResendVerificationCodeController::class);
-Route::post('/forgot-password', ForgotPasswordController::class);
-Route::post('/reset-password', ResetPasswordController::class);
-
-// User notifications + profile
-Route::middleware(['auth:sanctum'])->group(function () {
-    Route::get('/notifications', [NotificationController::class, 'index']);
-    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
-    Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead']);
-    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
-
-    Route::get('/user/me', [UserProfileController::class, 'show']);
-    Route::patch('/user/me', [UserProfileController::class, 'update']);
-    Route::patch('/user/password', [UserProfileController::class, 'changePassword']);
-});
-
-// Chat routes
-Route::middleware(['auth:sanctum', 'update.last.seen'])->group(function () {
-    Route::post('/chat/create-private', [ChatController::class, 'createPrivateChat']);
-    Route::post('/chat/create-group', [ChatController::class, 'createGroupChat']);
-    Route::post('/chat/{chatId}/send', [ChatController::class, 'sendMessageToChat']);
-    Route::get('/chat/{chatId}/messages', [ChatController::class, 'getChatMessages']);
-    Route::post('/chat/{chatId}/read', [ChatController::class, 'markMessagesAsRead']);
-    Route::get('/chat/{chatId}/unread-count', [ChatController::class, 'getUnreadCount']);
-    Route::get('/chat/conversation/{otherUserId}/{otherUserType}', [ChatController::class, 'getConversation']);
-    Route::get('/chats', [ChatController::class, 'getChats']);
-    Route::post('/broadcasting/auth', [ChatController::class, 'broadcastAuth']);
-
-    // Message edit / delete
-    Route::patch('/chat/{chatId}/messages/{messageId}', [ChatController::class, 'editMessage']);
-    Route::delete('/chat/{chatId}/messages/{messageId}', [ChatController::class, 'deleteMessage']);
-
-    // User search
-    Route::get('/users/search', [ChatController::class, 'searchUsers']);
-
-    // Group chat management
-    Route::post('/chat/{chatId}/participants', [ChatController::class, 'addParticipant']);
-    Route::delete('/chat/{chatId}/participants/{userId}', [ChatController::class, 'removeParticipant']);
-    Route::delete('/chat/{chatId}/leave', [ChatController::class, 'leaveChat']);
-    Route::patch('/chat/{chatId}/name', [ChatController::class, 'renameChat']);
-});
-
-// Admin Auth routes
-Route::prefix('admin')->group(function () {
-    Route::post('/login', AdminLoginController::class);
-    Route::post('/register', AdminRegisterController::class);
-    
-    // Protected admin routes
-    Route::middleware(['auth:sanctum', 'admin.auth', 'update.last.seen'])->group(function () {
-        // Role management routes
-        Route::get('/roles', [RoleController::class, 'index']);
-        Route::post('/role/create', [RoleController::class, 'create']);
-        Route::put('/role/update', [RoleController::class, 'update']);
-        Route::post('/role/delete', [RoleController::class, 'delete']);
-        Route::post('/role/update-permissions', [RoleController::class, 'updatePermissions']);
-        Route::get('/permissions', [PermissionController::class, 'index']);
-        
-        
-        // Admin self-profile (current authenticated admin)
-        Route::get('/me', [AdminProfileController::class, 'show']);
-        Route::patch('/me', [AdminProfileController::class, 'update']);
-        Route::patch('/me/password', [AdminProfileController::class, 'changePassword']);
-
-        // Admin management routes
-        Route::get('/admins', [AdminController::class, 'index']);
-        Route::post('/admins', [AdminController::class, 'create']);
-        Route::put('/admins', [AdminController::class, 'update']);
-        Route::delete('/admins', [AdminController::class, 'delete']);
-        
-        // User management routes
-        Route::get('/users', [UserController::class, 'index']);
-        Route::get('/users/{id}', [UserController::class, 'show']);
-        Route::post('/users', [UserController::class, 'create']);
-        Route::put('/users/{id}', [UserController::class, 'update']);
-        Route::delete('/users/{id}', [UserController::class, 'delete']);
-        
-        // Dashboard
-        Route::get('/dashboard', [DashboardController::class, 'index']);
-        
-        // Settings routes
-        Route::get('/settings', [SettingController::class, 'index']);
-        Route::get('/settings/{key}', [SettingController::class, 'show']);
-        Route::put('/settings/{key}', [SettingController::class, 'update']);
-        Route::put('/settings', [SettingController::class, 'updateMany']);
-
-        // Admin notifications
-        Route::get('/notifications', [AdminNotificationController::class, 'index']);
-        Route::get('/notifications/unread-count', [AdminNotificationController::class, 'unreadCount']);
-        Route::post('/notifications/{id}/read', [AdminNotificationController::class, 'markRead']);
-        Route::post('/notifications/read-all', [AdminNotificationController::class, 'markAllRead']);
-
-        // Admin chat management (requires chat-manage permission)
-        Route::get('/chats', [AdminChatController::class, 'allChats']);
-        Route::get('/chats/{chatId}/messages', [AdminChatController::class, 'chatMessages']);
-
-        // File management
-        Route::get('/files', [FileController::class, 'index']);
-        Route::post('/files', [FileController::class, 'upload']);
-        Route::delete('/files/{id}', [FileController::class, 'delete']);
-
-        // Audit routes
-        Route::prefix('audit')->group(function () {
-            Route::get('/', [AuditController::class, 'index']);
-            Route::get('/{id}', [AuditController::class, 'show']);
-            Route::get('/model/{type}/{id}', [AuditController::class, 'modelHistory']);
-            Route::get('/user/{type}/{id}', [AuditController::class, 'userActivity']);
-            Route::get('/action/{action}', [AuditController::class, 'byAction']);
-            Route::get('/tag/{tag}', [AuditController::class, 'byTag']);
-        });
-
+    Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+        return $request->user();
     });
+
+    // Public settings (no auth required)
+    Route::get('/settings/public', [SettingController::class, 'public']);
+
+    // Auth routes
+    Route::post('/login', LoginController::class);
+    Route::post('/register', RegisterController::class);
+    Route::post('/verify-email', VerifyEmailController::class);
+    Route::post('/resend-verification-code', ResendVerificationCodeController::class);
+    Route::post('/forgot-password', ForgotPasswordController::class);
+    Route::post('/reset-password', ResetPasswordController::class);
+
+    // User notifications + profile
+    Route::middleware(['auth:sanctum'])->group(function () {
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead']);
+        Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
+
+        Route::get('/user/me', [UserProfileController::class, 'show']);
+        Route::patch('/user/me', [UserProfileController::class, 'update']);
+        Route::patch('/user/password', [UserProfileController::class, 'changePassword']);
+    });
+
+    // Chat routes
+    Route::middleware(['auth:sanctum', 'update.last.seen'])->group(function () {
+        Route::post('/chat/create-private', [ChatController::class, 'createPrivateChat']);
+        Route::post('/chat/create-group', [ChatController::class, 'createGroupChat']);
+        Route::post('/chat/{chatId}/send', [ChatController::class, 'sendMessageToChat']);
+        Route::get('/chat/{chatId}/messages', [ChatController::class, 'getChatMessages']);
+        Route::post('/chat/{chatId}/read', [ChatController::class, 'markMessagesAsRead']);
+        Route::get('/chat/{chatId}/unread-count', [ChatController::class, 'getUnreadCount']);
+        Route::get('/chat/conversation/{otherUserId}/{otherUserType}', [ChatController::class, 'getConversation']);
+        Route::get('/chats', [ChatController::class, 'getChats']);
+        Route::post('/broadcasting/auth', [ChatController::class, 'broadcastAuth']);
+
+        // Message edit / delete
+        Route::patch('/chat/{chatId}/messages/{messageId}', [ChatController::class, 'editMessage']);
+        Route::delete('/chat/{chatId}/messages/{messageId}', [ChatController::class, 'deleteMessage']);
+
+        // User search
+        Route::get('/users/search', [ChatController::class, 'searchUsers']);
+
+        // Group chat management
+        Route::post('/chat/{chatId}/participants', [ChatController::class, 'addParticipant']);
+        Route::delete('/chat/{chatId}/participants/{userId}', [ChatController::class, 'removeParticipant']);
+        Route::delete('/chat/{chatId}/leave', [ChatController::class, 'leaveChat']);
+        Route::patch('/chat/{chatId}/name', [ChatController::class, 'renameChat']);
+    });
+
+    // Admin Auth routes
+    Route::prefix('admin')->group(function () {
+        Route::post('/login', AdminLoginController::class);
+        Route::post('/register', AdminRegisterController::class);
+
+        // Protected admin routes
+        Route::middleware(['auth:sanctum', 'admin.auth', 'update.last.seen'])->group(function () {
+            // Role management routes
+            Route::get('/roles', [RoleController::class, 'index']);
+            Route::post('/role/create', [RoleController::class, 'create']);
+            Route::put('/role/update', [RoleController::class, 'update']);
+            Route::post('/role/delete', [RoleController::class, 'delete']);
+            Route::post('/role/update-permissions', [RoleController::class, 'updatePermissions']);
+            Route::get('/permissions', [PermissionController::class, 'index']);
+
+
+            // Admin self-profile (current authenticated admin)
+            Route::get('/me', [AdminProfileController::class, 'show']);
+            Route::patch('/me', [AdminProfileController::class, 'update']);
+            Route::patch('/me/password', [AdminProfileController::class, 'changePassword']);
+
+            // Admin management routes
+            Route::get('/admins', [AdminController::class, 'index']);
+            Route::post('/admins', [AdminController::class, 'create']);
+            Route::put('/admins', [AdminController::class, 'update']);
+            Route::delete('/admins', [AdminController::class, 'delete']);
+
+            // User management routes
+            Route::get('/users', [UserController::class, 'index']);
+            Route::get('/users/{id}', [UserController::class, 'show']);
+            Route::post('/users', [UserController::class, 'create']);
+            Route::put('/users/{id}', [UserController::class, 'update']);
+            Route::delete('/users/{id}', [UserController::class, 'delete']);
+
+            // Dashboard
+            Route::get('/dashboard', [DashboardController::class, 'index']);
+
+            // Settings routes
+            Route::get('/settings', [SettingController::class, 'index']);
+            Route::get('/settings/{key}', [SettingController::class, 'show']);
+            Route::put('/settings/{key}', [SettingController::class, 'update']);
+            Route::put('/settings', [SettingController::class, 'updateMany']);
+
+            // Admin notifications
+            Route::get('/notifications', [AdminNotificationController::class, 'index']);
+            Route::get('/notifications/unread-count', [AdminNotificationController::class, 'unreadCount']);
+            Route::post('/notifications/{id}/read', [AdminNotificationController::class, 'markRead']);
+            Route::post('/notifications/read-all', [AdminNotificationController::class, 'markAllRead']);
+
+            // Admin chat management (requires chat-manage permission)
+            Route::get('/chats', [AdminChatController::class, 'allChats']);
+            Route::get('/chats/{chatId}/messages', [AdminChatController::class, 'chatMessages']);
+
+            // File management
+            Route::get('/files', [FileController::class, 'index']);
+            Route::post('/files', [FileController::class, 'upload']);
+            Route::delete('/files/{id}', [FileController::class, 'delete']);
+
+            // Audit routes
+            Route::prefix('audit')->group(function () {
+                Route::get('/', [AuditController::class, 'index']);
+                Route::get('/{id}', [AuditController::class, 'show']);
+                Route::get('/model/{type}/{id}', [AuditController::class, 'modelHistory']);
+                Route::get('/user/{type}/{id}', [AuditController::class, 'userActivity']);
+                Route::get('/action/{action}', [AuditController::class, 'byAction']);
+                Route::get('/tag/{tag}', [AuditController::class, 'byTag']);
+            });
+
+        });
+    });
+
+    // File serve — authenticated download/stream for local-disk files
+    Route::middleware('auth:sanctum')->get('/files/serve/{encodedPath}', [FileController::class, 'serve'])
+        ->where('encodedPath', '.+');
+
+    // Broadcast routes for private channels
+    Route::middleware('auth:sanctum')->post('/broadcasting/auth', function (Request $request) {
+        return \Illuminate\Support\Facades\Broadcast::auth($request);
+    });
+
 });
-
-// File serve — authenticated download/stream for local-disk files
-Route::middleware('auth:sanctum')->get('/files/serve/{encodedPath}', [FileController::class, 'serve'])
-    ->where('encodedPath', '.+');
-
-// Broadcast routes for private channels
-Route::middleware('auth:sanctum')->post('/broadcasting/auth', function (Request $request) {
-    return \Illuminate\Support\Facades\Broadcast::auth($request);
-}); 

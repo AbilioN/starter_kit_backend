@@ -16,7 +16,20 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin.auth'        => \App\Http\Middleware\AdminAuthMiddleware::class,
             'update.last.seen'  => \App\Http\Middleware\UpdateLastSeen::class,
+            'tenant.identify'   => \App\Http\Middleware\IdentifyTenant::class,
         ]);
+
+        // Laravel's default $middlewarePriority list reorders framework
+        // middleware (e.g. Authenticate, from auth:sanctum) to run before any
+        // custom middleware that isn't in that list, REGARDLESS of the order
+        // routes register them in. Without this, auth:sanctum would run
+        // before IdentifyTenant on every tenant-scoped route, resolving
+        // Sanctum tokens against whatever connection was configured before
+        // the tenant was ever identified.
+        $middleware->prependToPriorityList(
+            before: \Illuminate\Auth\Middleware\Authenticate::class,
+            prepend: \App\Http\Middleware\IdentifyTenant::class,
+        );
 
         // Adiciona CORS globalmente
         $middleware->append(\App\Http\Middleware\CorsMiddleware::class);

@@ -5,18 +5,16 @@ namespace Tests\Unit\Infrastructure\Repositories;
 use App\Domain\Entities\User;
 use App\Infrastructure\Repositories\EloquentUserRepository;
 use App\Models\User as UserModel;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
+use Tests\TenantTestCase;
 
-class EloquentUserRepositoryTest extends TestCase
+class EloquentUserRepositoryTest extends TenantTestCase
 {
-    use RefreshDatabase;
-
     private EloquentUserRepository $repository;
 
     protected function setUp(): void
     {
         parent::setUp();
+        $this->actingAsTenant();
         $this->repository = new EloquentUserRepository();
     }
 

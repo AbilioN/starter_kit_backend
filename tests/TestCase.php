@@ -27,4 +27,19 @@ abstract class TestCase extends BaseTestCase
             File::put($dbPath, '');
         }
     }
+
+    /**
+     * All app migrations now live under database/migrations/tenant/ (see
+     * docs/03-multitenancy-plan.md) - the default database/migrations/ path
+     * is empty. RefreshDatabase's built-in migrate:fresh call needs pointing
+     * at the new path, or every test using the default sqlite connection
+     * (not just TenantTestCase ones) would migrate against an empty schema.
+     */
+    protected function migrateFreshUsing()
+    {
+        return array_merge(parent::migrateFreshUsing(), [
+            '--path' => 'database/migrations/tenant',
+            '--realpath' => false,
+        ]);
+    }
 }

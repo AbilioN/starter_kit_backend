@@ -2,20 +2,18 @@
 
 namespace Tests\Integration\Auth;
 
-use Tests\TestCase;
+use Tests\TenantTestCase;
 use App\Models\User;
 use App\Models\EmailVerification;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
 
-class EmailVerificationIntegrationTest extends TestCase
+class EmailVerificationIntegrationTest extends TenantTestCase
 {
-    use RefreshDatabase;
-
     protected function setUp(): void
     {
         parent::setUp();
+        $this->actingAsTenant();
         Mail::fake();
     }
 

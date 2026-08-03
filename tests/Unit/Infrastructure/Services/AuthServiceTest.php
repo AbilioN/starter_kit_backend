@@ -7,20 +7,18 @@ use App\Domain\Exceptions\AuthenticationException;
 use App\Domain\Repositories\UserRepositoryInterface;
 use App\Infrastructure\Services\AuthService;
 use App\Models\User as UserModel;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
-use Tests\TestCase;
+use Tests\TenantTestCase;
 
-class AuthServiceTest extends TestCase
+class AuthServiceTest extends TenantTestCase
 {
-    use RefreshDatabase;
-
     private AuthService $authService;
     private UserRepositoryInterface $userRepository;
 
     protected function setUp(): void
     {
         parent::setUp();
+        $this->actingAsTenant();
         $this->userRepository = Mockery::mock(UserRepositoryInterface::class);
         $this->authService = new AuthService($this->userRepository);
     }

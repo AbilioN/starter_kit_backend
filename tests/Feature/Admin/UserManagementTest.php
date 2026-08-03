@@ -4,19 +4,17 @@ namespace Tests\Feature\Admin;
 
 use App\Models\Admin;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
+use Tests\TenantTestCase;
 
-class UserManagementTest extends TestCase
+class UserManagementTest extends TenantTestCase
 {
-    use RefreshDatabase;
-
     private string $adminToken;
 
     protected function setUp(): void
     {
         parent::setUp();
-        
+        $this->actingAsTenant();
+
         // Criar admin e fazer login
         $admin = Admin::factory()->create([
             'email' => 'admin3@dashboard.com',

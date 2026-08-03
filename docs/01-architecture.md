@@ -35,8 +35,8 @@ app/Models/ — Eloquent models (belong to Infrastructure layer logically)
 
 ## Adding a New Feature — Checklist
 
-1. **Migration** → `database/migrations/`
-2. **Eloquent Model** → `app/Models/`
+1. **Migration** → `database/migrations/tenant/` for tenant-scoped features (the vast majority), `database/migrations/landlord/` for platform-level (GodAdmin/Tenant/SubscriptionPlan) features — see `03-multitenancy-plan.md`
+2. **Eloquent Model** → `app/Models/` (tenant-scoped models need no explicit connection — they resolve via the `tenant` connection once `IdentifyTenant` flips `database.default`; landlord models set `protected $connection = 'landlord';` explicitly)
 3. **Domain Entity** → `app/Domain/Entities/`
 4. **Repository Interface** → `app/Domain/Repositories/`
 5. **Repository Implementation** → `app/Infrastructure/Repositories/`

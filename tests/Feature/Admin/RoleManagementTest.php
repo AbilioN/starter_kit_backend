@@ -9,20 +9,17 @@ use Database\Seeders\AdminRolePermissionSeeder;
 use Database\Seeders\AdminSeeder;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
+use Tests\TenantTestCase;
 
-class RoleManagementTest extends TestCase
+class RoleManagementTest extends TenantTestCase
 {
-
-    use RefreshDatabase;
-
     private Admin $sudoAdminModel;
     private Admin $adminWithAllPermissions;
 
     public function setUp(): void
-    {  
+    {
         parent::setUp();
+        $this->actingAsTenant();
         // Seed the database in the correct order
         $this->seed(RoleSeeder::class);
         $this->seed(PermissionSeeder::class);

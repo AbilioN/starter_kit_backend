@@ -9,21 +9,19 @@ use Database\Seeders\AdminRolePermissionSeeder;
 use Database\Seeders\AdminSeeder;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Tests\TestCase;
+use Tests\TenantTestCase;
 
-class FileTest extends TestCase
+class FileTest extends TenantTestCase
 {
-    use RefreshDatabase;
-
     private Admin $superAdmin;
     private Admin $adminWithPermissions;
 
     public function setUp(): void
     {
         parent::setUp();
+        $this->actingAsTenant();
 
         Storage::fake('local');
 

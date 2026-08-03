@@ -5,13 +5,10 @@ namespace Tests\Feature\Chat;
 use App\Models\Admin;
 use App\Models\Chat;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
+use Tests\TenantTestCase;
 
-class ChatModelTest extends TestCase
+class ChatModelTest extends TenantTestCase
 {
-    use RefreshDatabase;
-
     protected $user1;
     protected $user2;
     protected $admin;
@@ -19,7 +16,8 @@ class ChatModelTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+        $this->actingAsTenant();
+
         // Criar User primeiro (ID será 1)
         $this->user1 = User::factory()->create();
         // Criar outro User (ID será 2)  

@@ -3,12 +3,15 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\Admin;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
+use Tests\TenantTestCase;
 
-class AdminLoginTest extends TestCase
+class AdminLoginTest extends TenantTestCase
 {
-    use RefreshDatabase;
+    public function setUp(): void
+    {
+        parent::setUp();
+        $this->actingAsTenant();
+    }
 
     public function test_admin_can_login_with_valid_credentials()
     {

@@ -7,15 +7,12 @@ use App\Models\Chat;
 use App\Models\ChatUser;
 use App\Models\Message;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
-use Tests\TestCase;
+use Tests\TenantTestCase;
 
-class MessageTest extends TestCase
+class MessageTest extends TenantTestCase
 {
-    use RefreshDatabase;
-
     protected $user1;
     protected $user2;
     protected $admin;
@@ -24,7 +21,8 @@ class MessageTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+        $this->actingAsTenant();
+
         $this->user1 = User::factory()->create();
         $this->user2 = User::factory()->create();
         

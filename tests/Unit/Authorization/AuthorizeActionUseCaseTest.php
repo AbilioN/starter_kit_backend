@@ -9,13 +9,10 @@ use App\Domain\Exceptions\AuthorizationException;
 use App\Models\Admin;
 use App\Models\Role;
 use App\Models\Permission;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
+use Tests\TenantTestCase;
 
-class AuthorizeActionUseCaseTest extends TestCase
+class AuthorizeActionUseCaseTest extends TenantTestCase
 {
-    use RefreshDatabase;
-
     private AuthorizeActionUseCase $authorizeActionUseCase;
     private Admin $admin;
     private Admin $superAdmin;
@@ -23,7 +20,8 @@ class AuthorizeActionUseCaseTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        
+        $this->actingAsTenant();
+
         $this->authorizeActionUseCase = new AuthorizeActionUseCase(
             new CheckAdminPermissionUseCase()
         );

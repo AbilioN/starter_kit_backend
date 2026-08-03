@@ -3,12 +3,15 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
+use Tests\TenantTestCase;
 
-class LoginTest extends TestCase
+class LoginTest extends TenantTestCase
 {
-    use RefreshDatabase;
+    public function setUp(): void
+    {
+        parent::setUp();
+        $this->actingAsTenant();
+    }
 
     public function test_user_can_login_with_valid_credentials()
     {

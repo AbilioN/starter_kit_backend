@@ -8,19 +8,17 @@ use Database\Seeders\AdminRolePermissionSeeder;
 use Database\Seeders\AdminSeeder;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
-use Tests\TestCase;
+use Tests\TenantTestCase;
 
-class NotificationTest extends TestCase
+class NotificationTest extends TenantTestCase
 {
-    use RefreshDatabase;
-
     private Admin $superAdmin;
 
     public function setUp(): void
     {
         parent::setUp();
+        $this->actingAsTenant();
 
         $this->seed(RoleSeeder::class);
         $this->seed(PermissionSeeder::class);

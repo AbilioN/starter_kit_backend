@@ -6,19 +6,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    protected $connection = 'tenant';
     /**
      * Run the migrations.
      */
     public function up(): void
     {
-        Schema::create('permissions', function (Blueprint $table) {
+        Schema::create('assistants', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('slug')->unique();
             $table->string('name');
-            $table->string('description');
-            $table->string('resource');
-            $table->string('action');
-            $table->string('route')->nullable();
+            $table->string('description')->nullable();
+            $table->string('avatar')->nullable();
+            $table->json('capabilities')->nullable(); // Capacidades do assistente
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
@@ -29,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('permissions');
+        Schema::dropIfExists('assistants');
     }
 };

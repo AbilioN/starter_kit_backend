@@ -7,14 +7,11 @@ use App\Models\Admin;
 use App\Models\Chat;
 use App\Models\Message;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
-use Tests\TestCase;
+use Tests\TenantTestCase;
 
-class ChatControllerWithChatUserTest extends TestCase
+class ChatControllerWithChatUserTest extends TenantTestCase
 {
-    use RefreshDatabase;
-
     protected $user;
     protected $admin;
     protected $chat;
@@ -22,7 +19,8 @@ class ChatControllerWithChatUserTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+        $this->actingAsTenant();
+
         // Criar User primeiro (ID será 1)
         $this->user = User::factory()->create();
         

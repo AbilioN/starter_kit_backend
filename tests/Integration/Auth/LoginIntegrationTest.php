@@ -7,13 +7,10 @@ use App\Domain\Services\AuthServiceInterface;
 use App\Infrastructure\Repositories\EloquentUserRepository;
 use App\Infrastructure\Services\AuthService;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
+use Tests\TenantTestCase;
 
-class LoginIntegrationTest extends TestCase
+class LoginIntegrationTest extends TenantTestCase
 {
-    use RefreshDatabase;
-
     private LoginUseCase $loginUseCase;
     private AuthServiceInterface $authService;
     private EloquentUserRepository $userRepository;
@@ -21,7 +18,8 @@ class LoginIntegrationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+        $this->actingAsTenant();
+
         $this->userRepository = new EloquentUserRepository();
         $this->authService = new AuthService($this->userRepository);
         $this->loginUseCase = new LoginUseCase($this->authService);

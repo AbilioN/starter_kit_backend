@@ -8,17 +8,15 @@ use Database\Seeders\AdminSeeder;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Database\Seeders\AdminRolePermissionSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
+use Tests\TenantTestCase;
 
-class AdminAuthMiddlewareTest extends TestCase
+class AdminAuthMiddlewareTest extends TenantTestCase
 {
-    use RefreshDatabase;
-
     public function setUp(): void
     {
         parent::setUp();
-        
+        $this->actingAsTenant();
+
         // Seed the database
 /*         $this->seed(RoleSeeder::class);
         $this->seed(PermissionSeeder::class);

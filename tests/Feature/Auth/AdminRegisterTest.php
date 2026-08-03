@@ -3,12 +3,15 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\Admin;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
+use Tests\TenantTestCase;
 
-class AdminRegisterTest extends TestCase
+class AdminRegisterTest extends TenantTestCase
 {
-    use RefreshDatabase;
+    public function setUp(): void
+    {
+        parent::setUp();
+        $this->actingAsTenant();
+    }
 
     public function test_admin_can_register_with_valid_data()
     {

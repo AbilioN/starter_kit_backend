@@ -3,12 +3,15 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
+use Tests\TenantTestCase;
 
-class RegisterTest extends TestCase
+class RegisterTest extends TenantTestCase
 {
-    use RefreshDatabase;
+    public function setUp(): void
+    {
+        parent::setUp();
+        $this->actingAsTenant();
+    }
 
     public function test_user_can_register_with_valid_data()
     {

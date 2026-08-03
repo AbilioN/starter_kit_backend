@@ -6,21 +6,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    protected $connection = 'tenant';
     /**
      * Run the migrations.
      */
     public function up(): void
     {
-        Schema::create('admins', function (Blueprint $table) {
+        Schema::create('roles', function (Blueprint $table) {
             $table->uuid('id')->primary();
+            $table->string('slug')->unique();
             $table->string('name');
-            $table->string('email')->unique();
-            $table->string('password');
+            $table->string('description');
             $table->boolean('is_active')->default(true);
-            $table->timestamp('last_login_at')->nullable();
-            $table->timestamp('last_seen_at')->nullable();
-            $table->boolean('is_super_admin')->default(false);
-            $table->rememberToken();
             $table->timestamps();
         });
     }
@@ -30,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('admins');
+        Schema::dropIfExists('roles');
     }
 };

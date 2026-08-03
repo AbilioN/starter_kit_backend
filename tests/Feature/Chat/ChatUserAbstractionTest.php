@@ -10,13 +10,10 @@ use App\Models\Admin as AdminModel;
 use App\Models\Chat;
 use App\Models\Message;
 use App\Models\User as UserModel;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
+use Tests\TenantTestCase;
 
-class ChatUserAbstractionTest extends TestCase
+class ChatUserAbstractionTest extends TenantTestCase
 {
-    use RefreshDatabase;
-
     protected $userModel;
     protected $adminModel;
     protected $user;
@@ -26,7 +23,8 @@ class ChatUserAbstractionTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+        $this->actingAsTenant();
+
         // Criar User primeiro (ID será 1)
         $this->userModel = UserModel::factory()->create();
         
