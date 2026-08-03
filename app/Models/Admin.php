@@ -29,6 +29,7 @@ class Admin extends Authenticatable implements ChatUser
         'password',
         'is_active',
         'is_super_admin',
+        'is_tenant_owner',
         'last_login_at',
         'last_seen_at',
     ];
@@ -56,6 +57,7 @@ class Admin extends Authenticatable implements ChatUser
             'last_seen_at' => 'datetime',
             'password' => 'hashed',
             'is_super_admin' => 'boolean',
+            'is_tenant_owner' => 'boolean',
         ];
     }
 

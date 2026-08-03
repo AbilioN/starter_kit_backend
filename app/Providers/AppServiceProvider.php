@@ -25,6 +25,8 @@ use App\Domain\Repositories\TenantRepositoryInterface;
 use App\Infrastructure\Repositories\TenantRepository;
 use App\Domain\Repositories\LandlordAuditLogRepositoryInterface;
 use App\Infrastructure\Repositories\LandlordAuditLogRepository;
+use App\Domain\Services\TenantProvisioningServiceInterface;
+use App\Infrastructure\Services\TenantProvisioningService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -52,6 +54,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(SubscriptionPlanRepositoryInterface::class, SubscriptionPlanRepository::class);
         $this->app->bind(TenantRepositoryInterface::class, TenantRepository::class);
         $this->app->bind(LandlordAuditLogRepositoryInterface::class, LandlordAuditLogRepository::class);
+        $this->app->bind(TenantProvisioningServiceInterface::class, TenantProvisioningService::class);
 
         // Services
         $this->app->singleton(\App\Services\PusherApiService::class);
