@@ -33,8 +33,20 @@ return Application::configure(basePath: dirname(__DIR__))
         // before IdentifyTenant on every tenant-scoped route, resolving
         // Sanctum tokens against whatever connection was configured before
         // the tenant was ever identified.
+        //
+        // MUST reference the AuthenticatesRequests *interface*, not the
+        // Authenticate class - the framework's own default priority list
+        // entry is the interface (see Kernel::$middlewarePriority), and
+        // addToMiddlewarePriorityRelative() does a strict array_search()
+        // against that list. Referencing the concrete class here silently
+        // no-ops (falls through to "index not found" -> appended to the END
+        // of the priority list instead of before Authenticate), which is
+        // exactly backwards from what this is supposed to do. Confirmed via
+        // route:list -v showing Authenticate still ahead of IdentifyTenant
+        // despite this call being present - see
+        // docs/2026-08-04_SANCTUM_TENANT_AUTH_BUG.md for the full writeup.
         $middleware->prependToPriorityList(
-            before: \Illuminate\Auth\Middleware\Authenticate::class,
+            before: \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
             prepend: \App\Http\Middleware\IdentifyTenant::class,
         );
 
