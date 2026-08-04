@@ -23,6 +23,16 @@ http://tenant-a.127.0.0.1.nip.io:8006/api/...
 
 Useful for quickly testing a new tenant without editing `/etc/hosts` each time.
 
+## Option C — `?tenant=` query param (no DNS at all, local/testing only)
+
+For clients that can't easily point at a custom hostname (a frontend dev server on plain `localhost`, a quick `curl`), `IdentifyTenant` falls back to a `?tenant=<subdomain>` query param when the request's Host header doesn't resolve to a tenant:
+
+```
+http://localhost:8006/api/admin/login?tenant=tenant-a
+```
+
+This fallback is gated to `app()->environment(['local', 'testing'])` — it never activates outside those, since letting a query param override subdomain-based tenant resolution in production would undermine the whole point of subdomain isolation. It's genuinely a dev convenience, not part of the tenant-resolution contract.
+
 ## Provisioning a tenant to test against
 
 Use the `tenant:provision` artisan command (see `app/Console/Commands/ProvisionTenantCommand.php`) — it creates the database, migrates it, seeds roles/permissions, and creates the first (tenant-owner) admin in one step:

@@ -24,6 +24,16 @@ class IdentifyTenant
 
         $tenant = $subdomain ? Tenant::where('subdomain', $subdomain)->first() : null;
 
+        // Local-dev-only fallback: real subdomains need /etc/hosts or wildcard
+        // DNS to resolve in a browser, which not everyone has set up. Never
+        // enabled outside local/testing - letting a query param override
+        // tenant resolution in production would undermine the whole point
+        // of subdomain-based isolation (any client could ask for any
+        // tenant's database by guessing/enumerating ?tenant=).
+        if (! $tenant && app()->environment(['local', 'testing']) && $request->query('tenant')) {
+            $tenant = Tenant::where('subdomain', $request->query('tenant'))->first();
+        }
+
         if (! $tenant) {
             return response()->json(['message' => 'Tenant not found.'], 404);
         }
