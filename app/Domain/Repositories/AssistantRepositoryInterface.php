@@ -9,12 +9,12 @@ interface AssistantRepositoryInterface
     /**
      * Find an assistant by ID
      */
-    public function findById(int $id): ?Assistant;
+    public function findById(string $id): ?Assistant;
 
     /**
      * Find an active assistant by ID
      */
-    public function findActiveById(int $id): ?Assistant;
+    public function findActiveById(string $id): ?Assistant;
 
     /**
      * Get all active assistants

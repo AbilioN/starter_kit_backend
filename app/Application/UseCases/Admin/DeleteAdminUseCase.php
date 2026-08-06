@@ -10,7 +10,7 @@ class DeleteAdminUseCase
         private AdminRepositoryInterface $adminRepository
     ) {}
 
-    public function execute(int $id): void
+    public function execute(string $id): void
     {
         $admin = $this->adminRepository->findById($id);
         

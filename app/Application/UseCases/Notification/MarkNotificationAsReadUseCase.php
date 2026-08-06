@@ -13,7 +13,7 @@ class MarkNotificationAsReadUseCase
         $this->notificationRepository->markAsRead($notificationId);
     }
 
-    public function markAll(string $notifiableType, int $notifiableId): void
+    public function markAll(string $notifiableType, string $notifiableId): void
     {
         $this->notificationRepository->markAllAsRead($notifiableType, $notifiableId);
     }

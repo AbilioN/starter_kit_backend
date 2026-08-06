@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Application\Services\AdminFactory;
 use App\Application\UseCases\Admin\Authorization\AuthorizeActionUseCase;
 use App\Application\UseCases\Audit\GetAuditLogsUseCase;
+use App\Domain\Exceptions\AuthorizationException;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -69,6 +70,11 @@ class AuditController extends Controller
                 'data' => $result['data'],
                 'pagination' => $result['pagination'],
             ], 200);
+        } catch (AuthorizationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 403);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -102,6 +108,11 @@ class AuditController extends Controller
                 'success' => true,
                 'data' => $log,
             ], 200);
+        } catch (AuthorizationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 403);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -128,6 +139,11 @@ class AuditController extends Controller
                 'success' => true,
                 'data' => $logs,
             ], 200);
+        } catch (AuthorizationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 403);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -157,6 +173,11 @@ class AuditController extends Controller
                 'data' => $result['data'],
                 'pagination' => $result['pagination'],
             ], 200);
+        } catch (AuthorizationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 403);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -186,6 +207,11 @@ class AuditController extends Controller
                 'data' => $result['data'],
                 'pagination' => $result['pagination'],
             ], 200);
+        } catch (AuthorizationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 403);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -215,6 +241,11 @@ class AuditController extends Controller
                 'data' => $result['data'],
                 'pagination' => $result['pagination'],
             ], 200);
+        } catch (AuthorizationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 403);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

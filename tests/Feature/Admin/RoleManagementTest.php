@@ -104,10 +104,11 @@ class RoleManagementTest extends TenantTestCase
      {
         // Arrange
         $token = $this->adminWithAllPermissions->createToken('test-token')->plainTextToken;
+        $permissionIds = Permission::limit(3)->pluck('id')->all();
         $roleData = [
-            'name' => 'Test Role with Permissions', 
+            'name' => 'Test Role with Permissions',
             'description' => 'Test Description with permissions',
-            'permissions' => [1, 2, 3]
+            'permissions' => $permissionIds
         ];
         
         // Act
@@ -153,9 +154,10 @@ class RoleManagementTest extends TenantTestCase
         
         // Assert permissions were attached correctly
         $this->assertCount(3, $responseData['permissions']);
-        $this->assertContains(1, array_column($responseData['permissions'], 'id'));
-        $this->assertContains(2, array_column($responseData['permissions'], 'id'));
-        $this->assertContains(3, array_column($responseData['permissions'], 'id'));
+        $attachedIds = array_column($responseData['permissions'], 'id');
+        $this->assertContains($permissionIds[0], $attachedIds);
+        $this->assertContains($permissionIds[1], $attachedIds);
+        $this->assertContains($permissionIds[2], $attachedIds);
         
         // Assert role was actually created in database
         $this->assertDatabaseHas('roles', [
@@ -167,9 +169,9 @@ class RoleManagementTest extends TenantTestCase
         
         // Assert permissions were attached in pivot table
         $roleId = $responseData['id'];
-        $this->assertDatabaseHas('role_permissions', ['role_id' => $roleId, 'permission_id' => 1]);
-        $this->assertDatabaseHas('role_permissions', ['role_id' => $roleId, 'permission_id' => 2]);
-        $this->assertDatabaseHas('role_permissions', ['role_id' => $roleId, 'permission_id' => 3]);
+        $this->assertDatabaseHas('role_permissions', ['role_id' => $roleId, 'permission_id' => $permissionIds[0]]);
+        $this->assertDatabaseHas('role_permissions', ['role_id' => $roleId, 'permission_id' => $permissionIds[1]]);
+        $this->assertDatabaseHas('role_permissions', ['role_id' => $roleId, 'permission_id' => $permissionIds[2]]);
      }
 
     /**

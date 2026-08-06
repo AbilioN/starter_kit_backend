@@ -25,7 +25,7 @@ class EloquentUserRepository implements UserRepositoryInterface
         );
     }
 
-    public function findById(int $id): ?User
+    public function findById(string $id): ?User
     {
         $userModel = UserModel::find($id);
         

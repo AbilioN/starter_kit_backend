@@ -18,7 +18,7 @@ class CreateAdminRequest extends FormRequest
             'email' => 'required|email|unique:admins,email|max:255',
             'password' => 'required|string|min:8|confirmed',
             'is_active' => 'sometimes|boolean',
-            'role_id' => 'sometimes|integer|exists:roles,id'
+            'role_id' => 'sometimes|string|exists:roles,id'
         ];
     }
 

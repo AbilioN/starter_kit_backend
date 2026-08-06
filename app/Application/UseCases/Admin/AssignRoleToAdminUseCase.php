@@ -7,7 +7,7 @@ use App\Models\Role;
 
 class AssignRoleToAdminUseCase
 {
-    public function execute(int $adminId, int $roleId, int $assignedBy): void
+    public function execute(string $adminId, string $roleId, string $assignedBy): void
     {
         $admin = Admin::findOrFail($adminId);
         $role = Role::findOrFail($roleId);

@@ -5,7 +5,7 @@ namespace App\Application\DTOs\Setting;
 class SettingDto
 {
     public function __construct(
-        public readonly int $id,
+        public readonly string $id,
         public readonly string $key,
         public readonly mixed $value,
         public readonly string $type,

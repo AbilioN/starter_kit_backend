@@ -13,7 +13,7 @@ class UpdatePermissionsToRoleUseCase
         private RoleRepositoryInterface $roleRepository
     ) {}
 
-    public function execute(int $roleId, array $permissionIds): Role
+    public function execute(string $roleId, array $permissionIds): Role
     {
         if (empty($permissionIds)) {
             $this->roleRepository->updatePermissions($roleId, []);

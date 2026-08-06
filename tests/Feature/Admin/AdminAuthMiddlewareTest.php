@@ -49,7 +49,7 @@ class AdminAuthMiddlewareTest extends TenantTestCase
         // Assert
         $response->assertStatus(200)
             ->assertJson([
-                'message' => 'Welcome to Admin Dashboard'
+                'success' => true,
             ]);
     }
 

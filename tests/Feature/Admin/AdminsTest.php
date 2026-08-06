@@ -340,8 +340,8 @@ class AdminsTest extends TenantTestCase
         
         $response->assertStatus(200)
             ->assertJson(['success' => true]);
-        
-        $this->assertDatabaseMissing('admins', [
+
+        $this->assertSoftDeleted('admins', [
             'id' => $adminToDelete->id
         ]);
     }
@@ -361,8 +361,8 @@ class AdminsTest extends TenantTestCase
         ])->deleteJson('/api/admin/admins', ['id' => $adminToDelete->id]);
         
         $response->assertStatus(200);
-        
-        $this->assertDatabaseMissing('admins', [
+
+        $this->assertSoftDeleted('admins', [
             'id' => $adminToDelete->id
         ]);
     }

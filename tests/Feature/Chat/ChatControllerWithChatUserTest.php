@@ -169,7 +169,7 @@ class ChatControllerWithChatUserTest extends TenantTestCase
         $response->assertStatus(200);
         $response->assertJson([
             'success' => true,
-            'data' => ['unread_count' => 0] // Por enquanto aceitamos o comportamento atual do sistema
+            'data' => ['unread_count' => 2] // 2 mensagens não lidas enviadas pelo admin, corretamente contadas
         ]);
     }
 

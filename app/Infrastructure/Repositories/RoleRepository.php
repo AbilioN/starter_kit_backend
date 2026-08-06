@@ -9,7 +9,7 @@ use Illuminate\Support\Str;
 
 class RoleRepository implements RoleRepositoryInterface
 {
-    public function findById(int $id): ?Role
+    public function findById(string $id): ?Role
     {
 
         
@@ -58,7 +58,7 @@ class RoleRepository implements RoleRepositoryInterface
         return $role->toEntity();
     }
 
-    public function update(int $id, string $slug, string $name, string $description): Role
+    public function update(string $id, string $slug, string $name, string $description): Role
     {
         // Usar findOrFail()->update() para disparar eventos do Eloquent (audit log)
         $role = RoleModel::findOrFail($id);
@@ -71,13 +71,13 @@ class RoleRepository implements RoleRepositoryInterface
         return $role->fresh()->toEntity();
     }
 
-    public function delete(int $id): void
+    public function delete(string $id): void
     {
         // Usar findOrFail()->delete() para disparar eventos do Eloquent (audit log)
         RoleModel::findOrFail($id)->delete();
     }
 
-    public function updatePermissions(int $roleId, array $permissionIds): Role
+    public function updatePermissions(string $roleId, array $permissionIds): Role
     {
         $role = RoleModel::findOrFail($roleId);
         // sync() substitui todas as permissions (remove as antigas e adiciona as novas)
@@ -86,7 +86,7 @@ class RoleRepository implements RoleRepositoryInterface
     }
 
     // Manter o método antigo para compatibilidade
-    public function attachPermissions(int $roleId, array $permissionIds): Role
+    public function attachPermissions(string $roleId, array $permissionIds): Role
     {
         return $this->updatePermissions($roleId, $permissionIds);
     }

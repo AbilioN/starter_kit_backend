@@ -11,7 +11,7 @@ class UpdateRoleUseCase
         private RoleRepositoryInterface $roleRepository
     ) {}
 
-    public function execute(int $id, string $name, string $description): Role
+    public function execute(string $id, string $name, string $description): Role
     {
         $slug = Str::slug($name);
         return $this->roleRepository->update($id, $slug, $name, $description);

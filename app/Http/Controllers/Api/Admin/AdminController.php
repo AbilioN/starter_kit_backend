@@ -159,7 +159,7 @@ class AdminController extends Controller
             
             $this->authorizeActionUseCase->execute($admin, 'admin-delete');
             
-            $request->validate(['id' => 'required|integer|exists:admins,id']);
+            $request->validate(['id' => 'required|string|exists:admins,id']);
             
             $this->deleteAdminUseCase->execute($request->input('id'));
             

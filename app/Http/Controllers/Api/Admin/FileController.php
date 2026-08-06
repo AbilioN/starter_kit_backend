@@ -7,6 +7,7 @@ use App\Application\UseCases\Admin\Authorization\AuthorizeActionUseCase;
 use App\Application\UseCases\File\DeleteFileUseCase;
 use App\Application\UseCases\File\GetFilesUseCase;
 use App\Application\UseCases\File\UploadFileUseCase;
+use App\Domain\Exceptions\AuthorizationException;
 use App\Domain\Exceptions\FileNotFoundException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UploadFileRequest;
@@ -37,6 +38,8 @@ class FileController extends Controller
             $result = $this->getFiles->execute($page, $perPage, $folder);
 
             return response()->json(['success' => true, 'data' => $result['data'], 'pagination' => $result['pagination']]);
+        } catch (AuthorizationException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 403);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -59,6 +62,8 @@ class FileController extends Controller
             );
 
             return response()->json(['success' => true, 'data' => $file], 201);
+        } catch (AuthorizationException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 403);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -89,6 +94,8 @@ class FileController extends Controller
             $this->deleteFile->execute($id);
 
             return response()->json(['success' => true]);
+        } catch (AuthorizationException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 403);
         } catch (FileNotFoundException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (\Exception $e) {

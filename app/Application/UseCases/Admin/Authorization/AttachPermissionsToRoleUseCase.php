@@ -13,7 +13,7 @@ class AttachPermissionsToRoleUseCase
         private RoleRepositoryInterface $roleRepository
     ) {}
 
-    public function execute(int $roleId, array $permissionIds): Role
+    public function execute(string $roleId, array $permissionIds): Role
     {
         // Valida se todas as permissions existem
         $existingPermissions = $this->permissionRepository->findByIds($permissionIds);

@@ -11,7 +11,7 @@ class UpdateAdminUseCase
     ) {}
 
     public function execute(
-        int $id,
+        string $id,
         ?string $name = null,
         ?string $email = null,
         ?string $password = null,

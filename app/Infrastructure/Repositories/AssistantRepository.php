@@ -8,7 +8,7 @@ use App\Models\Assistant as AssistantModel;
 
 class AssistantRepository implements AssistantRepositoryInterface
 {
-    public function findById(int $id): ?Assistant
+    public function findById(string $id): ?Assistant
     {
         $model = AssistantModel::find($id);
         
@@ -26,7 +26,7 @@ class AssistantRepository implements AssistantRepositoryInterface
         );
     }
     
-    public function findActiveById(int $id): ?Assistant
+    public function findActiveById(string $id): ?Assistant
     {
         $model = AssistantModel::where('id', $id)
             ->where('is_active', true)

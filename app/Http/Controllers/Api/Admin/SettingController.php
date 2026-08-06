@@ -7,6 +7,7 @@ use App\Application\UseCases\Admin\Authorization\AuthorizeActionUseCase;
 use App\Application\UseCases\Setting\GetAllSettingsUseCase;
 use App\Application\UseCases\Setting\GetSettingByKeyUseCase;
 use App\Application\UseCases\Setting\UpdateSettingUseCase;
+use App\Domain\Exceptions\AuthorizationException;
 use App\Domain\Exceptions\SettingNotFoundException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateSettingRequest;
@@ -32,6 +33,8 @@ class SettingController extends Controller
             $data = $this->getAllSettings->execute(publicOnly: false, group: $group);
 
             return response()->json(['success' => true, 'data' => $data]);
+        } catch (AuthorizationException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 403);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -50,6 +53,8 @@ class SettingController extends Controller
             }
 
             return response()->json(['success' => true, 'data' => $setting]);
+        } catch (AuthorizationException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 403);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -64,6 +69,8 @@ class SettingController extends Controller
             $data = $this->updateSetting->execute($key, $request->validated('value'));
 
             return response()->json(['success' => true, 'data' => $data]);
+        } catch (AuthorizationException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 403);
         } catch (SettingNotFoundException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (\Exception $e) {
@@ -83,6 +90,8 @@ class SettingController extends Controller
             $this->updateSetting->executeMany($keyValues);
 
             return response()->json(['success' => true, 'message' => 'Settings updated.']);
+        } catch (AuthorizationException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 403);
         } catch (SettingNotFoundException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (\Exception $e) {

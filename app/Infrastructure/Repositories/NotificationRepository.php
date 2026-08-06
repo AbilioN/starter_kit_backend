@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 class NotificationRepository implements NotificationRepositoryInterface
 {
-    public function findForNotifiable(string $type, int $id, bool $unreadOnly = false, int $perPage = 20): array
+    public function findForNotifiable(string $type, string $id, bool $unreadOnly = false, int $perPage = 20): array
     {
         $query = DB::table('notifications')
             ->where('notifiable_type', $type)
@@ -42,7 +42,7 @@ class NotificationRepository implements NotificationRepositoryInterface
             ->update(['read_at' => now()]);
     }
 
-    public function markAllAsRead(string $notifiableType, int $notifiableId): void
+    public function markAllAsRead(string $notifiableType, string $notifiableId): void
     {
         DB::table('notifications')
             ->where('notifiable_type', $notifiableType)
@@ -51,7 +51,7 @@ class NotificationRepository implements NotificationRepositoryInterface
             ->update(['read_at' => now()]);
     }
 
-    public function unreadCount(string $notifiableType, int $notifiableId): int
+    public function unreadCount(string $notifiableType, string $notifiableId): int
     {
         return DB::table('notifications')
             ->where('notifiable_type', $notifiableType)

@@ -8,7 +8,7 @@ use DateTime;
 class Setting
 {
     public function __construct(
-        public readonly int $id,
+        public readonly string $id,
         public readonly string $key,
         public readonly mixed $value,
         public readonly string $rawValue,

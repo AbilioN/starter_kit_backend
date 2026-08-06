@@ -31,7 +31,7 @@ class LoginUseCaseTest extends TestCase
     {
         // Arrange
         $user = new User(
-            id: 1,
+            id: '1',
             name: 'John Doe',
             email: 'john@example.com',
             password: password_hash('password123', PASSWORD_DEFAULT)
@@ -58,10 +58,11 @@ class LoginUseCaseTest extends TestCase
         $this->assertArrayHasKey('token', $result);
         
         $this->assertEquals([
-            'id' => 1,
+            'id' => '1',
             'name' => 'John Doe',
             'email' => 'john@example.com',
-            'email_verified_at' => null
+            'email_verified_at' => null,
+            'channel' => 'user.user.1',
         ], $result['user']);
         
         $this->assertEquals('valid-token-123', $result['token']);

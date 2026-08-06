@@ -11,7 +11,7 @@ class DeleteRoleUseCase
         private RoleRepositoryInterface $roleRepository
     ) {}    
 
-    public function execute(int $id): void
+    public function execute(string $id): void
     {
         $this->roleRepository->delete($id);
     }

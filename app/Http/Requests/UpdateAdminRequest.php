@@ -17,7 +17,7 @@ class UpdateAdminRequest extends FormRequest
         $adminId = $this->input('id');
         
         return [
-            'id' => 'required|integer|exists:admins,id',
+            'id' => 'required|string|exists:admins,id',
             'name' => 'sometimes|string|max:255',
             'email' => [
                 'sometimes',

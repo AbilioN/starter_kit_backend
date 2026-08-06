@@ -11,7 +11,7 @@ class GetUserUseCase
         private UserRepositoryInterface $userRepository
     ) {}
 
-    public function execute(int $userId): array
+    public function execute(string $userId): array
     {
         $user = $this->userRepository->findById($userId);
         
