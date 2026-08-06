@@ -224,13 +224,28 @@ GodAdmin's own CRUD (tenants, subscription plans) is Livewire-rendered server-si
 
 0.1 → 0.2 → 0.5 → 0.3/0.4 in parallel, matching the original suggested order. Sprint 0 is complete.
 
+## Sprint 0.6 — Monetization layer (backend + frontend, built 2026-08-06/07)
+
+Built on top of Sprint 0, in the same session as the multitenancy foundation:
+
+- **Public vs. private Subscription Plans**: `subscription_plans.is_public` (+ `tertiary_color`, `icon_paths` json — small/medium/large, auto-generated via `intervention/image` from one GodAdmin upload). Private plans are simply never listed publicly; GodAdmin assigns them to a specific tenant manually at creation — no restriction table.
+- **Public API** (`/api/public/subscription-plans[/{slug}]`, `/api/public/signup`), deliberately outside `tenant.identify`, rate-limited (`throttle:60,1` reads, `throttle:5,60` signup). `PublicTenantSignupRequest` rejects a `plan_id` unless `is_public=true` — the actual enforcement of "private."
+- **Mock payment ledger** (`mock_payments` table, landlord): recorded on every signup with a plan and every tenant-owner plan change, via `RecordMockPaymentUseCase`. No real gateway — `status` always `succeeded`, kept for a future real integration.
+- **Financial report** (`GenerateFinancialReportUseCase`, `/god/financial-report` + CSV export): current MRR-equivalent, breakdown by plan, public/private split, 12-month revenue history from the ledger. Two summary tiles added to the existing GodAdmin `Dashboard`.
+- **Frontend** (`starter_kit_frontend`): `/` is now a public marketing homepage (horizontal navbar, no tenant-detection redirect — see the note in that repo's own notes about `?tenant=`-mode not being reliably distinguishable from the root domain), `/pricing` lists public plans, `/signup/checkout` does the mock-payment signup flow and redirects straight to the new tenant's login. `/login` is a "find my workspace" page for existing tenant owners (subdomain isn't wired up yet, so this — and the post-signup redirect — go through `buildTenantEntryUrl()`, which targets `?tenant=` today and subdomain-prefixed once real DNS is set up, with no code change needed then).
+- **Plan limits are now enforced** (previously stored on `subscription_plans.limits` but never read anywhere): `limits.max_admins`/`max_users`/`max_storage_mb` are seeded into tenant `settings` at provisioning and re-synced on plan change (mirrors the existing `features.*` mechanism exactly — `ProvisionTenantUseCase::seedLimitsFromPlan()`, `ChangeTenantSubscriptionPlanUseCase::syncLimitsFromPlan()`, also re-attempted by `RetrySettingsSyncJob`). Enforced via `EnforcePlanLimitUseCase` (lazy count closure — skips the DB hit entirely when no limit is configured) at the three real creation entry points: `CreateAdminUseCase`, `RegisterUseCase` (end-user self-registration), `UploadFileUseCase` (byte-sum check against `max_storage_mb`). All three return **402 Payment Required** (`PlanLimitExceededException`) when hit, distinct from 403 (permission) and 422 (validation). Tests: `tests/Feature/Tenant/PlanLimitEnforcementTest.php`.
+- **Note**: `UserController::create/update/delete` (the *admin-panel-driven* "create a user" path) are registered in `routes/api.php` but the methods don't exist on the controller — pre-existing, unrelated to this work. `max_users` is enforced at the only real working entry point (self-registration via `POST /api/register`), not there.
+
+Full backend suite: **286/286 passing** as of 2026-08-07.
+
 ## Next steps
 
 1. ~~Fix the ID type mismatch~~ — **done 2026-08-06**, see "Current status" above.
 2. ~~Stale test assertions~~ — **done 2026-08-06**.
 3. ~~`FileTest` GD extension~~ — **done 2026-08-06** (`Dockerfile` now configures `gd` with `--with-jpeg`; image rebuilt).
-4. **Self-service tenant signup has no form UI yet** — `POST /signup` (`TenantSignupController`) works, but nothing renders a form against it (no Blade view, no Nuxt page). GodAdmin-created provisioning is fully usable via Livewire in the meantime.
+4. ~~Self-service tenant signup has no form UI~~ — **done 2026-08-07**, see Sprint 0.6 above (`/pricing` + `/signup/checkout` in Nuxt).
 5. **Follow-up left deliberately unfixed** — `AuditController`'s `show`/`modelHistory`/`userActivity` and `PermissionRepositoryInterface`'s unused methods still type-hint ids as `int`. Same bug class, but no test covers those paths today — fix with a test in hand.
-6. Once the above is addressed, move on to `starter_kit/roadmap.md` Sprint 1 (Production Readiness) or further round out multitenancy (custom domains, multiple GodAdmin roles) per the "Explicitly out of scope" list above — whichever the coordinator session prioritizes.
+6. **`UserController::create/update/delete` don't exist** despite routes pointing at them (see Sprint 0.6 note above) — pre-existing gap, unrelated to multitenancy, worth fixing before relying on admin-driven user management.
+7. See root `roadmap.md` → Sprint 0 addenda for the next batch of multitenancy/monetization improvements. Of these, **tenant-suspension notifications are now done (backend)** as of 2026-08-07 — `NotifyTenantOwnerUseCase` + `TenantSuspendedNotification`/`TenantReactivatedNotification`, see `roadmap.md` → 0.7 for detail. Still not started: the Nuxt-side "workspace suspended" screen (0.7's remaining item), GodAdmin 2FA (0.8), GodAdmin changing an existing tenant's plan (0.9), white-label tenant emails (0.10).
 
 Update this file's checkboxes as work lands, and update `starter_kit/roadmap.md` + `starter_kit/docs/02-roadmap.md` (the cross-repo coordinator) to keep both in sync.

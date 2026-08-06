@@ -47,13 +47,20 @@ class Form extends Component
 
     public array $iconPaths = [];
 
+    private SubscriptionPlanRepositoryInterface $subscriptionPlanRepository;
+
+    public function __construct(SubscriptionPlanRepositoryInterface $subscriptionPlanRepository)
+    {
+        $this->subscriptionPlanRepository = $subscriptionPlanRepository;
+    }
+
     public function mount(?string $planId = null): void
     {
         if (! $planId) {
             return;
         }
 
-        $plan = app(SubscriptionPlanRepositoryInterface::class)->findById($planId);
+        $plan = $this->subscriptionPlanRepository->findById($planId);
 
         if (! $plan) {
             abort(404);

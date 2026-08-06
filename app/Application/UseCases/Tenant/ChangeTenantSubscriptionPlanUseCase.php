@@ -42,6 +42,7 @@ class ChangeTenantSubscriptionPlanUseCase
         // ever runs from a tenant-resolved request.
         try {
             $this->syncFeaturesFromPlan($subscriptionPlanId);
+            $this->syncLimitsFromPlan($subscriptionPlanId);
         } catch (Throwable $e) {
             $this->logAudit->execute(
                 userId: $adminId,
@@ -84,6 +85,27 @@ class ChangeTenantSubscriptionPlanUseCase
                     'value' => is_bool($value) ? ($value ? '1' : '0') : (string) $value,
                     'type' => is_bool($value) ? 'boolean' : 'string',
                     'group' => 'features',
+                    'label' => Str::headline($key),
+                ],
+            );
+        }
+    }
+
+    public function syncLimitsFromPlan(string $subscriptionPlanId): void
+    {
+        $plan = $this->subscriptionPlanRepository->findById($subscriptionPlanId);
+
+        if (! $plan) {
+            throw new \RuntimeException("Subscription plan {$subscriptionPlanId} not found.");
+        }
+
+        foreach ($plan->limits as $key => $value) {
+            Setting::updateOrCreate(
+                ['key' => "limits.{$key}"],
+                [
+                    'value' => (string) $value,
+                    'type' => 'integer',
+                    'group' => 'limits',
                     'label' => Str::headline($key),
                 ],
             );

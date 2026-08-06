@@ -56,6 +56,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Tenant Frontend Domain
+    |--------------------------------------------------------------------------
+    |
+    | Where a browser gets sent after tenant signup (self-service or
+    | GodAdmin-created) - the Nuxt admin panel's host, not this API's.
+    | Locally these run on different ports (Nuxt on 3000, this API on 8006),
+    | so the default must include Nuxt's port or the post-signup redirect
+    | lands nowhere useful. Was previously read via config('app.tenant_domain',
+    | 'starterkit.test') with no entry here at all, so env(TENANT_DOMAIN) was
+    | silently ignored and the fallback (no port) was always used.
+    |
+    */
+
+    'tenant_domain' => env('TENANT_DOMAIN', 'starterkit.test:3000'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

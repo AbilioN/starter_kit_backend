@@ -13,9 +13,10 @@ use Illuminate\Queue\SerializesModels;
 use Throwable;
 
 /**
- * Retries syncing settings.features.* from a subscription plan after the
- * landlord write already succeeded but the tenant-side sync failed - the
- * "eventual consistency" half of ChangeTenantSubscriptionPlanUseCase.
+ * Retries syncing settings.features.* and settings.limits.* from a
+ * subscription plan after the landlord write already succeeded but the
+ * tenant-side sync failed - the "eventual consistency" half of
+ * ChangeTenantSubscriptionPlanUseCase.
  */
 class RetrySettingsSyncJob implements ShouldQueue
 {
@@ -38,6 +39,7 @@ class RetrySettingsSyncJob implements ShouldQueue
     public function handle(ChangeTenantSubscriptionPlanUseCase $changeTenantSubscriptionPlan): void
     {
         $changeTenantSubscriptionPlan->syncFeaturesFromPlan($this->subscriptionPlanId);
+        $changeTenantSubscriptionPlan->syncLimitsFromPlan($this->subscriptionPlanId);
     }
 
     /**

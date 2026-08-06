@@ -113,6 +113,10 @@ class AdminController extends Controller
             return response()->json([
                 'error' => $e->getMessage()
             ], 403);
+        } catch (\App\Domain\Exceptions\PlanLimitExceededException $e) {
+            return response()->json([
+                'error' => $e->getMessage()
+            ], 402);
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Internal server error: ' . $e->getMessage()

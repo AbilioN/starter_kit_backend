@@ -85,6 +85,7 @@ class ProvisionTenantUseCase
 
         if ($subscriptionPlanId) {
             $this->seedFeaturesFromPlan($subscriptionPlanId);
+            $this->seedLimitsFromPlan($subscriptionPlanId);
             $this->recordMockPayment->execute($tenant->id, $subscriptionPlanId, trigger: 'signup');
         }
 
@@ -123,6 +124,25 @@ class ProvisionTenantUseCase
                 'value' => is_bool($value) ? ($value ? '1' : '0') : (string) $value,
                 'type' => is_bool($value) ? 'boolean' : 'string',
                 'group' => 'features',
+                'label' => Str::headline($key),
+            ]);
+        }
+    }
+
+    private function seedLimitsFromPlan(string $subscriptionPlanId): void
+    {
+        $plan = $this->subscriptionPlanRepository->findById($subscriptionPlanId);
+
+        if (! $plan) {
+            return;
+        }
+
+        foreach ($plan->limits as $key => $value) {
+            Setting::create([
+                'key' => "limits.{$key}",
+                'value' => (string) $value,
+                'type' => 'integer',
+                'group' => 'limits',
                 'label' => Str::headline($key),
             ]);
         }

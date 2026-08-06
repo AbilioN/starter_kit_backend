@@ -64,6 +64,8 @@ class FileController extends Controller
             return response()->json(['success' => true, 'data' => $file], 201);
         } catch (AuthorizationException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 403);
+        } catch (\App\Domain\Exceptions\PlanLimitExceededException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 402);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RegisterRequest;
 use App\Application\UseCases\Auth\RegisterUseCase;
+use App\Domain\Exceptions\PlanLimitExceededException;
 use App\Domain\Exceptions\RegistrationException;
 use Illuminate\Http\JsonResponse;
 
@@ -15,7 +16,7 @@ class RegisterController extends Controller
         try {
             $result = $registerUseCase->execute(
                 $request->name,
-                $request->email, 
+                $request->email,
                 $request->password
             );
 
@@ -24,6 +25,10 @@ class RegisterController extends Controller
             return response()->json([
                 'message' => $e->getMessage()
             ], 422);
+        } catch (PlanLimitExceededException $e) {
+            return response()->json([
+                'message' => $e->getMessage()
+            ], 402);
         }
     }
 } 
