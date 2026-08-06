@@ -20,13 +20,17 @@ use App\Infrastructure\Repositories\MessageRepository;
 use App\Domain\Repositories\GodAdminRepositoryInterface;
 use App\Infrastructure\Repositories\GodAdminRepository;
 use App\Domain\Repositories\SubscriptionPlanRepositoryInterface;
+use App\Domain\Repositories\MockPaymentRepositoryInterface;
 use App\Infrastructure\Repositories\SubscriptionPlanRepository;
+use App\Infrastructure\Repositories\MockPaymentRepository;
 use App\Domain\Repositories\TenantRepositoryInterface;
 use App\Infrastructure\Repositories\TenantRepository;
 use App\Domain\Repositories\LandlordAuditLogRepositoryInterface;
 use App\Infrastructure\Repositories\LandlordAuditLogRepository;
 use App\Domain\Services\TenantProvisioningServiceInterface;
+use App\Domain\Services\IconResizingServiceInterface;
 use App\Infrastructure\Services\TenantProvisioningService;
+use App\Infrastructure\Services\IconResizingService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -52,9 +56,11 @@ class AppServiceProvider extends ServiceProvider
         // Landlord dependencies
         $this->app->bind(GodAdminRepositoryInterface::class, GodAdminRepository::class);
         $this->app->bind(SubscriptionPlanRepositoryInterface::class, SubscriptionPlanRepository::class);
+        $this->app->bind(MockPaymentRepositoryInterface::class, MockPaymentRepository::class);
         $this->app->bind(TenantRepositoryInterface::class, TenantRepository::class);
         $this->app->bind(LandlordAuditLogRepositoryInterface::class, LandlordAuditLogRepository::class);
         $this->app->bind(TenantProvisioningServiceInterface::class, TenantProvisioningService::class);
+        $this->app->bind(IconResizingServiceInterface::class, IconResizingService::class);
 
         // Services
         $this->app->singleton(\App\Services\PusherApiService::class);

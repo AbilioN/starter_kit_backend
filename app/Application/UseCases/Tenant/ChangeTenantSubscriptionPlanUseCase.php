@@ -4,6 +4,7 @@ namespace App\Application\UseCases\Tenant;
 
 use App\Application\UseCases\Audit\LogAuditUseCase;
 use App\Application\UseCases\Landlord\LogLandlordAuditUseCase;
+use App\Application\UseCases\Landlord\RecordMockPaymentUseCase;
 use App\Domain\Repositories\SubscriptionPlanRepositoryInterface;
 use App\Domain\Repositories\TenantRepositoryInterface;
 use App\Jobs\RetrySettingsSyncJob;
@@ -18,6 +19,7 @@ class ChangeTenantSubscriptionPlanUseCase
         private SubscriptionPlanRepositoryInterface $subscriptionPlanRepository,
         private LogAuditUseCase $logAudit,
         private LogLandlordAuditUseCase $logLandlordAudit,
+        private RecordMockPaymentUseCase $recordMockPayment,
     ) {}
 
     public function execute(string $tenantId, string $adminId, string $subscriptionPlanId): void
@@ -32,6 +34,8 @@ class ChangeTenantSubscriptionPlanUseCase
             modelId: $tenantId,
             metadata: ['tenant_id' => $tenantId],
         );
+
+        $this->recordMockPayment->execute($tenantId, $subscriptionPlanId, trigger: 'plan_change');
 
         // 2. Attempt to re-sync tenant settings.features.* - already on the
         // right (tenant) connection, no switch needed: this use case only

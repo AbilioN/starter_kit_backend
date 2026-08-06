@@ -27,6 +27,21 @@
                 <dt class="text-sm font-medium text-slate-500">Created via</dt>
                 <dd class="col-span-2 text-sm text-slate-900">{{ $tenant->createdVia }}</dd>
             </div>
+            <div class="grid grid-cols-3 gap-4 px-6 py-4">
+                <dt class="text-sm font-medium text-slate-500">Subscription Plan</dt>
+                <dd class="col-span-2 text-sm text-slate-900">
+                    @if ($plan)
+                        {{ $plan->name }}
+                        @if ($plan->isPublic)
+                            <span class="ml-2 inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-600/20">Public</span>
+                        @else
+                            <span class="ml-2 inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-500/10">Private</span>
+                        @endif
+                    @else
+                        <span class="text-slate-400">— none —</span>
+                    @endif
+                </dd>
+            </div>
         </dl>
     </div>
 

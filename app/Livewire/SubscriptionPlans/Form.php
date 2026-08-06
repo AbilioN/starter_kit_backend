@@ -5,11 +5,15 @@ namespace App\Livewire\SubscriptionPlans;
 use App\Application\UseCases\GodAdmin\CreateSubscriptionPlanUseCase;
 use App\Application\UseCases\GodAdmin\UpdateSubscriptionPlanUseCase;
 use App\Domain\Repositories\SubscriptionPlanRepositoryInterface;
+use App\Domain\Services\IconResizingServiceInterface;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class Form extends Component
 {
+    use WithFileUploads;
+
     public ?string $planId = null;
 
     public string $name = '';
@@ -33,6 +37,15 @@ class Form extends Component
     public int $maxUsers = 100;
 
     public int $maxStorageMb = 1024;
+
+    public bool $isPublic = false;
+
+    public ?string $tertiaryColor = null;
+
+    /** @var \Livewire\Features\SupportFileUploads\TemporaryUploadedFile|null */
+    public $iconUpload = null;
+
+    public array $iconPaths = [];
 
     public function mount(?string $planId = null): void
     {
@@ -58,16 +71,22 @@ class Form extends Component
         $this->maxAdmins = (int) ($plan->limits['max_admins'] ?? 5);
         $this->maxUsers = (int) ($plan->limits['max_users'] ?? 100);
         $this->maxStorageMb = (int) ($plan->limits['max_storage_mb'] ?? 1024);
+        $this->isPublic = $plan->isPublic;
+        $this->tertiaryColor = $plan->tertiaryColor;
+        $this->iconPaths = $plan->iconPaths;
     }
 
     public function save(
         CreateSubscriptionPlanUseCase $createSubscriptionPlan,
         UpdateSubscriptionPlanUseCase $updateSubscriptionPlan,
+        IconResizingServiceInterface $iconResizingService,
     ): void {
         $this->validate([
             'name' => 'required|string|max:255',
             'slug' => 'required|string|max:255|regex:/^[a-z0-9-]+$/',
             'priceCents' => 'nullable|integer|min:0',
+            'tertiaryColor' => 'nullable|string|regex:/^#[0-9a-fA-F]{6}$/',
+            'iconUpload' => 'nullable|image|max:4096',
         ]);
 
         $actorId = Auth::guard('godadmin')->id();
@@ -83,6 +102,10 @@ class Form extends Component
             'max_storage_mb' => $this->maxStorageMb,
         ];
 
+        $iconPaths = $this->iconUpload
+            ? $iconResizingService->generateSizes($this->iconUpload, 'subscription-plan-icons')
+            : null;
+
         if ($this->planId) {
             $updateSubscriptionPlan->execute(
                 actorId: $actorId,
@@ -92,6 +115,9 @@ class Form extends Component
                 features: $features,
                 limits: $limits,
                 isActive: $this->isActive,
+                isPublic: $this->isPublic,
+                tertiaryColor: $this->tertiaryColor,
+                iconPaths: $iconPaths,
             );
         } else {
             $createSubscriptionPlan->execute(
@@ -102,6 +128,9 @@ class Form extends Component
                 features: $features,
                 limits: $limits,
                 isActive: $this->isActive,
+                isPublic: $this->isPublic,
+                tertiaryColor: $this->tertiaryColor,
+                iconPaths: $iconPaths,
             );
         }
 

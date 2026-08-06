@@ -2,6 +2,7 @@
 
 namespace App\Application\UseCases\Tenant;
 
+use App\Application\UseCases\Landlord\RecordMockPaymentUseCase;
 use App\Domain\Entities\Tenant;
 use App\Domain\Repositories\SubscriptionPlanRepositoryInterface;
 use App\Domain\Repositories\TenantRepositoryInterface;
@@ -21,6 +22,7 @@ class ProvisionTenantUseCase
         private TenantRepositoryInterface $tenantRepository,
         private SubscriptionPlanRepositoryInterface $subscriptionPlanRepository,
         private TenantProvisioningServiceInterface $provisioningService,
+        private RecordMockPaymentUseCase $recordMockPayment,
     ) {}
 
     public function execute(
@@ -83,6 +85,7 @@ class ProvisionTenantUseCase
 
         if ($subscriptionPlanId) {
             $this->seedFeaturesFromPlan($subscriptionPlanId);
+            $this->recordMockPayment->execute($tenant->id, $subscriptionPlanId, trigger: 'signup');
         }
 
         return $tenant;

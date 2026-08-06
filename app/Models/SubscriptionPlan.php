@@ -21,6 +21,9 @@ class SubscriptionPlan extends Model
         'features',
         'limits',
         'is_active',
+        'is_public',
+        'tertiary_color',
+        'icon_paths',
     ];
 
     protected function casts(): array
@@ -29,6 +32,8 @@ class SubscriptionPlan extends Model
             'features' => 'array',
             'limits' => 'array',
             'is_active' => 'boolean',
+            'is_public' => 'boolean',
+            'icon_paths' => 'array',
         ];
     }
 
@@ -47,6 +52,9 @@ class SubscriptionPlan extends Model
             features: $this->features ?? [],
             limits: $this->limits ?? [],
             isActive: $this->is_active,
+            isPublic: $this->is_public,
+            tertiaryColor: $this->tertiary_color,
+            iconPaths: $this->icon_paths ?? [],
             createdAt: $this->created_at,
             updatedAt: $this->updated_at,
         );

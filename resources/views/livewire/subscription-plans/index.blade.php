@@ -18,6 +18,7 @@
                     <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Slug</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Price</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Status</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Visibility</th>
                     <th class="px-4 py-3"></th>
                 </tr>
             </thead>
@@ -36,6 +37,13 @@
                                 <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-500/10">Inactive</span>
                             @endif
                         </td>
+                        <td class="px-4 py-3">
+                            @if ($plan->isPublic)
+                                <span class="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-600/20">Public</span>
+                            @else
+                                <span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-500/10">Private</span>
+                            @endif
+                        </td>
                         <td class="px-4 py-3 text-right">
                             <a href="{{ url('/god/subscription-plans/'.$plan->id.'/edit') }}"
                                class="text-sm font-medium text-indigo-600 hover:text-indigo-500">Edit</a>
@@ -43,7 +51,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="px-4 py-10 text-center text-sm text-slate-500">No subscription plans yet.</td>
+                        <td colspan="6" class="px-4 py-10 text-center text-sm text-slate-500">No subscription plans yet.</td>
                     </tr>
                 @endforelse
             </tbody>

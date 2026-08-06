@@ -21,6 +21,9 @@ class CreateSubscriptionPlanUseCase
         array $features,
         array $limits,
         bool $isActive = true,
+        bool $isPublic = false,
+        ?string $tertiaryColor = null,
+        ?array $iconPaths = null,
     ): SubscriptionPlan {
         $plan = $this->subscriptionPlanRepository->create(
             name: $name,
@@ -29,6 +32,9 @@ class CreateSubscriptionPlanUseCase
             features: $features,
             limits: $limits,
             isActive: $isActive,
+            isPublic: $isPublic,
+            tertiaryColor: $tertiaryColor,
+            iconPaths: $iconPaths,
         );
 
         $this->logLandlordAudit->execute(

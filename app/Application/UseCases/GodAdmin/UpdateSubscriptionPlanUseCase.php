@@ -21,6 +21,9 @@ class UpdateSubscriptionPlanUseCase
         ?array $features = null,
         ?array $limits = null,
         ?bool $isActive = null,
+        ?bool $isPublic = null,
+        ?string $tertiaryColor = null,
+        ?array $iconPaths = null,
     ): SubscriptionPlan {
         $plan = $this->subscriptionPlanRepository->update(
             id: $planId,
@@ -29,6 +32,9 @@ class UpdateSubscriptionPlanUseCase
             features: $features,
             limits: $limits,
             isActive: $isActive,
+            isPublic: $isPublic,
+            tertiaryColor: $tertiaryColor,
+            iconPaths: $iconPaths,
         );
 
         $this->logLandlordAudit->execute(

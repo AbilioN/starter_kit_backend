@@ -40,6 +40,61 @@
         </div>
 
         <div class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-900/5">
+            <h2 class="text-sm font-semibold text-slate-900">Visibility</h2>
+            <p class="mt-1 text-sm text-slate-500">Public plans are listed on the public pricing page and can be self-selected by a visitor. Private plans are never listed — only a GodAdmin can assign them to a specific tenant.</p>
+            <div class="mt-4 flex gap-6">
+                <label class="flex items-center gap-2 text-sm text-slate-700">
+                    <input type="radio" wire:model="isPublic" value="1"
+                           class="border-slate-300 text-indigo-600 focus:ring-indigo-600">
+                    Public
+                </label>
+                <label class="flex items-center gap-2 text-sm text-slate-700">
+                    <input type="radio" wire:model="isPublic" value="0"
+                           class="border-slate-300 text-indigo-600 focus:ring-indigo-600">
+                    Private
+                </label>
+            </div>
+        </div>
+
+        <div class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-900/5">
+            <h2 class="text-sm font-semibold text-slate-900">Marketing</h2>
+            <p class="mt-1 text-sm text-slate-500">Used on the public pricing page only — has no effect on tenant branding.</p>
+            <div class="mt-4 flex items-start gap-8">
+                <div>
+                    <label for="tertiaryColor" class="block text-xs font-medium text-slate-500">Accent color</label>
+                    <input type="color" id="tertiaryColor" wire:model="tertiaryColor" value="{{ $tertiaryColor ?? '#6366F1' }}"
+                           class="mt-1 h-9 w-16 rounded-md border-0 ring-1 ring-inset ring-slate-300 cursor-pointer">
+                    @error('tertiaryColor') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
+                </div>
+                <div class="flex-1">
+                    <label for="iconUpload" class="block text-xs font-medium text-slate-500">Icon (auto-generated in 3 sizes)</label>
+                    <input type="file" id="iconUpload" wire:model="iconUpload" accept="image/*"
+                           class="mt-1.5 block w-full text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-slate-700 hover:file:bg-slate-200">
+                    <div wire:loading wire:target="iconUpload" class="mt-1.5 text-xs text-slate-500">Uploading…</div>
+                    @error('iconUpload') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
+
+                    @if ($iconUpload)
+                        <div class="mt-2">
+                            <p class="text-xs text-slate-500">New icon preview (will be resized to small/medium/large on save):</p>
+                            <img src="{{ $iconUpload->temporaryUrl() }}" alt="Icon preview" class="mt-1 h-12 w-12 rounded ring-1 ring-slate-200 object-cover">
+                        </div>
+                    @elseif (!empty($iconPaths))
+                        <div class="mt-2 flex items-end gap-3">
+                            @foreach (['small', 'medium', 'large'] as $size)
+                                @if (!empty($iconPaths[$size]))
+                                    <div class="text-center">
+                                        <img src="{{ asset('storage/'.$iconPaths[$size]) }}" alt="{{ $size }} icon" class="rounded ring-1 ring-slate-200 object-cover" style="width: {{ $size === 'small' ? 24 : ($size === 'medium' ? 40 : 56) }}px; height: {{ $size === 'small' ? 24 : ($size === 'medium' ? 40 : 56) }}px;">
+                                        <span class="mt-1 block text-[10px] uppercase tracking-wide text-slate-400">{{ $size }}</span>
+                                    </div>
+                                @endif
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+
+        <div class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-900/5">
             <h2 class="text-sm font-semibold text-slate-900">Features</h2>
             <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <label class="flex items-center gap-2 text-sm text-slate-700">

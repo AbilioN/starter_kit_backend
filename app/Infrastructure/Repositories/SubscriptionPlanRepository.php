@@ -36,13 +36,23 @@ class SubscriptionPlanRepository implements SubscriptionPlanRepositoryInterface
             ->all();
     }
 
+    public function findPublic(): array
+    {
+        return SubscriptionPlanModel::where('is_active', true)->where('is_public', true)->get()
+            ->map(fn (SubscriptionPlanModel $plan) => $plan->toEntity())
+            ->all();
+    }
+
     public function create(
         string $name,
         string $slug,
         ?int $priceCents,
         array $features,
         array $limits,
-        bool $isActive = true
+        bool $isActive = true,
+        bool $isPublic = false,
+        ?string $tertiaryColor = null,
+        ?array $iconPaths = null
     ): SubscriptionPlan {
         $plan = SubscriptionPlanModel::create([
             'name' => $name,
@@ -51,6 +61,9 @@ class SubscriptionPlanRepository implements SubscriptionPlanRepositoryInterface
             'features' => $features,
             'limits' => $limits,
             'is_active' => $isActive,
+            'is_public' => $isPublic,
+            'tertiary_color' => $tertiaryColor,
+            'icon_paths' => $iconPaths,
         ]);
 
         return $plan->toEntity();
@@ -62,7 +75,10 @@ class SubscriptionPlanRepository implements SubscriptionPlanRepositoryInterface
         ?int $priceCents = null,
         ?array $features = null,
         ?array $limits = null,
-        ?bool $isActive = null
+        ?bool $isActive = null,
+        ?bool $isPublic = null,
+        ?string $tertiaryColor = null,
+        ?array $iconPaths = null
     ): SubscriptionPlan {
         $plan = SubscriptionPlanModel::findOrFail($id);
 
@@ -72,6 +88,9 @@ class SubscriptionPlanRepository implements SubscriptionPlanRepositoryInterface
             'features' => $features,
             'limits' => $limits,
             'is_active' => $isActive,
+            'is_public' => $isPublic,
+            'tertiary_color' => $tertiaryColor,
+            'icon_paths' => $iconPaths,
         ], fn ($value) => $value !== null);
 
         $plan->update($updateData);

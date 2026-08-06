@@ -4,6 +4,7 @@ namespace App\Livewire\Tenants;
 
 use App\Application\UseCases\GodAdmin\SuspendTenantUseCase;
 use App\Application\UseCases\GodAdmin\UpdateTenantBrandingUseCase;
+use App\Domain\Repositories\SubscriptionPlanRepositoryInterface;
 use App\Domain\Repositories\TenantRepositoryInterface;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
@@ -84,7 +85,11 @@ class Show extends Component
             abort(404);
         }
 
-        return view('livewire.tenants.show', ['tenant' => $tenant])
+        $plan = $tenant->subscriptionPlanId
+            ? app(SubscriptionPlanRepositoryInterface::class)->findById($tenant->subscriptionPlanId)
+            : null;
+
+        return view('livewire.tenants.show', ['tenant' => $tenant, 'plan' => $plan])
             ->layout('layouts.god');
     }
 }

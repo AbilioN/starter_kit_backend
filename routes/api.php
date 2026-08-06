@@ -25,6 +25,8 @@ use App\Http\Controllers\Api\Auth\ResetPasswordController;
 use App\Http\Controllers\Api\Admin\AdminProfileController;
 use App\Http\Controllers\Api\Admin\ChatController as AdminChatController;
 use App\Http\Controllers\Api\Admin\TenantController;
+use App\Http\Controllers\Api\Public\PublicSubscriptionPlanController;
+use App\Http\Controllers\Api\Public\PublicTenantSignupController;
 use Illuminate\Support\Facades\Broadcast;
 
 /*
@@ -42,6 +44,16 @@ use Illuminate\Support\Facades\Broadcast;
 | Sprint 0.3) are registered separately and are never wrapped by this.
 |
 */
+
+// Landlord-level public marketing/signup surface - deliberately NOT wrapped
+// by `tenant.identify` below, since these run on the root domain before any
+// tenant exists (a visitor hasn't picked one yet). Mirrors the reasoning in
+// routes/web.php's `/signup` route.
+Route::prefix('public')->group(function () {
+    Route::get('/subscription-plans', [PublicSubscriptionPlanController::class, 'index'])->middleware('throttle:60,1');
+    Route::get('/subscription-plans/{slug}', [PublicSubscriptionPlanController::class, 'show'])->middleware('throttle:60,1');
+    Route::post('/signup', [PublicTenantSignupController::class, 'store'])->middleware('throttle:5,60');
+});
 
 Route::middleware(['tenant.identify'])->group(function () {
 

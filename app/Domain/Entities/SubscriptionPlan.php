@@ -14,6 +14,9 @@ class SubscriptionPlan
         public readonly array $features,
         public readonly array $limits,
         public readonly bool $isActive = true,
+        public readonly bool $isPublic = false,
+        public readonly ?string $tertiaryColor = null,
+        public readonly array $iconPaths = [],
         public readonly ?DateTime $createdAt = null,
         public readonly ?DateTime $updatedAt = null
     ) {}
