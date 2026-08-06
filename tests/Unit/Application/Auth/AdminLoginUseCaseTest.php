@@ -61,9 +61,11 @@ class AdminLoginUseCaseTest extends TestCase
                 'email' => 'admin@test.com',
                 'is_active' => true,
                 'is_super_admin' => false,
+                'is_tenant_owner' => false,
                 'last_login_at' => null,
                 'created_at' => null,
-                'updated_at' => null
+                'updated_at' => null,
+                'channel' => 'user.admin.1',
             ],
             'token' => 'test_token_123',
             'roles' => []

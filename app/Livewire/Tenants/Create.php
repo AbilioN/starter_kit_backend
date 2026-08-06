@@ -6,9 +6,12 @@ use App\Application\UseCases\Tenant\ProvisionTenantUseCase;
 use App\Domain\Repositories\SubscriptionPlanRepositoryInterface;
 use DomainException;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class Create extends Component
 {
+    use WithFileUploads;
+
     public string $name = '';
 
     public string $subdomain = '';
@@ -18,6 +21,12 @@ class Create extends Component
     public string $adminEmail = '';
 
     public string $adminPassword = '';
+
+    public string $themePrimaryColor = '#4F46E5';
+
+    public string $themeSecondaryColor = '#64748B';
+
+    public $logo = null;
 
     public string $error = '';
 
@@ -29,7 +38,12 @@ class Create extends Component
             'planId' => 'nullable|uuid',
             'adminEmail' => 'required|email',
             'adminPassword' => 'required|string|min:8',
+            'themePrimaryColor' => 'nullable|string|regex:/^#[0-9a-fA-F]{6}$/',
+            'themeSecondaryColor' => 'nullable|string|regex:/^#[0-9a-fA-F]{6}$/',
+            'logo' => 'nullable|image|max:2048',
         ]);
+
+        $logoPath = $this->logo?->store('tenant-logos', 'public');
 
         try {
             $tenant = $provisionTenant->execute(
@@ -39,6 +53,9 @@ class Create extends Component
                 createdVia: 'godadmin',
                 adminEmail: $this->adminEmail,
                 adminPassword: $this->adminPassword,
+                themePrimaryColor: $this->themePrimaryColor,
+                themeSecondaryColor: $this->themeSecondaryColor,
+                logoPath: $logoPath,
             );
         } catch (DomainException $e) {
             $this->error = $e->getMessage();

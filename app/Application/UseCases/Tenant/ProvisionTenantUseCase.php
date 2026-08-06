@@ -31,6 +31,9 @@ class ProvisionTenantUseCase
         string $adminEmail,
         string $adminPassword,
         ?string $adminName = null,
+        ?string $themePrimaryColor = null,
+        ?string $themeSecondaryColor = null,
+        ?string $logoPath = null,
     ): Tenant {
         if ($this->tenantRepository->findBySubdomain($subdomain)) {
             throw new DomainException("Subdomain '{$subdomain}' is already taken.");
@@ -48,6 +51,15 @@ class ProvisionTenantUseCase
             createdVia: $createdVia,
             status: 'active',
         );
+
+        if ($themePrimaryColor || $themeSecondaryColor || $logoPath) {
+            $tenant = $this->tenantRepository->update(
+                id: $tenant->id,
+                themePrimaryColor: $themePrimaryColor,
+                themeSecondaryColor: $themeSecondaryColor,
+                logoPath: $logoPath,
+            );
+        }
 
         $this->pointTenantConnectionAt($databaseName);
 

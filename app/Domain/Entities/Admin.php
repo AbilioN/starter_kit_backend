@@ -15,6 +15,7 @@ class Admin implements ChatUser, AuthorizableUser
         public readonly string $password,
         public readonly bool $isActive,
         public readonly bool $isSuperAdmin = false,
+        public readonly bool $isTenantOwner = false,
         public readonly ?DateTime $lastLoginAt = null,
         public readonly ?DateTime $createdAt = null,
         public readonly ?DateTime $updatedAt = null
@@ -78,6 +79,7 @@ class Admin implements ChatUser, AuthorizableUser
             email: $this->email,
             is_active: $this->isActive,
             is_super_admin: $this->isSuperAdmin,
+            is_tenant_owner: $this->isTenantOwner,
             last_login_at: $this->lastLoginAt?->format('Y-m-d H:i:s'),
             created_at: $this->createdAt?->format('Y-m-d H:i:s'),
             updated_at: $this->updatedAt?->format('Y-m-d H:i:s'),

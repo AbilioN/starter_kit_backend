@@ -70,6 +70,7 @@ class Admin extends Authenticatable implements ChatUser
             password: $this->password,
             isActive: $this->is_active,
             isSuperAdmin: $this->is_super_admin,
+            isTenantOwner: (bool) $this->is_tenant_owner,
             lastLoginAt: $this->last_login_at,
             createdAt: $this->created_at,
             updatedAt: $this->updated_at

@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ChangeTenantSubscriptionPlanRequest;
 use App\Http\Requests\UpdateTenantBrandingRequest;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Storage;
 
 class TenantController extends Controller
 {
@@ -33,18 +34,23 @@ class TenantController extends Controller
     ): JsonResponse {
         $tenant = app('currentTenant');
 
+        $logoPath = $request->hasFile('logo')
+            ? Storage::disk('public')->putFile('tenant-logos', $request->file('logo'))
+            : $request->validated('logo_path');
+
         $updated = $updateTenantBranding->execute(
             tenantId: $tenant->id,
             adminId: $request->user()->id,
             themePrimaryColor: $request->validated('theme_primary_color'),
             themeSecondaryColor: $request->validated('theme_secondary_color'),
-            logoPath: $request->validated('logo_path'),
+            logoPath: $logoPath,
         );
 
         return response()->json(['success' => true, 'data' => [
             'theme_primary_color' => $updated->themePrimaryColor,
             'theme_secondary_color' => $updated->themeSecondaryColor,
             'logo_path' => $updated->logoPath,
+            'logo_url' => $updated->logoPath ? asset('storage/'.$updated->logoPath) : null,
         ]]);
     }
 
