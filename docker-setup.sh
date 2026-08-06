@@ -44,6 +44,12 @@ docker-compose exec app php artisan db:seed --class=GodAdminSeeder --force
 
 docker-compose exec app php artisan storage:link
 
+# No-op if tenant-a/tenant-b haven't been provisioned yet (tenant:provision
+# is a separate manual step, see docs/04-local-dev-tenants.md) - safe to
+# always run, just re-applies the demo palette to whichever of them exist.
+echo "🎨 Aplicando branding padrão aos tenants de demonstração (tenant-a/tenant-b, se existirem)..."
+docker-compose exec app php artisan db:seed --class=TenantBrandingSeeder --force
+
 # Instalar dependências do Node.js e construir assets
 echo "📦 Instalando dependências do Node.js..."
 docker-compose exec app npm install

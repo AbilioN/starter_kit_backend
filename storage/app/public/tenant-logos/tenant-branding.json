@@ -1,0 +1,77 @@
+{
+  "version": "1.0.0",
+  "description": "Configuração de branding multitenant com logos e paletas de cores",
+  "tenants": [
+    {
+      "id": "tenant-a",
+      "name": "Tenant A",
+      "description": "Paleta Fria - Azul e Teal",
+      "logo": "logo-tenant-a.svg",
+      "colors": {
+        "primary": "#185FA5",
+        "primaryName": "Azul Profundo",
+        "secondary": "#0F6E56",
+        "secondaryName": "Teal Escuro",
+        "tertiary": "#85B7EB",
+        "tertiaryName": "Azul Claro"
+      },
+      "metadata": {
+        "theme": "corporate",
+        "style": "geometric",
+        "industries": ["tecnologia", "finanças", "educação"]
+      }
+    },
+    {
+      "id": "tenant-b",
+      "name": "Tenant B",
+      "description": "Paleta Quente - Coral e Terracota",
+      "logo": "logo-tenant-b.svg",
+      "colors": {
+        "primary": "#D85A30",
+        "primaryName": "Coral Vibrante",
+        "secondary": "#993C1D",
+        "secondaryName": "Marrom Escuro",
+        "tertiary": "#F5B895",
+        "tertiaryName": "Pêssego"
+      },
+      "metadata": {
+        "theme": "energetic",
+        "style": "friendly",
+        "industries": ["varejo", "hospitalidade", "alimentos"]
+      }
+    },
+    {
+      "id": "tenant-c",
+      "name": "Tenant C",
+      "description": "Paleta Vibrante - Roxo e Magenta",
+      "logo": "logo-tenant-c.svg",
+      "colors": {
+        "primary": "#7F77DD",
+        "primaryName": "Roxo Vibrante",
+        "secondary": "#BA46D9",
+        "secondaryName": "Magenta",
+        "tertiary": "#E8E4F5",
+        "tertiaryName": "Roxo Claro"
+      },
+      "metadata": {
+        "theme": "creative",
+        "style": "modern",
+        "industries": ["design", "mídia", "criatividade"]
+      }
+    }
+  ],
+  "implementation": {
+    "css": {
+      "description": "Aplicar cores via CSS custom properties",
+      "example": ":root { --tenant-primary: #185FA5; --tenant-secondary: #0F6E56; --tenant-tertiary: #85B7EB; }"
+    },
+    "javascript": {
+      "description": "Carregar configuração dinamicamente",
+      "example": "const tenant = tenantConfigs[tenantId]; document.documentElement.style.setProperty('--tenant-primary', tenant.colors.primary);"
+    },
+    "react": {
+      "description": "Usar em componentes React",
+      "example": "<img src={tenant.logo} alt={tenant.name} style={{ filter: `hue-rotate(${hueValue}deg)` }} />"
+    }
+  }
+}
