@@ -130,9 +130,26 @@
                            class="mt-1.5 block w-full rounded-md border-0 px-3 py-2 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
                 </div>
                 <div>
-                    <label for="maxStorageMb" class="block text-sm font-medium text-slate-700">Max Storage (MB)</label>
-                    <input type="number" id="maxStorageMb" wire:model="maxStorageMb" min="0"
-                           class="mt-1.5 block w-full rounded-md border-0 px-3 py-2 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+                    <label for="maxStoragePreset" class="block text-sm font-medium text-slate-700">Max Storage</label>
+                    <select id="maxStoragePreset" wire:model.live="maxStoragePreset"
+                            class="mt-1.5 block w-full rounded-md border-0 px-3 py-2 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+                        <option value="256">256 MB</option>
+                        <option value="512">512 MB</option>
+                        <option value="1024">1 GB</option>
+                        <option value="2048">2 GB</option>
+                        <option value="5120">5 GB</option>
+                        <option value="10240">10 GB</option>
+                        <option value="51200">50 GB</option>
+                        <option value="102400">100 GB</option>
+                        <option value="unlimited">Unlimited</option>
+                        <option value="custom">Custom…</option>
+                    </select>
+
+                    @if ($maxStoragePreset === 'custom')
+                        <input type="number" wire:model="maxStorageMbCustom" min="1" placeholder="MB"
+                               class="mt-2 block w-full rounded-md border-0 px-3 py-2 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+                        @error('maxStorageMbCustom') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
+                    @endif
                 </div>
             </div>
         </div>

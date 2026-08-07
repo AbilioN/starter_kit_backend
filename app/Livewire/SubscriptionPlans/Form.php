@@ -14,6 +14,9 @@ class Form extends Component
 {
     use WithFileUploads;
 
+    /** MB values for the storage shortcut list - 256MB/512MB/1-2-5-10-50-100GB. */
+    public const STORAGE_PRESETS = [256, 512, 1024, 2048, 5120, 10240, 51200, 102400];
+
     public ?string $planId = null;
 
     public string $name = '';
@@ -36,7 +39,15 @@ class Form extends Component
 
     public int $maxUsers = 100;
 
-    public int $maxStorageMb = 1024;
+    /**
+     * Shortcut list for the common case, so nobody has to do MB math for a
+     * "5 GB" plan - value is either one of self::STORAGE_PRESETS' keys (as
+     * a string, matching wire:model on a <select>), 'unlimited', or
+     * 'custom' (reveals $maxStorageMbCustom for a manual value).
+     */
+    public string $maxStoragePreset = '1024';
+
+    public ?int $maxStorageMbCustom = null;
 
     public bool $isPublic = false;
 
@@ -49,7 +60,13 @@ class Form extends Component
 
     private SubscriptionPlanRepositoryInterface $subscriptionPlanRepository;
 
-    public function __construct(SubscriptionPlanRepositoryInterface $subscriptionPlanRepository)
+    // Livewire re-instantiates the component via `new static` on every
+    // request (initial load and every subsequent AJAX update) without going
+    // through the container, so a custom __construct() with a required
+    // param blows up ("Too few arguments... 0 passed"). boot() is Livewire's
+    // own hook for this — it IS called through the container with method
+    // injection, automatically, before mount() and before every update.
+    public function boot(SubscriptionPlanRepositoryInterface $subscriptionPlanRepository): void
     {
         $this->subscriptionPlanRepository = $subscriptionPlanRepository;
     }
@@ -77,7 +94,24 @@ class Form extends Component
         $this->featureAiAgent = (bool) ($plan->features['ai_agent'] ?? false);
         $this->maxAdmins = (int) ($plan->limits['max_admins'] ?? 5);
         $this->maxUsers = (int) ($plan->limits['max_users'] ?? 100);
-        $this->maxStorageMb = (int) ($plan->limits['max_storage_mb'] ?? 1024);
+
+        // Key present but null means "unlimited" (see UploadFileUseCase /
+        // ChangeTenantSubscriptionPlanUseCase - absence of a storage limit
+        // setting is how "no cap" is represented everywhere it's enforced).
+        // Key absent entirely (older plan, field didn't exist yet) defaults
+        // to the same 1GB the field always defaulted to.
+        if (array_key_exists('max_storage_mb', $plan->limits) && $plan->limits['max_storage_mb'] === null) {
+            $this->maxStoragePreset = 'unlimited';
+        } else {
+            $storageMb = (int) ($plan->limits['max_storage_mb'] ?? 1024);
+            if (in_array($storageMb, self::STORAGE_PRESETS, true)) {
+                $this->maxStoragePreset = (string) $storageMb;
+            } else {
+                $this->maxStoragePreset = 'custom';
+                $this->maxStorageMbCustom = $storageMb;
+            }
+        }
+
         $this->isPublic = $plan->isPublic;
         $this->tertiaryColor = $plan->tertiaryColor;
         $this->iconPaths = $plan->iconPaths;
@@ -94,6 +128,7 @@ class Form extends Component
             'priceCents' => 'nullable|integer|min:0',
             'tertiaryColor' => 'nullable|string|regex:/^#[0-9a-fA-F]{6}$/',
             'iconUpload' => 'nullable|image|max:4096',
+            'maxStorageMbCustom' => 'required_if:maxStoragePreset,custom|nullable|integer|min:1',
         ]);
 
         $actorId = Auth::guard('godadmin')->id();
@@ -106,7 +141,14 @@ class Form extends Component
         $limits = [
             'max_admins' => $this->maxAdmins,
             'max_users' => $this->maxUsers,
-            'max_storage_mb' => $this->maxStorageMb,
+            // null = unlimited - see UploadFileUseCase::enforceStorageLimit()
+            // and ChangeTenantSubscriptionPlanUseCase::syncLimitsFromPlan(),
+            // both treat "no limits.max_storage_mb setting" as no cap.
+            'max_storage_mb' => match ($this->maxStoragePreset) {
+                'unlimited' => null,
+                'custom' => $this->maxStorageMbCustom,
+                default => (int) $this->maxStoragePreset,
+            },
         ];
 
         $iconPaths = $this->iconUpload

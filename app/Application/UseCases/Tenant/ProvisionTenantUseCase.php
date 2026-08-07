@@ -138,6 +138,14 @@ class ProvisionTenantUseCase
         }
 
         foreach ($plan->limits as $key => $value) {
+            // null = unlimited (e.g. max_storage_mb) - skip creating the
+            // setting row entirely rather than storing an empty/zero value,
+            // since enforcement code (UploadFileUseCase et al.) already
+            // treats "no such setting" as no cap.
+            if ($value === null) {
+                continue;
+            }
+
             Setting::create([
                 'key' => "limits.{$key}",
                 'value' => (string) $value,

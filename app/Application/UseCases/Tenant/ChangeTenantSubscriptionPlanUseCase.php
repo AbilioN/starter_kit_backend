@@ -9,6 +9,7 @@ use App\Domain\Repositories\SubscriptionPlanRepositoryInterface;
 use App\Domain\Repositories\TenantRepositoryInterface;
 use App\Jobs\RetrySettingsSyncJob;
 use App\Models\Setting;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -100,6 +101,19 @@ class ChangeTenantSubscriptionPlanUseCase
         }
 
         foreach ($plan->limits as $key => $value) {
+            // null = unlimited. Unlike seedLimitsFromPlan() (fresh
+            // provisioning, nothing to clean up), this runs when an
+            // existing tenant CHANGES plans - a previous plan may have left
+            // a numeric cap in place, so switching to unlimited must delete
+            // it, not just skip writing a new one, or the stale cap would
+            // keep being enforced.
+            if ($value === null) {
+                Setting::where('key', "limits.{$key}")->delete();
+                $this->bustSettingCache("limits.{$key}");
+
+                continue;
+            }
+
             Setting::updateOrCreate(
                 ['key' => "limits.{$key}"],
                 [
@@ -109,6 +123,23 @@ class ChangeTenantSubscriptionPlanUseCase
                     'label' => Str::headline($key),
                 ],
             );
+            $this->bustSettingCache("limits.{$key}");
         }
+    }
+
+    /**
+     * Mirrors SettingRepository's private cache keys - this use case writes
+     * to the Setting model directly (updateOrCreate/delete) rather than
+     * through SettingRepositoryInterface, so Settings::get() would keep
+     * serving a stale cached value (up to SettingRepository::CACHE_TTL)
+     * without this. Most consequential for max_storage_mb: switching a
+     * tenant to an unlimited plan must take effect immediately, not up to
+     * an hour later.
+     */
+    private function bustSettingCache(string $key): void
+    {
+        Cache::forget('setting:'.$key);
+        Cache::forget('settings:all');
+        Cache::forget('settings:public');
     }
 }
