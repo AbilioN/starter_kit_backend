@@ -64,6 +64,26 @@ class TenantSuspensionNotificationTest extends TenantTestCase
         Notification::assertSentTo($owner, TenantReactivatedNotification::class);
     }
 
+    public function test_suspended_tenant_requests_get_a_machine_readable_error_code(): void
+    {
+        $tenant = app(ProvisionTenantUseCase::class)->execute(
+            name: 'Blocked Co',
+            subdomain: 'blockedco',
+            subscriptionPlanId: null,
+            createdVia: 'godadmin',
+            adminEmail: 'owner@blockedco.test',
+            adminPassword: 'super-secret',
+        );
+
+        app(SuspendTenantUseCase::class)->execute(self::SYSTEM_ACTOR_ID, $tenant->id, 'suspended');
+
+        $this->useTenantHost($tenant->subdomain);
+
+        $this->getJson('/api/tenant/theme')
+            ->assertStatus(403)
+            ->assertJson(['message' => 'Tenant suspended.', 'error' => 'tenant_suspended']);
+    }
+
     public function test_suspending_a_tenant_with_no_owner_admin_does_not_error(): void
     {
         Notification::fake();

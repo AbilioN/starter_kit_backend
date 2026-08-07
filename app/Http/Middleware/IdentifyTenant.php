@@ -39,7 +39,10 @@ class IdentifyTenant
         }
 
         if ($tenant->status === 'suspended') {
-            return response()->json(['message' => 'Tenant suspended.'], 403);
+            // `error` is a machine-readable code, distinct from `message`
+            // (human copy, free to change) — lets the frontend reliably
+            // detect "suspended" instead of string-matching a sentence.
+            return response()->json(['message' => 'Tenant suspended.', 'error' => 'tenant_suspended'], 403);
         }
 
         if ($tenant->status !== 'active') {
