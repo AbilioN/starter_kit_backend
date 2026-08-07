@@ -25,6 +25,7 @@ use App\Http\Controllers\Api\Auth\ResetPasswordController;
 use App\Http\Controllers\Api\Admin\AdminProfileController;
 use App\Http\Controllers\Api\Admin\ChatController as AdminChatController;
 use App\Http\Controllers\Api\Admin\TenantController;
+use App\Http\Controllers\Api\Admin\TemplateController;
 use App\Http\Controllers\Api\Public\PublicSubscriptionPlanController;
 use App\Http\Controllers\Api\Public\PublicTenantSignupController;
 use Illuminate\Support\Facades\Broadcast;
@@ -171,6 +172,17 @@ Route::middleware(['tenant.identify'])->group(function () {
             Route::get('/files', [FileController::class, 'index']);
             Route::post('/files', [FileController::class, 'upload']);
             Route::delete('/files/{id}', [FileController::class, 'delete']);
+
+            // Templates (email/SMS/PDF/AI-prompt content)
+            Route::get('/templates', [TemplateController::class, 'index']);
+            Route::post('/templates', [TemplateController::class, 'store']);
+            Route::get('/templates/{id}', [TemplateController::class, 'show']);
+            Route::put('/templates/{id}', [TemplateController::class, 'update']);
+            Route::delete('/templates/{id}', [TemplateController::class, 'destroy']);
+            Route::get('/templates/{id}/background', [TemplateController::class, 'listBackground']);
+            Route::post('/templates/{id}/background', [TemplateController::class, 'uploadBackground']);
+            Route::delete('/templates/{id}/background/{fileId}', [TemplateController::class, 'deleteBackground']);
+            Route::post('/templates/{id}/preview', [TemplateController::class, 'preview']);
 
             // Tenant subscription plan / branding (tenant owner only)
             Route::middleware('tenant.owner')->group(function () {

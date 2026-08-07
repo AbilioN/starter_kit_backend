@@ -22,7 +22,7 @@ class GetFilesUseCase
         return $result;
     }
 
-    public function forUploadable(string $type, int $id, ?string $folder = null, int $perPage = 20): array
+    public function forUploadable(string $type, string $id, ?string $folder = null, int $perPage = 20): array
     {
         $result = $this->fileRepository->findForUploadable($type, $id, $folder, $perPage);
         $result['data'] = array_map(

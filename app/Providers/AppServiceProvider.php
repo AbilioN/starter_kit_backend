@@ -31,6 +31,12 @@ use App\Domain\Services\TenantProvisioningServiceInterface;
 use App\Domain\Services\IconResizingServiceInterface;
 use App\Infrastructure\Services\TenantProvisioningService;
 use App\Infrastructure\Services\IconResizingService;
+use App\Domain\Repositories\TemplateRepositoryInterface;
+use App\Infrastructure\Repositories\TemplateRepository;
+use App\Domain\Services\MergeContextInterface;
+use App\Infrastructure\Services\StubMergeContext;
+use App\Domain\Services\PdfRenderServiceInterface;
+use App\Infrastructure\Services\PdfRenderService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -61,6 +67,13 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(LandlordAuditLogRepositoryInterface::class, LandlordAuditLogRepository::class);
         $this->app->bind(TenantProvisioningServiceInterface::class, TenantProvisioningService::class);
         $this->app->bind(IconResizingServiceInterface::class, IconResizingService::class);
+
+        // Template dependencies
+        $this->app->bind(TemplateRepositoryInterface::class, TemplateRepository::class);
+        // StubMergeContext until a real business entity is wired in — see
+        // app/Domain/Services/MergeContextInterface.php.
+        $this->app->bind(MergeContextInterface::class, StubMergeContext::class);
+        $this->app->bind(PdfRenderServiceInterface::class, PdfRenderService::class);
 
         // Services
         $this->app->singleton(\App\Services\PusherApiService::class);

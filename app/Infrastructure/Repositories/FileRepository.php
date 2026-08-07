@@ -14,7 +14,7 @@ class FileRepository implements FileRepositoryInterface
         return $model?->toEntity();
     }
 
-    public function findForUploadable(string $type, int $id, ?string $folder = null, int $perPage = 20): array
+    public function findForUploadable(string $type, string $id, ?string $folder = null, int $perPage = 20): array
     {
         $query = FileModel::where('uploadable_type', $type)->where('uploadable_id', $id);
 

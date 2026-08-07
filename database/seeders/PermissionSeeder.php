@@ -234,5 +234,51 @@ class PermissionSeeder extends Seeder
             'action' => 'delete',
             'route' => 'file/delete',
         ]);
+
+        // Template permissions
+        Permission::create([
+            'slug' => 'template-read',
+            'name' => 'View Templates',
+            'description' => 'Allows viewing and listing content templates',
+            'resource' => 'template',
+            'action' => 'read',
+            'route' => 'template/read',
+        ]);
+
+        Permission::create([
+            'slug' => 'template-create',
+            'name' => 'Create Templates',
+            'description' => 'Allows creating content templates',
+            'resource' => 'template',
+            'action' => 'create',
+            'route' => 'template/create',
+        ]);
+
+        Permission::create([
+            'slug' => 'template-update',
+            'name' => 'Edit Templates',
+            'description' => 'Allows editing content templates',
+            'resource' => 'template',
+            'action' => 'update',
+            'route' => 'template/update',
+        ]);
+
+        Permission::create([
+            'slug' => 'template-delete',
+            'name' => 'Delete Templates',
+            'description' => 'Allows deleting content templates',
+            'resource' => 'template',
+            'action' => 'delete',
+            'route' => 'template/delete',
+        ]);
+
+        Permission::create([
+            'slug' => 'template-manage',
+            'name' => 'Manage Templates',
+            'description' => 'Allows managing all aspects of content templates',
+            'resource' => 'template',
+            'action' => 'manage',
+            'route' => 'template/manage',
+        ]);
     }
 }
