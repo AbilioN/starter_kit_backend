@@ -2,10 +2,12 @@
 
 namespace App\Livewire\Tenants;
 
+use App\Application\UseCases\GodAdmin\ChangeTenantSubscriptionPlanAsGodAdminUseCase;
 use App\Application\UseCases\GodAdmin\SuspendTenantUseCase;
 use App\Application\UseCases\GodAdmin\UpdateTenantBrandingUseCase;
 use App\Domain\Repositories\SubscriptionPlanRepositoryInterface;
 use App\Domain\Repositories\TenantRepositoryInterface;
+use DomainException;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -24,6 +26,12 @@ class Show extends Component
 
     public string $brandingSaved = '';
 
+    public ?string $selectedPlanId = null;
+
+    public string $planError = '';
+
+    public string $planSaved = '';
+
     public function mount(string $tenantId): void
     {
         $this->tenantId = $tenantId;
@@ -36,6 +44,29 @@ class Show extends Component
 
         $this->themePrimaryColor = $tenant->themePrimaryColor ?? '#4F46E5';
         $this->themeSecondaryColor = $tenant->themeSecondaryColor ?? '#64748B';
+        $this->selectedPlanId = $tenant->subscriptionPlanId;
+    }
+
+    public function savePlan(ChangeTenantSubscriptionPlanAsGodAdminUseCase $changePlan): void
+    {
+        $this->planError = '';
+        $this->planSaved = '';
+
+        $this->validate(['selectedPlanId' => 'required|uuid']);
+
+        try {
+            $changePlan->execute(
+                actorId: (string) Auth::guard('godadmin')->id(),
+                tenantId: $this->tenantId,
+                subscriptionPlanId: $this->selectedPlanId,
+            );
+        } catch (DomainException $e) {
+            $this->planError = $e->getMessage();
+
+            return;
+        }
+
+        $this->planSaved = 'Subscription plan updated.';
     }
 
     public function toggleStatus(SuspendTenantUseCase $suspendTenant): void
@@ -89,7 +120,9 @@ class Show extends Component
             ? app(SubscriptionPlanRepositoryInterface::class)->findById($tenant->subscriptionPlanId)
             : null;
 
-        return view('livewire.tenants.show', ['tenant' => $tenant, 'plan' => $plan])
+        $plans = app(SubscriptionPlanRepositoryInterface::class)->findActive();
+
+        return view('livewire.tenants.show', ['tenant' => $tenant, 'plan' => $plan, 'plans' => $plans])
             ->layout('layouts.god');
     }
 }

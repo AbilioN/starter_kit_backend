@@ -8,6 +8,7 @@ class Template
 {
     public function __construct(
         public readonly string $id,
+        public readonly ?string $key,
         public readonly string $name,
         public readonly string $type,
         public readonly string $bodyFormat,

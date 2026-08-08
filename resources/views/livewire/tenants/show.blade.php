@@ -45,6 +45,44 @@
         </dl>
     </div>
 
+    <div class="mt-6 rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-900/5">
+        <h2 class="text-sm font-semibold text-slate-900">Subscription Plan</h2>
+        <p class="mt-1 text-xs text-slate-500">
+            Change this tenant's plan directly — records a mock payment and re-syncs their feature flags/limits immediately, same as when the tenant owner changes it themselves.
+        </p>
+
+        @if ($planSaved)
+            <div class="mt-4 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700 ring-1 ring-emerald-600/10">
+                {{ $planSaved }}
+            </div>
+        @endif
+        @if ($planError)
+            <div class="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-600/10">
+                {{ $planError }}
+            </div>
+        @endif
+
+        <form wire:submit="savePlan" class="mt-4 flex items-end gap-3">
+            <div class="flex-1">
+                <label for="selectedPlanId" class="block text-xs font-medium text-slate-500">Plan</label>
+                <select id="selectedPlanId" wire:model="selectedPlanId"
+                        class="mt-1.5 block w-full rounded-md border-0 px-3 py-2 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+                    <option value="">— select a plan —</option>
+                    @foreach ($plans as $planOption)
+                        <option value="{{ $planOption->id }}">{{ $planOption->name }}{{ $planOption->isPublic ? '' : ' (private)' }}</option>
+                    @endforeach
+                </select>
+                @error('selectedPlanId') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
+            </div>
+            <button type="submit"
+                    class="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 transition"
+                    wire:loading.attr="disabled" wire:target="savePlan">
+                <span wire:loading.remove wire:target="savePlan">Change Plan</span>
+                <span wire:loading wire:target="savePlan">Saving…</span>
+            </button>
+        </form>
+    </div>
+
     <div class="mt-6 flex justify-end">
         <button wire:click="toggleStatus" wire:confirm="Are you sure?"
                 class="rounded-md px-3.5 py-2.5 text-sm font-semibold shadow-sm transition

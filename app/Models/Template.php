@@ -15,6 +15,7 @@ class Template extends Model
     protected $connection = 'tenant';
 
     protected $fillable = [
+        'key',
         'name',
         'type',
         'body_format',
@@ -49,6 +50,7 @@ class Template extends Model
     {
         return new TemplateEntity(
             id: $this->id,
+            key: $this->key,
             name: $this->name,
             type: $this->type,
             bodyFormat: $this->body_format,

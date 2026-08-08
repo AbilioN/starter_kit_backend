@@ -11,6 +11,7 @@ use App\Models\Admin;
 use App\Models\Setting;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
+use Database\Seeders\SystemTemplateSeeder;
 use DomainException;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -73,6 +74,7 @@ class ProvisionTenantUseCase
 
         (new RoleSeeder())->run();
         (new PermissionSeeder())->run();
+        (new SystemTemplateSeeder())->run();
 
         Admin::create([
             'name' => $adminName ?? "{$name} Owner",

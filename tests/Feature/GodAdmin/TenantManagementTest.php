@@ -2,10 +2,12 @@
 
 namespace Tests\Feature\GodAdmin;
 
+use App\Domain\Repositories\SubscriptionPlanRepositoryInterface;
 use App\Domain\Repositories\TenantRepositoryInterface;
 use App\Livewire\Tenants\Create;
 use App\Livewire\Tenants\Show;
 use App\Models\GodAdmin;
+use App\Models\Setting;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Livewire;
 use Tests\TenantTestCase;
@@ -79,6 +81,51 @@ class TenantManagementTest extends TenantTestCase
 
         $reactivated = app(TenantRepositoryInterface::class)->findById($tenant->id);
         $this->assertSame('active', $reactivated->status);
+    }
+
+    public function test_godadmin_can_change_a_tenants_subscription_plan(): void
+    {
+        // Reuses the "testing" tenant setUp() already created via
+        // actingAsTenant() — its database_name points at the same
+        // already-migrated sqlite connection this test process uses, so the
+        // use case's connection-switch is a safe no-op and Setting/AuditLog
+        // writes land somewhere real (not the fake 'irrelevant.sqlite' the
+        // suspend test above gets away with, since that path never actually
+        // writes to the tenant connection). Calling actingAsTenant() again
+        // here would violate tenants.database_name's unique constraint.
+        $tenant = app(TenantRepositoryInterface::class)->findBySubdomain('testing');
+
+        $plan = app(SubscriptionPlanRepositoryInterface::class)->create(
+            name: 'Pro',
+            slug: 'pro',
+            priceCents: 9900,
+            features: ['chat' => true],
+            limits: ['max_admins' => 10],
+        );
+
+        Livewire::actingAs($this->godAdmin, 'godadmin')
+            ->test(Show::class, ['tenantId' => $tenant->id])
+            ->set('selectedPlanId', $plan->id)
+            ->call('savePlan')
+            ->assertHasNoErrors();
+
+        $updated = app(TenantRepositoryInterface::class)->findById($tenant->id);
+        $this->assertSame($plan->id, $updated->subscriptionPlanId);
+
+        $chatSetting = Setting::where('key', 'features.chat')->first();
+        $this->assertNotNull($chatSetting);
+        $this->assertSame('1', $chatSetting->value);
+    }
+
+    public function test_changing_plan_without_selecting_one_shows_a_validation_error(): void
+    {
+        $tenant = app(TenantRepositoryInterface::class)->findBySubdomain('testing');
+
+        Livewire::actingAs($this->godAdmin, 'godadmin')
+            ->test(Show::class, ['tenantId' => $tenant->id])
+            ->set('selectedPlanId', '')
+            ->call('savePlan')
+            ->assertHasErrors(['selectedPlanId' => 'required']);
     }
 
     public function test_guest_cannot_access_tenants(): void

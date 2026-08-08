@@ -13,6 +13,11 @@ class TemplateRepository implements TemplateRepositoryInterface
         return TemplateModel::find($id)?->toEntity();
     }
 
+    public function findByKey(string $key): ?Template
+    {
+        return TemplateModel::where('key', $key)->first()?->toEntity();
+    }
+
     public function findAll(?string $type = null): array
     {
         $query = TemplateModel::query();
@@ -56,8 +61,10 @@ class TemplateRepository implements TemplateRepositoryInterface
         ?string $description = null,
         bool $isActive = true,
         array $options = [],
+        ?string $key = null,
     ): Template {
         $template = TemplateModel::create([
+            'key' => $key,
             'name' => $name,
             'type' => $type,
             'body_format' => $bodyFormat,

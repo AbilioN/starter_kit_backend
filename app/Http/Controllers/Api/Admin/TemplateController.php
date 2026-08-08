@@ -233,6 +233,10 @@ class TemplateController extends Controller
     {
         return [
             'id' => $template->id,
+            // Read-only — identifies a system email slot (e.g.
+            // 'welcome_email'), never settable through this API. Null for
+            // every ordinary, user-authored template.
+            'key' => $template->key,
             'name' => $template->name,
             'type' => $template->type,
             'body_format' => $template->bodyFormat,

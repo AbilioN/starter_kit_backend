@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Jobs\Middleware\EstablishTenantConnection;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -11,7 +12,17 @@ class PasswordResetNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(private string $resetUrl) {}
+    /**
+     * $subject/$htmlBody are pre-rendered by the caller — see
+     * WelcomeNotification's docblock for why this can't happen lazily
+     * inside toMail() on a queue worker.
+     */
+    public function __construct(
+        private string $subject,
+        private string $htmlBody,
+        private ?string $tenantId = null,
+        private ?string $tenantName = null,
+    ) {}
 
     public function via(object $notifiable): array
     {
@@ -20,12 +31,16 @@ class PasswordResetNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
+        $brand = $this->tenantName ?? config('app.name');
+
         return (new MailMessage)
-            ->subject('Reset Your Password')
-            ->greeting('Hello!')
-            ->line('You are receiving this email because we received a password reset request for your account.')
-            ->action('Reset Password', $this->resetUrl)
-            ->line('This password reset link will expire in 60 minutes.')
-            ->line('If you did not request a password reset, no further action is required.');
+            ->from(config('mail.from.address'), $brand)
+            ->subject($this->subject)
+            ->view('emails.rendered-template', ['html' => $this->htmlBody]);
+    }
+
+    public function middleware(object $notifiable, string $channel): array
+    {
+        return $this->tenantId ? [new EstablishTenantConnection($this->tenantId)] : [];
     }
 }
