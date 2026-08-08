@@ -55,6 +55,7 @@ class SubscriptionPlanRepository implements SubscriptionPlanRepositoryInterface
         ?array $iconPaths = null,
         ?string $broadcastingProviderId = null,
         ?string $storageProviderId = null,
+        ?string $aiProviderId = null,
     ): SubscriptionPlan {
         $plan = SubscriptionPlanModel::create([
             'name' => $name,
@@ -68,6 +69,7 @@ class SubscriptionPlanRepository implements SubscriptionPlanRepositoryInterface
             'icon_paths' => $iconPaths,
             'broadcasting_provider_id' => $broadcastingProviderId,
             'storage_provider_id' => $storageProviderId,
+            'ai_provider_id' => $aiProviderId,
         ]);
 
         return $plan->toEntity();
@@ -85,8 +87,10 @@ class SubscriptionPlanRepository implements SubscriptionPlanRepositoryInterface
         ?array $iconPaths = null,
         ?string $broadcastingProviderId = null,
         ?string $storageProviderId = null,
+        ?string $aiProviderId = null,
         bool $clearBroadcastingProvider = false,
         bool $clearStorageProvider = false,
+        bool $clearAiProvider = false,
     ): SubscriptionPlan {
         $plan = SubscriptionPlanModel::findOrFail($id);
 
@@ -101,6 +105,7 @@ class SubscriptionPlanRepository implements SubscriptionPlanRepositoryInterface
             'icon_paths' => $iconPaths,
             'broadcasting_provider_id' => $broadcastingProviderId,
             'storage_provider_id' => $storageProviderId,
+            'ai_provider_id' => $aiProviderId,
         ], fn ($value) => $value !== null);
 
         // array_filter() above treats null as "don't touch" (existing
@@ -113,6 +118,9 @@ class SubscriptionPlanRepository implements SubscriptionPlanRepositoryInterface
         }
         if ($clearStorageProvider) {
             $updateData['storage_provider_id'] = null;
+        }
+        if ($clearAiProvider) {
+            $updateData['ai_provider_id'] = null;
         }
 
         $plan->update($updateData);

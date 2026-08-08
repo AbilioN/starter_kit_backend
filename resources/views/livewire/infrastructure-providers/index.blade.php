@@ -27,8 +27,10 @@
                         <td class="px-4 py-3">
                             @if ($provider->type === 'broadcasting')
                                 <span class="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-600/20">Broadcasting</span>
-                            @else
+                            @elseif ($provider->type === 'storage')
                                 <span class="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">Storage</span>
+                            @else
+                                <span class="inline-flex items-center rounded-full bg-violet-50 px-2.5 py-0.5 text-xs font-medium text-violet-700 ring-1 ring-inset ring-violet-600/20">AI</span>
                             @endif
                         </td>
                         <td class="px-4 py-3">

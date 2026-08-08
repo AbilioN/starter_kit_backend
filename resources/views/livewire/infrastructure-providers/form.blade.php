@@ -14,6 +14,7 @@
                             class="mt-1.5 block w-full rounded-md border-0 px-3 py-2 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm disabled:bg-slate-50 disabled:text-slate-500">
                         <option value="broadcasting">Broadcasting (Pusher)</option>
                         <option value="storage">Storage (S3)</option>
+                        <option value="ai">AI (OpenAI)</option>
                     </select>
                     @if ($providerId)
                         <p class="mt-1.5 text-xs text-slate-500">Type can't be changed after creation.</p>
@@ -72,7 +73,7 @@
                     </div>
                 </div>
             </div>
-        @else
+        @elseif ($type === 'storage')
             <div class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-900/5">
                 <h2 class="text-sm font-semibold text-slate-900">S3-Compatible Storage Credentials</h2>
                 <div class="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -115,6 +116,30 @@
                                    class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-600">
                             Use path-style endpoint
                         </label>
+                    </div>
+                </div>
+            </div>
+        @else
+            <div class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-900/5">
+                <h2 class="text-sm font-semibold text-slate-900">OpenAI Credentials</h2>
+                <div class="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2">
+                    <div class="sm:col-span-2">
+                        <label for="configApiKey" class="block text-sm font-medium text-slate-700">API Key</label>
+                        <input type="password" id="configApiKey" wire:model="configApiKey" autocomplete="new-password"
+                               class="mt-1.5 block w-full rounded-md border-0 px-3 py-2 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm font-mono">
+                        @error('configApiKey') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label for="configModel" class="block text-sm font-medium text-slate-700">Model (optional)</label>
+                        <input type="text" id="configModel" wire:model="configModel" placeholder="gpt-4o-mini"
+                               class="mt-1.5 block w-full rounded-md border-0 px-3 py-2 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm font-mono">
+                        <p class="mt-1.5 text-xs text-slate-500">Falls back to the worker's default model when blank.</p>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="configSystemPrompt" class="block text-sm font-medium text-slate-700">System Prompt (optional)</label>
+                        <textarea id="configSystemPrompt" wire:model="configSystemPrompt" rows="3"
+                                  class="mt-1.5 block w-full rounded-md border-0 px-3 py-2 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm"></textarea>
+                        <p class="mt-1.5 text-xs text-slate-500">Overrides the default "You are {name}. {description}" prompt built from the assistant's own persona.</p>
                     </div>
                 </div>
             </div>

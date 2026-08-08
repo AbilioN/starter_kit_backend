@@ -25,15 +25,19 @@ class UpdateTenantInfrastructureUseCase
         string $tenantId,
         ?string $broadcastingProviderId = null,
         ?string $storageProviderId = null,
+        ?string $aiProviderId = null,
         bool $clearBroadcastingProvider = false,
         bool $clearStorageProvider = false,
+        bool $clearAiProvider = false,
     ): Tenant {
         $tenant = $this->tenantRepository->update(
             id: $tenantId,
             broadcastingProviderId: $broadcastingProviderId,
             storageProviderId: $storageProviderId,
+            aiProviderId: $aiProviderId,
             clearBroadcastingProvider: $clearBroadcastingProvider,
             clearStorageProvider: $clearStorageProvider,
+            clearAiProvider: $clearAiProvider,
         );
 
         $this->logLandlordAudit->execute(

@@ -27,6 +27,7 @@ class SubscriptionPlan extends Model
         'icon_paths',
         'broadcasting_provider_id',
         'storage_provider_id',
+        'ai_provider_id',
     ];
 
     protected function casts(): array
@@ -55,6 +56,11 @@ class SubscriptionPlan extends Model
         return $this->belongsTo(InfrastructureProvider::class, 'storage_provider_id');
     }
 
+    public function aiProvider(): BelongsTo
+    {
+        return $this->belongsTo(InfrastructureProvider::class, 'ai_provider_id');
+    }
+
     public function toEntity(): SubscriptionPlanEntity
     {
         return new SubscriptionPlanEntity(
@@ -70,6 +76,7 @@ class SubscriptionPlan extends Model
             iconPaths: $this->icon_paths ?? [],
             broadcastingProviderId: $this->broadcasting_provider_id,
             storageProviderId: $this->storage_provider_id,
+            aiProviderId: $this->ai_provider_id,
             createdAt: $this->created_at,
             updatedAt: $this->updated_at,
         );

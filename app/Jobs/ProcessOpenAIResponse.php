@@ -124,7 +124,7 @@ class ProcessOpenAIResponse implements ShouldQueue
     /**
      * Create AI response message in the chat using SendMessageToChatUseCase
      */
-    private function createAssistantMessage(int $chatId, string $content): void
+    private function createAssistantMessage(string $chatId, string $content): void
     {
         try {
             Log::info('Creating assistant message', [
@@ -191,21 +191,40 @@ class ProcessOpenAIResponse implements ShouldQueue
     }
     
     /**
-     * Fallback method to create AI message directly
+     * Fallback method to create AI message directly (used when the
+     * SendMessageToChatUseCase path above couldn't resolve an assistant
+     * model, e.g. the chat_user row exists but the Assistant record
+     * itself is missing). Still requires a real assistant participant to
+     * attribute the message to — if none exists at all, logs and skips
+     * rather than mis-attributing the reply to the human user.
      */
-    private function createAIMessageFallback(int $chatId, string $content): void
+    private function createAIMessageFallback(string $chatId, string $content): void
     {
-        Message::create([
+        $assistantId = DB::table('chat_user')
+            ->where('chat_id', $chatId)
+            ->where('user_type', 'assistant')
+            ->value('user_id');
+
+        if (!$assistantId) {
+            Log::error('Cannot create fallback AI message: no assistant participant in chat', [
+                'chat_id' => $chatId,
+            ]);
+            return;
+        }
+
+        $message = Message::create([
             'chat_id' => $chatId,
-            'sender_id' => $this->userId,
-            'user_id' => $this->userId,
-            'user_type' => 'ai',
+            'sender_id' => $assistantId,
+            'sender_type' => 'assistant',
             'content' => $content,
-            'type' => 'text'
+            'message_type' => 'text',
         ]);
-        
+
+        \App\Events\MessageSent::dispatch($message->toEntity());
+
         Log::info('AI message created using fallback method', [
             'chat_id' => $chatId,
+            'assistant_id' => $assistantId,
             'content' => $content
         ]);
     }

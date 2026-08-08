@@ -64,6 +64,8 @@ class Form extends Component
 
     public string $storageProviderId = '';
 
+    public string $aiProviderId = '';
+
     private SubscriptionPlanRepositoryInterface $subscriptionPlanRepository;
 
     // Livewire re-instantiates the component via `new static` on every
@@ -123,6 +125,7 @@ class Form extends Component
         $this->iconPaths = $plan->iconPaths;
         $this->broadcastingProviderId = $plan->broadcastingProviderId ?? '';
         $this->storageProviderId = $plan->storageProviderId ?? '';
+        $this->aiProviderId = $plan->aiProviderId ?? '';
     }
 
     public function save(
@@ -177,8 +180,10 @@ class Form extends Component
                 iconPaths: $iconPaths,
                 broadcastingProviderId: $this->broadcastingProviderId ?: null,
                 storageProviderId: $this->storageProviderId ?: null,
+                aiProviderId: $this->aiProviderId ?: null,
                 clearBroadcastingProvider: $this->broadcastingProviderId === '',
                 clearStorageProvider: $this->storageProviderId === '',
+                clearAiProvider: $this->aiProviderId === '',
             );
         } else {
             $createSubscriptionPlan->execute(
@@ -194,6 +199,7 @@ class Form extends Component
                 iconPaths: $iconPaths,
                 broadcastingProviderId: $this->broadcastingProviderId ?: null,
                 storageProviderId: $this->storageProviderId ?: null,
+                aiProviderId: $this->aiProviderId ?: null,
             );
         }
 
@@ -207,6 +213,7 @@ class Form extends Component
         return view('livewire.subscription-plans.form', [
             'broadcastingProviders' => $providerRepository->findByType('broadcasting'),
             'storageProviders' => $providerRepository->findByType('storage'),
+            'aiProviders' => $providerRepository->findByType('ai'),
         ])->layout('layouts.god');
     }
 }

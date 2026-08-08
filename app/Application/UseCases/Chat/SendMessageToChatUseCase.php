@@ -2,6 +2,7 @@
 
 namespace App\Application\UseCases\Chat;
 
+use App\Application\UseCases\Setting\GetSettingByKeyUseCase;
 use App\Domain\Entities\ChatUser;
 use App\Domain\Entities\Message;
 use App\Domain\Repositories\ChatRepositoryInterface;
@@ -13,7 +14,8 @@ class SendMessageToChatUseCase
 {
     public function __construct(
         private MessageRepositoryInterface $messageRepository,
-        private ChatRepositoryInterface $chatRepository
+        private ChatRepositoryInterface $chatRepository,
+        private GetSettingByKeyUseCase $getSettingByKey,
     ) {}
 
     public function execute(string $chatId, string $content, ChatUser $sender, string $messageType = 'text', ?array $metadata = null, ?string $replyToId = null): Message
@@ -36,12 +38,18 @@ class SendMessageToChatUseCase
         MessageSent::dispatch($message);
         Log::info('MessageSent by sender ' . $sender->getName());
         if ($this->chatRepository->hasAssistant($chatId) && $sender->getType() !== 'assistant') {
-            Log::info('Chat has assistant and sender is not assistant, dispatching OpenAI request', [
-                'chat_id' => $chatId,
-                'sender_type' => $sender->getType(),
-                'sender_id' => $sender->getId()
-            ]);
-            $this->dispatchOpenAIRequest($chatId, $sender->getId(), $content);
+            if (! $this->isAiAgentEnabled()) {
+                Log::info('AI agent feature disabled for this tenant, skipping OpenAI dispatch', [
+                    'chat_id' => $chatId,
+                ]);
+            } else {
+                Log::info('Chat has assistant and sender is not assistant, dispatching OpenAI request', [
+                    'chat_id' => $chatId,
+                    'sender_type' => $sender->getType(),
+                    'sender_id' => $sender->getId()
+                ]);
+                $this->dispatchOpenAIRequest($chatId, $sender->getId(), $content);
+            }
         } else {
             Log::info('OpenAI request not dispatched', [
                 'chat_id' => $chatId,
@@ -51,6 +59,18 @@ class SendMessageToChatUseCase
             ]);
         }
         return $message;
+    }
+
+    /**
+     * Tenant-level toggle (settings.features.ai_agent, surfaced in the
+     * admin panel's Feature Flags page) — defaults to disabled when unset
+     * (new tenants, or tenants that haven't been seeded yet).
+     */
+    private function isAiAgentEnabled(): bool
+    {
+        $setting = $this->getSettingByKey->execute('features.ai_agent');
+
+        return (bool) ($setting['value'] ?? false);
     }
 
     private function dispatchOpenAIRequest(string $chatId, string $userId, string $content): void

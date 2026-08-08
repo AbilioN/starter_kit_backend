@@ -23,6 +23,7 @@ interface SubscriptionPlanRepositoryInterface
         ?array $iconPaths = null,
         ?string $broadcastingProviderId = null,
         ?string $storageProviderId = null,
+        ?string $aiProviderId = null,
     ): SubscriptionPlan;
     public function update(
         string $id,
@@ -36,8 +37,10 @@ interface SubscriptionPlanRepositoryInterface
         ?array $iconPaths = null,
         ?string $broadcastingProviderId = null,
         ?string $storageProviderId = null,
+        ?string $aiProviderId = null,
         bool $clearBroadcastingProvider = false,
         bool $clearStorageProvider = false,
+        bool $clearAiProvider = false,
     ): SubscriptionPlan;
     public function delete(string $id): void;
 }

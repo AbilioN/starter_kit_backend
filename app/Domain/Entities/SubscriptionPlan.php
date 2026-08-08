@@ -19,6 +19,7 @@ class SubscriptionPlan
         public readonly array $iconPaths = [],
         public readonly ?string $broadcastingProviderId = null,
         public readonly ?string $storageProviderId = null,
+        public readonly ?string $aiProviderId = null,
         public readonly ?DateTime $createdAt = null,
         public readonly ?DateTime $updatedAt = null
     ) {}

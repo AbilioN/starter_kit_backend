@@ -42,6 +42,13 @@ class Form extends Component
 
     public string $configUrl = '';
 
+    // ai only
+    public string $configApiKey = '';
+
+    public string $configModel = '';
+
+    public string $configSystemPrompt = '';
+
     private InfrastructureProviderRepositoryInterface $providerRepository;
 
     // See SubscriptionPlans/Form.php's boot() for why this isn't __construct().
@@ -78,6 +85,9 @@ class Form extends Component
         $this->configEndpoint = $config['endpoint'] ?? '';
         $this->configUsePathStyle = (bool) ($config['use_path_style'] ?? false);
         $this->configUrl = $config['url'] ?? '';
+        $this->configApiKey = $config['api_key'] ?? '';
+        $this->configModel = $config['model'] ?? '';
+        $this->configSystemPrompt = $config['system_prompt'] ?? '';
     }
 
     public function save(
@@ -85,24 +95,25 @@ class Form extends Component
         UpdateInfrastructureProviderUseCase $updateProvider,
     ): void {
         $this->validate([
-            'type' => 'required|in:broadcasting,storage',
+            'type' => 'required|in:broadcasting,storage,ai',
             'name' => 'required|string|max:255',
-            'configKey' => 'required|string',
-            'configSecret' => 'required|string',
+            'configKey' => 'required_if:type,broadcasting|required_if:type,storage|string',
+            'configSecret' => 'required_if:type,broadcasting|required_if:type,storage|string',
             'configAppId' => 'required_if:type,broadcasting|string',
             'configCluster' => 'required_if:type,broadcasting|string',
             'configBucket' => 'required_if:type,storage|string',
+            'configApiKey' => 'required_if:type,ai|string',
         ]);
 
-        $config = $this->type === 'broadcasting'
-            ? [
+        $config = match ($this->type) {
+            'broadcasting' => [
                 'key' => $this->configKey,
                 'secret' => $this->configSecret,
                 'app_id' => $this->configAppId,
                 'cluster' => $this->configCluster,
                 'host' => $this->configHost ?: null,
-            ]
-            : [
+            ],
+            'storage' => [
                 'key' => $this->configKey,
                 'secret' => $this->configSecret,
                 'region' => $this->configRegion ?: null,
@@ -110,7 +121,13 @@ class Form extends Component
                 'endpoint' => $this->configEndpoint ?: null,
                 'use_path_style' => $this->configUsePathStyle,
                 'url' => $this->configUrl ?: null,
-            ];
+            ],
+            'ai' => [
+                'api_key' => $this->configApiKey,
+                'model' => $this->configModel ?: null,
+                'system_prompt' => $this->configSystemPrompt ?: null,
+            ],
+        };
 
         $actorId = (string) Auth::guard('godadmin')->id();
 

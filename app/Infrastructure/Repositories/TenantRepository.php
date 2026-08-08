@@ -59,8 +59,10 @@ class TenantRepository implements TenantRepositoryInterface
         ?string $logoPath = null,
         ?string $broadcastingProviderId = null,
         ?string $storageProviderId = null,
+        ?string $aiProviderId = null,
         bool $clearBroadcastingProvider = false,
         bool $clearStorageProvider = false,
+        bool $clearAiProvider = false,
     ): Tenant {
         $tenant = TenantModel::findOrFail($id);
 
@@ -73,6 +75,7 @@ class TenantRepository implements TenantRepositoryInterface
             'logo_path' => $logoPath,
             'broadcasting_provider_id' => $broadcastingProviderId,
             'storage_provider_id' => $storageProviderId,
+            'ai_provider_id' => $aiProviderId,
         ], fn ($value) => $value !== null);
 
         // Same "null = don't touch" convention as SubscriptionPlanRepository
@@ -83,6 +86,9 @@ class TenantRepository implements TenantRepositoryInterface
         }
         if ($clearStorageProvider) {
             $updateData['storage_provider_id'] = null;
+        }
+        if ($clearAiProvider) {
+            $updateData['ai_provider_id'] = null;
         }
 
         $tenant->update($updateData);

@@ -39,6 +39,8 @@ class Show extends Component
 
     public string $storageProviderId = '';
 
+    public string $aiProviderId = '';
+
     public string $infraSaved = '';
 
     public function mount(string $tenantId): void
@@ -56,6 +58,7 @@ class Show extends Component
         $this->selectedPlanId = $tenant->subscriptionPlanId;
         $this->broadcastingProviderId = $tenant->broadcastingProviderId ?? '';
         $this->storageProviderId = $tenant->storageProviderId ?? '';
+        $this->aiProviderId = $tenant->aiProviderId ?? '';
     }
 
     public function saveInfrastructure(UpdateTenantInfrastructureUseCase $updateInfrastructure): void
@@ -67,8 +70,10 @@ class Show extends Component
             tenantId: $this->tenantId,
             broadcastingProviderId: $this->broadcastingProviderId ?: null,
             storageProviderId: $this->storageProviderId ?: null,
+            aiProviderId: $this->aiProviderId ?: null,
             clearBroadcastingProvider: $this->broadcastingProviderId === '',
             clearStorageProvider: $this->storageProviderId === '',
+            clearAiProvider: $this->aiProviderId === '',
         );
 
         $this->infraSaved = 'Infrastructure overrides updated.';
@@ -157,6 +162,7 @@ class Show extends Component
             'plans' => $plans,
             'broadcastingProviders' => $providerRepository->findByType('broadcasting'),
             'storageProviders' => $providerRepository->findByType('storage'),
+            'aiProviders' => $providerRepository->findByType('ai'),
         ])->layout('layouts.god');
     }
 }

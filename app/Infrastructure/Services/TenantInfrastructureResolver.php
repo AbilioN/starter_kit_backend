@@ -37,6 +37,17 @@ class TenantInfrastructureResolver implements TenantInfrastructureResolverInterf
         return $provider ? $this->mapStorageConfig($provider) : null;
     }
 
+    public function resolveAiConfig(Tenant $tenant): ?array
+    {
+        $provider = $this->resolveProvider(
+            $tenant,
+            tenantProviderId: $tenant->aiProviderId,
+            planProviderId: fn ($plan) => $plan->aiProviderId,
+        );
+
+        return $provider ? $this->mapAiConfig($provider) : null;
+    }
+
     private function resolveProvider(Tenant $tenant, ?string $tenantProviderId, callable $planProviderId): ?InfrastructureProvider
     {
         $providerId = $tenantProviderId;
@@ -74,6 +85,17 @@ class TenantInfrastructureResolver implements TenantInfrastructureResolverInterf
                 'useTLS' => true,
             ],
             'client_options' => [],
+        ];
+    }
+
+    private function mapAiConfig(InfrastructureProvider $provider): array
+    {
+        $config = $provider->config;
+
+        return [
+            'api_key' => $config['api_key'] ?? null,
+            'model' => $config['model'] ?? null,
+            'system_prompt' => $config['system_prompt'] ?? null,
         ];
     }
 

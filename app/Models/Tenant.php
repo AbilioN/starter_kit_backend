@@ -26,6 +26,7 @@ class Tenant extends Model
         'created_via',
         'broadcasting_provider_id',
         'storage_provider_id',
+        'ai_provider_id',
     ];
 
     public function subscriptionPlan(): BelongsTo
@@ -43,6 +44,11 @@ class Tenant extends Model
         return $this->belongsTo(InfrastructureProvider::class, 'storage_provider_id');
     }
 
+    public function aiProvider(): BelongsTo
+    {
+        return $this->belongsTo(InfrastructureProvider::class, 'ai_provider_id');
+    }
+
     public function toEntity(): TenantEntity
     {
         return new TenantEntity(
@@ -58,6 +64,7 @@ class Tenant extends Model
             createdVia: $this->created_via,
             broadcastingProviderId: $this->broadcasting_provider_id,
             storageProviderId: $this->storage_provider_id,
+            aiProviderId: $this->ai_provider_id,
             createdAt: $this->created_at,
             updatedAt: $this->updated_at,
         );

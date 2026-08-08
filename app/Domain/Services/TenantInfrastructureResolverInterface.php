@@ -33,4 +33,14 @@ interface TenantInfrastructureResolverInterface
      *   config(['filesystems.disks.s3' => ...]).
      */
     public function resolveStorageConfig(Tenant $tenant): ?array;
+
+    /**
+     * Unlike broadcasting/storage, this isn't swapped into Laravel's own
+     * config() — nothing in this app calls OpenAI directly. Callers (i.e.
+     * ProcessOpenAIRequest) embed the result directly into the Redis
+     * payload sent to the Python worker.
+     *
+     * @return array{api_key: ?string, model: ?string, system_prompt: ?string}|null
+     */
+    public function resolveAiConfig(Tenant $tenant): ?array;
 }

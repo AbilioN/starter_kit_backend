@@ -27,7 +27,9 @@ interface TenantRepositoryInterface
         ?string $logoPath = null,
         ?string $broadcastingProviderId = null,
         ?string $storageProviderId = null,
+        ?string $aiProviderId = null,
         bool $clearBroadcastingProvider = false,
         bool $clearStorageProvider = false,
+        bool $clearAiProvider = false,
     ): Tenant;
 }
