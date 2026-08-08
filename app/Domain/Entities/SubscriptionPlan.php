@@ -17,6 +17,8 @@ class SubscriptionPlan
         public readonly bool $isPublic = false,
         public readonly ?string $tertiaryColor = null,
         public readonly array $iconPaths = [],
+        public readonly ?string $broadcastingProviderId = null,
+        public readonly ?string $storageProviderId = null,
         public readonly ?DateTime $createdAt = null,
         public readonly ?DateTime $updatedAt = null
     ) {}

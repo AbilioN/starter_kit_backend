@@ -4,6 +4,7 @@ use App\Http\Controllers\God\FinancialReportExportController;
 use App\Livewire\Auth\Login;
 use App\Livewire\Dashboard;
 use App\Livewire\FinancialReport;
+use App\Livewire\InfrastructureProviders;
 use App\Livewire\SubscriptionPlans;
 use App\Livewire\Tenants;
 use Illuminate\Support\Facades\Auth;
@@ -31,6 +32,10 @@ Route::middleware('auth:godadmin')->group(function () {
     Route::get('/subscription-plans', SubscriptionPlans\Index::class)->name('god.subscription-plans.index');
     Route::get('/subscription-plans/create', SubscriptionPlans\Form::class)->name('god.subscription-plans.create');
     Route::get('/subscription-plans/{planId}/edit', SubscriptionPlans\Form::class)->name('god.subscription-plans.edit');
+
+    Route::get('/infrastructure-providers', InfrastructureProviders\Index::class)->name('god.infrastructure-providers.index');
+    Route::get('/infrastructure-providers/create', InfrastructureProviders\Form::class)->name('god.infrastructure-providers.create');
+    Route::get('/infrastructure-providers/{providerId}/edit', InfrastructureProviders\Form::class)->name('god.infrastructure-providers.edit');
 
     Route::get('/tenants', Tenants\Index::class)->name('god.tenants.index');
     Route::get('/tenants/create', Tenants\Create::class)->name('god.tenants.create');

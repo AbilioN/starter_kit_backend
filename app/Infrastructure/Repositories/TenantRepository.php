@@ -56,7 +56,11 @@ class TenantRepository implements TenantRepositoryInterface
         ?string $subscriptionPlanId = null,
         ?string $themePrimaryColor = null,
         ?string $themeSecondaryColor = null,
-        ?string $logoPath = null
+        ?string $logoPath = null,
+        ?string $broadcastingProviderId = null,
+        ?string $storageProviderId = null,
+        bool $clearBroadcastingProvider = false,
+        bool $clearStorageProvider = false,
     ): Tenant {
         $tenant = TenantModel::findOrFail($id);
 
@@ -67,7 +71,19 @@ class TenantRepository implements TenantRepositoryInterface
             'theme_primary_color' => $themePrimaryColor,
             'theme_secondary_color' => $themeSecondaryColor,
             'logo_path' => $logoPath,
+            'broadcasting_provider_id' => $broadcastingProviderId,
+            'storage_provider_id' => $storageProviderId,
         ], fn ($value) => $value !== null);
+
+        // Same "null = don't touch" convention as SubscriptionPlanRepository
+        // — the explicit clear flags are the only way to actually null out
+        // a provider override (fall back to inheriting the plan's default).
+        if ($clearBroadcastingProvider) {
+            $updateData['broadcasting_provider_id'] = null;
+        }
+        if ($clearStorageProvider) {
+            $updateData['storage_provider_id'] = null;
+        }
 
         $tenant->update($updateData);
 

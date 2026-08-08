@@ -24,6 +24,10 @@ interface TenantRepositoryInterface
         ?string $subscriptionPlanId = null,
         ?string $themePrimaryColor = null,
         ?string $themeSecondaryColor = null,
-        ?string $logoPath = null
+        ?string $logoPath = null,
+        ?string $broadcastingProviderId = null,
+        ?string $storageProviderId = null,
+        bool $clearBroadcastingProvider = false,
+        bool $clearStorageProvider = false,
     ): Tenant;
 }

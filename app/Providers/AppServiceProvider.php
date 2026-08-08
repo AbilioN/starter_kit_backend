@@ -67,6 +67,14 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(LandlordAuditLogRepositoryInterface::class, LandlordAuditLogRepository::class);
         $this->app->bind(TenantProvisioningServiceInterface::class, TenantProvisioningService::class);
         $this->app->bind(IconResizingServiceInterface::class, IconResizingService::class);
+        $this->app->bind(
+            \App\Domain\Repositories\InfrastructureProviderRepositoryInterface::class,
+            \App\Infrastructure\Repositories\InfrastructureProviderRepository::class,
+        );
+        $this->app->bind(
+            \App\Domain\Services\TenantInfrastructureResolverInterface::class,
+            \App\Infrastructure\Services\TenantInfrastructureResolver::class,
+        );
 
         // Template dependencies
         $this->app->bind(TemplateRepositoryInterface::class, TemplateRepository::class);

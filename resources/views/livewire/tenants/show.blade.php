@@ -83,6 +83,52 @@
         </form>
     </div>
 
+    <div class="mt-6 rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-900/5">
+        <h2 class="text-sm font-semibold text-slate-900">Infrastructure Overrides</h2>
+        <p class="mt-1 text-xs text-slate-500">
+            Leave unset to inherit the plan's default (or the global config if the plan has none either). Only needed for a tenant that needs its own dedicated Pusher app or storage bucket.
+        </p>
+
+        @if ($infraSaved)
+            <div class="mt-4 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700 ring-1 ring-emerald-600/10">
+                {{ $infraSaved }}
+            </div>
+        @endif
+
+        <form wire:submit="saveInfrastructure" class="mt-4 space-y-4">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                    <label for="broadcastingProviderId" class="block text-xs font-medium text-slate-500">Broadcasting Provider</label>
+                    <select id="broadcastingProviderId" wire:model="broadcastingProviderId"
+                            class="mt-1.5 block w-full rounded-md border-0 px-3 py-2 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+                        <option value="">— inherit from plan —</option>
+                        @foreach ($broadcastingProviders as $provider)
+                            <option value="{{ $provider->id }}">{{ $provider->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label for="storageProviderId" class="block text-xs font-medium text-slate-500">Storage Provider</label>
+                    <select id="storageProviderId" wire:model="storageProviderId"
+                            class="mt-1.5 block w-full rounded-md border-0 px-3 py-2 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+                        <option value="">— inherit from plan —</option>
+                        @foreach ($storageProviders as $provider)
+                            <option value="{{ $provider->id }}">{{ $provider->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            <div class="flex justify-end">
+                <button type="submit"
+                        class="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 transition"
+                        wire:loading.attr="disabled" wire:target="saveInfrastructure">
+                    <span wire:loading.remove wire:target="saveInfrastructure">Save Overrides</span>
+                    <span wire:loading wire:target="saveInfrastructure">Saving…</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
     <div class="mt-6 flex justify-end">
         <button wire:click="toggleStatus" wire:confirm="Are you sure?"
                 class="rounded-md px-3.5 py-2.5 text-sm font-semibold shadow-sm transition

@@ -24,6 +24,10 @@ class UpdateSubscriptionPlanUseCase
         ?bool $isPublic = null,
         ?string $tertiaryColor = null,
         ?array $iconPaths = null,
+        ?string $broadcastingProviderId = null,
+        ?string $storageProviderId = null,
+        bool $clearBroadcastingProvider = false,
+        bool $clearStorageProvider = false,
     ): SubscriptionPlan {
         $plan = $this->subscriptionPlanRepository->update(
             id: $planId,
@@ -35,6 +39,10 @@ class UpdateSubscriptionPlanUseCase
             isPublic: $isPublic,
             tertiaryColor: $tertiaryColor,
             iconPaths: $iconPaths,
+            broadcastingProviderId: $broadcastingProviderId,
+            storageProviderId: $storageProviderId,
+            clearBroadcastingProvider: $clearBroadcastingProvider,
+            clearStorageProvider: $clearStorageProvider,
         );
 
         $this->logLandlordAudit->execute(

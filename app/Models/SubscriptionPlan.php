@@ -6,6 +6,7 @@ use App\Domain\Entities\SubscriptionPlan as SubscriptionPlanEntity;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SubscriptionPlan extends Model
@@ -24,6 +25,8 @@ class SubscriptionPlan extends Model
         'is_public',
         'tertiary_color',
         'icon_paths',
+        'broadcasting_provider_id',
+        'storage_provider_id',
     ];
 
     protected function casts(): array
@@ -42,6 +45,16 @@ class SubscriptionPlan extends Model
         return $this->hasMany(Tenant::class);
     }
 
+    public function broadcastingProvider(): BelongsTo
+    {
+        return $this->belongsTo(InfrastructureProvider::class, 'broadcasting_provider_id');
+    }
+
+    public function storageProvider(): BelongsTo
+    {
+        return $this->belongsTo(InfrastructureProvider::class, 'storage_provider_id');
+    }
+
     public function toEntity(): SubscriptionPlanEntity
     {
         return new SubscriptionPlanEntity(
@@ -55,6 +68,8 @@ class SubscriptionPlan extends Model
             isPublic: $this->is_public,
             tertiaryColor: $this->tertiary_color,
             iconPaths: $this->icon_paths ?? [],
+            broadcastingProviderId: $this->broadcasting_provider_id,
+            storageProviderId: $this->storage_provider_id,
             createdAt: $this->created_at,
             updatedAt: $this->updated_at,
         );

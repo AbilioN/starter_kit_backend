@@ -2,9 +2,12 @@
 
 namespace App\Jobs\Middleware;
 
+use App\Domain\Services\TenantInfrastructureResolverInterface;
 use App\Models\Tenant;
 use Closure;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Re-establishes tenant context on a queue worker, mirroring what
@@ -37,8 +40,34 @@ class EstablishTenantConnection
             }
 
             config(['database.default' => 'tenant']);
+
+            $this->applyInfrastructureConfig($tenant);
         }
 
         $next($job);
+    }
+
+    /**
+     * Same config-mutation idiom as IdentifyTenant::applyInfrastructureConfig()
+     * — job middleware is instantiated manually (`new EstablishTenantConnection(...)`,
+     * not resolved via the container), so the resolver is fetched via the
+     * app() helper here instead of constructor injection.
+     */
+    private function applyInfrastructureConfig(Tenant $tenant): void
+    {
+        $infraResolver = app(TenantInfrastructureResolverInterface::class);
+        $entity = $tenant->toEntity();
+
+        $broadcastingConfig = $infraResolver->resolveBroadcastingConfig($entity);
+        if ($broadcastingConfig) {
+            config(['broadcasting.connections.pusher' => $broadcastingConfig]);
+            Broadcast::forgetDrivers();
+        }
+
+        $storageConfig = $infraResolver->resolveStorageConfig($entity);
+        if ($storageConfig) {
+            config(['filesystems.disks.s3' => $storageConfig]);
+            Storage::forgetDisk('s3');
+        }
     }
 }

@@ -52,7 +52,9 @@ class SubscriptionPlanRepository implements SubscriptionPlanRepositoryInterface
         bool $isActive = true,
         bool $isPublic = false,
         ?string $tertiaryColor = null,
-        ?array $iconPaths = null
+        ?array $iconPaths = null,
+        ?string $broadcastingProviderId = null,
+        ?string $storageProviderId = null,
     ): SubscriptionPlan {
         $plan = SubscriptionPlanModel::create([
             'name' => $name,
@@ -64,6 +66,8 @@ class SubscriptionPlanRepository implements SubscriptionPlanRepositoryInterface
             'is_public' => $isPublic,
             'tertiary_color' => $tertiaryColor,
             'icon_paths' => $iconPaths,
+            'broadcasting_provider_id' => $broadcastingProviderId,
+            'storage_provider_id' => $storageProviderId,
         ]);
 
         return $plan->toEntity();
@@ -78,7 +82,11 @@ class SubscriptionPlanRepository implements SubscriptionPlanRepositoryInterface
         ?bool $isActive = null,
         ?bool $isPublic = null,
         ?string $tertiaryColor = null,
-        ?array $iconPaths = null
+        ?array $iconPaths = null,
+        ?string $broadcastingProviderId = null,
+        ?string $storageProviderId = null,
+        bool $clearBroadcastingProvider = false,
+        bool $clearStorageProvider = false,
     ): SubscriptionPlan {
         $plan = SubscriptionPlanModel::findOrFail($id);
 
@@ -91,7 +99,21 @@ class SubscriptionPlanRepository implements SubscriptionPlanRepositoryInterface
             'is_public' => $isPublic,
             'tertiary_color' => $tertiaryColor,
             'icon_paths' => $iconPaths,
+            'broadcasting_provider_id' => $broadcastingProviderId,
+            'storage_provider_id' => $storageProviderId,
         ], fn ($value) => $value !== null);
+
+        // array_filter() above treats null as "don't touch" (existing
+        // convention for this partial-update method) — the explicit clear
+        // flags are the only way to actually null out a provider override,
+        // since passing null for the id itself is indistinguishable from
+        // "not provided" otherwise.
+        if ($clearBroadcastingProvider) {
+            $updateData['broadcasting_provider_id'] = null;
+        }
+        if ($clearStorageProvider) {
+            $updateData['storage_provider_id'] = null;
+        }
 
         $plan->update($updateData);
 

@@ -2,14 +2,21 @@
 
 namespace App\Http\Middleware;
 
+use App\Domain\Services\TenantInfrastructureResolverInterface;
 use App\Models\Tenant;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\Response;
 
 class IdentifyTenant
 {
+    public function __construct(
+        private TenantInfrastructureResolverInterface $infraResolver,
+    ) {}
+
     /**
      * Resolves the tenant from the request's subdomain, points the `tenant`
      * connection at its database, and flips database.default to `tenant` so
@@ -62,8 +69,35 @@ class IdentifyTenant
 
         config(['database.default' => 'tenant']);
 
+        $this->applyInfrastructureConfig($tenant);
+
         app()->instance('currentTenant', $tenant);
 
         return $next($request);
+    }
+
+    /**
+     * Overrides the broadcasting/storage connection config with whatever
+     * this tenant resolves to (its own override, or its plan's default) —
+     * null means nothing's configured, so config() is left untouched and
+     * the global .env-driven values apply exactly like before this feature
+     * existed. Same "mutate named config + invalidate the manager's cached
+     * instance" idiom already used above for the tenant DB connection.
+     */
+    private function applyInfrastructureConfig(Tenant $tenant): void
+    {
+        $entity = $tenant->toEntity();
+
+        $broadcastingConfig = $this->infraResolver->resolveBroadcastingConfig($entity);
+        if ($broadcastingConfig) {
+            config(['broadcasting.connections.pusher' => $broadcastingConfig]);
+            Broadcast::forgetDrivers();
+        }
+
+        $storageConfig = $this->infraResolver->resolveStorageConfig($entity);
+        if ($storageConfig) {
+            config(['filesystems.disks.s3' => $storageConfig]);
+            Storage::forgetDisk('s3');
+        }
     }
 }

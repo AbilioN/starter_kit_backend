@@ -24,11 +24,23 @@ class Tenant extends Model
         'logo_path',
         'status',
         'created_via',
+        'broadcasting_provider_id',
+        'storage_provider_id',
     ];
 
     public function subscriptionPlan(): BelongsTo
     {
         return $this->belongsTo(SubscriptionPlan::class);
+    }
+
+    public function broadcastingProvider(): BelongsTo
+    {
+        return $this->belongsTo(InfrastructureProvider::class, 'broadcasting_provider_id');
+    }
+
+    public function storageProvider(): BelongsTo
+    {
+        return $this->belongsTo(InfrastructureProvider::class, 'storage_provider_id');
     }
 
     public function toEntity(): TenantEntity
@@ -44,6 +56,8 @@ class Tenant extends Model
             logoPath: $this->logo_path,
             status: $this->status,
             createdVia: $this->created_via,
+            broadcastingProviderId: $this->broadcasting_provider_id,
+            storageProviderId: $this->storage_provider_id,
             createdAt: $this->created_at,
             updatedAt: $this->updated_at,
         );

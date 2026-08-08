@@ -5,6 +5,8 @@ namespace App\Livewire\Tenants;
 use App\Application\UseCases\GodAdmin\ChangeTenantSubscriptionPlanAsGodAdminUseCase;
 use App\Application\UseCases\GodAdmin\SuspendTenantUseCase;
 use App\Application\UseCases\GodAdmin\UpdateTenantBrandingUseCase;
+use App\Application\UseCases\GodAdmin\UpdateTenantInfrastructureUseCase;
+use App\Domain\Repositories\InfrastructureProviderRepositoryInterface;
 use App\Domain\Repositories\SubscriptionPlanRepositoryInterface;
 use App\Domain\Repositories\TenantRepositoryInterface;
 use DomainException;
@@ -32,6 +34,13 @@ class Show extends Component
 
     public string $planSaved = '';
 
+    /** '' means "no override — inherit the plan's default (or the global default)". */
+    public string $broadcastingProviderId = '';
+
+    public string $storageProviderId = '';
+
+    public string $infraSaved = '';
+
     public function mount(string $tenantId): void
     {
         $this->tenantId = $tenantId;
@@ -45,6 +54,24 @@ class Show extends Component
         $this->themePrimaryColor = $tenant->themePrimaryColor ?? '#4F46E5';
         $this->themeSecondaryColor = $tenant->themeSecondaryColor ?? '#64748B';
         $this->selectedPlanId = $tenant->subscriptionPlanId;
+        $this->broadcastingProviderId = $tenant->broadcastingProviderId ?? '';
+        $this->storageProviderId = $tenant->storageProviderId ?? '';
+    }
+
+    public function saveInfrastructure(UpdateTenantInfrastructureUseCase $updateInfrastructure): void
+    {
+        $this->infraSaved = '';
+
+        $updateInfrastructure->execute(
+            actorId: (string) Auth::guard('godadmin')->id(),
+            tenantId: $this->tenantId,
+            broadcastingProviderId: $this->broadcastingProviderId ?: null,
+            storageProviderId: $this->storageProviderId ?: null,
+            clearBroadcastingProvider: $this->broadcastingProviderId === '',
+            clearStorageProvider: $this->storageProviderId === '',
+        );
+
+        $this->infraSaved = 'Infrastructure overrides updated.';
     }
 
     public function savePlan(ChangeTenantSubscriptionPlanAsGodAdminUseCase $changePlan): void
@@ -122,7 +149,14 @@ class Show extends Component
 
         $plans = app(SubscriptionPlanRepositoryInterface::class)->findActive();
 
-        return view('livewire.tenants.show', ['tenant' => $tenant, 'plan' => $plan, 'plans' => $plans])
-            ->layout('layouts.god');
+        $providerRepository = app(InfrastructureProviderRepositoryInterface::class);
+
+        return view('livewire.tenants.show', [
+            'tenant' => $tenant,
+            'plan' => $plan,
+            'plans' => $plans,
+            'broadcastingProviders' => $providerRepository->findByType('broadcasting'),
+            'storageProviders' => $providerRepository->findByType('storage'),
+        ])->layout('layouts.god');
     }
 }

@@ -4,6 +4,7 @@ namespace App\Livewire\SubscriptionPlans;
 
 use App\Application\UseCases\GodAdmin\CreateSubscriptionPlanUseCase;
 use App\Application\UseCases\GodAdmin\UpdateSubscriptionPlanUseCase;
+use App\Domain\Repositories\InfrastructureProviderRepositoryInterface;
 use App\Domain\Repositories\SubscriptionPlanRepositoryInterface;
 use App\Domain\Services\IconResizingServiceInterface;
 use Illuminate\Support\Facades\Auth;
@@ -57,6 +58,11 @@ class Form extends Component
     public $iconUpload = null;
 
     public array $iconPaths = [];
+
+    /** '' means "no default" — same convention as a clearable <select>. */
+    public string $broadcastingProviderId = '';
+
+    public string $storageProviderId = '';
 
     private SubscriptionPlanRepositoryInterface $subscriptionPlanRepository;
 
@@ -115,6 +121,8 @@ class Form extends Component
         $this->isPublic = $plan->isPublic;
         $this->tertiaryColor = $plan->tertiaryColor;
         $this->iconPaths = $plan->iconPaths;
+        $this->broadcastingProviderId = $plan->broadcastingProviderId ?? '';
+        $this->storageProviderId = $plan->storageProviderId ?? '';
     }
 
     public function save(
@@ -167,6 +175,10 @@ class Form extends Component
                 isPublic: $this->isPublic,
                 tertiaryColor: $this->tertiaryColor,
                 iconPaths: $iconPaths,
+                broadcastingProviderId: $this->broadcastingProviderId ?: null,
+                storageProviderId: $this->storageProviderId ?: null,
+                clearBroadcastingProvider: $this->broadcastingProviderId === '',
+                clearStorageProvider: $this->storageProviderId === '',
             );
         } else {
             $createSubscriptionPlan->execute(
@@ -180,6 +192,8 @@ class Form extends Component
                 isPublic: $this->isPublic,
                 tertiaryColor: $this->tertiaryColor,
                 iconPaths: $iconPaths,
+                broadcastingProviderId: $this->broadcastingProviderId ?: null,
+                storageProviderId: $this->storageProviderId ?: null,
             );
         }
 
@@ -188,6 +202,11 @@ class Form extends Component
 
     public function render()
     {
-        return view('livewire.subscription-plans.form')->layout('layouts.god');
+        $providerRepository = app(InfrastructureProviderRepositoryInterface::class);
+
+        return view('livewire.subscription-plans.form', [
+            'broadcastingProviders' => $providerRepository->findByType('broadcasting'),
+            'storageProviders' => $providerRepository->findByType('storage'),
+        ])->layout('layouts.god');
     }
 }

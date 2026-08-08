@@ -154,6 +154,33 @@
             </div>
         </div>
 
+        <div class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-900/5">
+            <h2 class="text-sm font-semibold text-slate-900">Infrastructure</h2>
+            <p class="mt-1 text-sm text-slate-500">Optional. Tenants on this plan use these by default, unless a tenant has its own override (set on the tenant's page). Leave unset to use the global config.</p>
+            <div class="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <div>
+                    <label for="broadcastingProviderId" class="block text-sm font-medium text-slate-700">Broadcasting Provider</label>
+                    <select id="broadcastingProviderId" wire:model="broadcastingProviderId"
+                            class="mt-1.5 block w-full rounded-md border-0 px-3 py-2 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+                        <option value="">— global default —</option>
+                        @foreach ($broadcastingProviders as $provider)
+                            <option value="{{ $provider->id }}">{{ $provider->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label for="storageProviderId" class="block text-sm font-medium text-slate-700">Storage Provider</label>
+                    <select id="storageProviderId" wire:model="storageProviderId"
+                            class="mt-1.5 block w-full rounded-md border-0 px-3 py-2 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+                        <option value="">— global default —</option>
+                        @foreach ($storageProviders as $provider)
+                            <option value="{{ $provider->id }}">{{ $provider->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+        </div>
+
         <div class="flex justify-end gap-3">
             <a href="{{ url('/god/subscription-plans') }}"
                class="rounded-md px-3.5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition">Cancel</a>

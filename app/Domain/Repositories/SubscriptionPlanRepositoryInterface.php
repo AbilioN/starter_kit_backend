@@ -20,7 +20,9 @@ interface SubscriptionPlanRepositoryInterface
         bool $isActive = true,
         bool $isPublic = false,
         ?string $tertiaryColor = null,
-        ?array $iconPaths = null
+        ?array $iconPaths = null,
+        ?string $broadcastingProviderId = null,
+        ?string $storageProviderId = null,
     ): SubscriptionPlan;
     public function update(
         string $id,
@@ -31,7 +33,11 @@ interface SubscriptionPlanRepositoryInterface
         ?bool $isActive = null,
         ?bool $isPublic = null,
         ?string $tertiaryColor = null,
-        ?array $iconPaths = null
+        ?array $iconPaths = null,
+        ?string $broadcastingProviderId = null,
+        ?string $storageProviderId = null,
+        bool $clearBroadcastingProvider = false,
+        bool $clearStorageProvider = false,
     ): SubscriptionPlan;
     public function delete(string $id): void;
 }

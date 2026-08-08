@@ -17,6 +17,8 @@ class Tenant
         public readonly ?string $logoPath,
         public readonly string $status, // pending|active|suspended
         public readonly string $createdVia, // godadmin|self_service
+        public readonly ?string $broadcastingProviderId = null,
+        public readonly ?string $storageProviderId = null,
         public readonly ?DateTime $createdAt = null,
         public readonly ?DateTime $updatedAt = null
     ) {}
