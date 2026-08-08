@@ -12,6 +12,14 @@ return new class extends Migration
     {
         Schema::create('templates', function (Blueprint $table) {
             $table->uuid('id')->primary();
+            // Identifies a template as filling a well-known system slot
+            // (e.g. 'welcome_email') rather than being an arbitrary
+            // user-authored one. Not exposed for editing via the templates
+            // API — only ever set by SystemTemplateSeeder at provisioning
+            // time. A tenant customizes the SLOT by editing that template's
+            // body/subject through the normal Templates UI, not by picking
+            // which template fills which slot.
+            $table->string('key')->nullable()->unique();
             $table->string('name');
             // text_email | sms | html_email | pdf | ai_prompt
             $table->string('type');
