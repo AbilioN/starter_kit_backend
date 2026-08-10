@@ -140,9 +140,20 @@ class ChatRepository implements ChatRepositoryInterface
 
     public function hasAssistant(string $chatId): bool
     {
+        // Chat::users() always joins against the User::class table
+        // regardless of the pivot's user_type (see its own docblock
+        // warning) - an assistant participant's user_id never matches a
+        // users row, so whereHas('users', ...) silently finds nothing for
+        // every assistant chat. Chat::assistants() is the relation that
+        // actually joins against Assistant::class.
         return ChatModel::where('id', $chatId)
-            ->whereHas('users', function ($query) {
-                $query->where('user_type', 'assistant');
+            ->whereHas('assistants', function ($query) {
+                // Explicit qualified column, not wherePivot() - inside a
+                // whereHas() closure the builder doesn't reliably carry the
+                // BelongsToMany relation's pivot-alias macro, and
+                // wherePivot() silently mis-resolves into invalid SQL
+                // ("pivot = is_active") instead of erroring loudly.
+                $query->where('chat_user.is_active', true);
             })
             ->exists();
     }

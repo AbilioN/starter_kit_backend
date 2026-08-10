@@ -47,7 +47,13 @@ class ChatUserFactory
             name: $model->name,
             description: $model->description,
             avatar: $model->avatar,
-            capabilities: $model->capabilities,
+            // capabilities is a nullable json column - rows created without
+            // it set (e.g. SyncAgentProfilesForTenantUseCase, which only
+            // ever populates name/description/avatar/is_active) come back
+            // as null, which the Assistant entity's non-nullable `array`
+            // param rejects. Same null-coalescing AssistantModel::getCapabilities()
+            // already does, just applied here too.
+            capabilities: $model->capabilities ?? [],
             isActive: $model->is_active
         );
     }
