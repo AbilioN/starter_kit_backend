@@ -8,7 +8,8 @@ services:
     environment:
       - APP_ENV=local
       - APP_DEBUG=true
-    command: php artisan serve --host=0.0.0.0 --port=9000
+    # See the note on `app` in docker-compose.yml: the image CMD (php-fpm) is
+    # kept so requests are handled concurrently instead of one at a time.
 
   webserver:
     ports:

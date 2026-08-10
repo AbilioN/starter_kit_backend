@@ -86,9 +86,6 @@ class AppServiceProvider extends ServiceProvider
         // app/Domain/Services/MergeContextInterface.php.
         $this->app->bind(MergeContextInterface::class, StubMergeContext::class);
         $this->app->bind(PdfRenderServiceInterface::class, PdfRenderService::class);
-
-        // Services
-        $this->app->singleton(\App\Services\PusherApiService::class);
     }
 
     /**

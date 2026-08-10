@@ -34,7 +34,10 @@ services:
     depends_on:
       - db
       - redis
-    command: php artisan serve --host=0.0.0.0 --port=9000
+    # No `command:` on purpose - the image's own CMD is `php-fpm`, which is
+    # multi-process. Overriding it with `php artisan serve` (PHP's built-in
+    # dev server) serialised every request onto a single worker; nginx now
+    # talks FastCGI to this container instead. See docker/nginx/conf.d/app.conf.
 
   # Servidor web Nginx
   webserver:
