@@ -36,10 +36,13 @@ class RetrySettingsSyncJob implements ShouldQueue
         return [new EstablishTenantConnection($this->tenantId)];
     }
 
-    public function handle(ChangeTenantSubscriptionPlanUseCase $changeTenantSubscriptionPlan): void
-    {
+    public function handle(
+        ChangeTenantSubscriptionPlanUseCase $changeTenantSubscriptionPlan,
+        \App\Application\UseCases\Tenant\SyncAgentProfilesForTenantUseCase $syncAgentProfiles,
+    ): void {
         $changeTenantSubscriptionPlan->syncFeaturesFromPlan($this->subscriptionPlanId);
         $changeTenantSubscriptionPlan->syncLimitsFromPlan($this->subscriptionPlanId);
+        $syncAgentProfiles->execute($this->subscriptionPlanId);
     }
 
     /**

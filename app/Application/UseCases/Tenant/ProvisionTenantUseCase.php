@@ -24,6 +24,7 @@ class ProvisionTenantUseCase
         private SubscriptionPlanRepositoryInterface $subscriptionPlanRepository,
         private TenantProvisioningServiceInterface $provisioningService,
         private RecordMockPaymentUseCase $recordMockPayment,
+        private SyncAgentProfilesForTenantUseCase $syncAgentProfiles,
     ) {}
 
     public function execute(
@@ -88,6 +89,7 @@ class ProvisionTenantUseCase
         if ($subscriptionPlanId) {
             $this->seedFeaturesFromPlan($subscriptionPlanId);
             $this->seedLimitsFromPlan($subscriptionPlanId);
+            $this->syncAgentProfiles->execute($subscriptionPlanId);
             $this->recordMockPayment->execute($tenant->id, $subscriptionPlanId, trigger: 'signup');
         }
 

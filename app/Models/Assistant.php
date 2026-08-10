@@ -13,6 +13,7 @@ class Assistant extends Model
     use HasUuids;
 
     protected $fillable = [
+        'agent_profile_id',
         'name',
         'description',
         'avatar',

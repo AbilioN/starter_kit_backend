@@ -15,6 +15,7 @@ use App\Models\Message;
 use App\Models\Chat;
 use App\Models\User;
 use App\Models\Assistant;
+use App\Models\AgentProfile;
 use App\Models\Tenant;
 use App\Domain\Services\TenantInfrastructureResolverInterface;
 use App\Events\MessageSent;
@@ -62,6 +63,7 @@ class ProcessOpenAIRequest implements ShouldQueue
 
             $assistant = $this->findActiveAssistant();
             $aiConfig = $this->resolveAiConfig();
+            $agentProfileConfig = $this->resolveAgentProfileConfig($assistant['agent_profile_id'] ?? null);
             $history = $this->buildHistory();
 
             // Prepare the request data
@@ -73,12 +75,19 @@ class ProcessOpenAIRequest implements ShouldQueue
                 'tenant_id' => $this->tenantId,
                 'timestamp' => now()->toISOString(),
                 'status' => 'pending',
-                // BYOK overrides resolved from infrastructure_providers
-                // (type=ai) — all nullable, the Python worker falls back
-                // to its own global .env defaults when absent.
+                // api_key never comes from an agent profile — it's always
+                // the tenant's own BYOK credential (infrastructure_providers,
+                // type=ai) or null (Python worker's global .env default).
                 'api_key' => $aiConfig['api_key'] ?? null,
-                'model' => $aiConfig['model'] ?? null,
-                'system_prompt' => $aiConfig['system_prompt'] ?? null,
+                // model/system_prompt: this specific agent's own profile
+                // wins when set (read live from the landlord agent_profiles
+                // table, never copied - an edit there takes effect on the
+                // very next message), else the tenant-wide BYOK default,
+                // else null (Python worker falls back further: its own
+                // .env model, and assistant_name/description below for the
+                // prompt).
+                'model' => $agentProfileConfig['model'] ?? $aiConfig['model'] ?? null,
+                'system_prompt' => $agentProfileConfig['system_prompt'] ?? $aiConfig['system_prompt'] ?? null,
                 'assistant_name' => $assistant['name'] ?? null,
                 'assistant_description' => $assistant['description'] ?? null,
                 'history' => $history,
@@ -128,7 +137,7 @@ class ProcessOpenAIRequest implements ShouldQueue
      * its persona fields — used both to seed a default system prompt on
      * the Python side and to correctly attribute error messages below.
      *
-     * @return array{id: ?string, name: ?string, description: ?string}
+     * @return array{id: ?string, name: ?string, description: ?string, agent_profile_id: ?string}
      */
     private function findActiveAssistant(): array
     {
@@ -139,19 +148,48 @@ class ProcessOpenAIRequest implements ShouldQueue
             ->first();
 
         if (! $chatUser) {
-            return ['id' => null, 'name' => null, 'description' => null];
+            return ['id' => null, 'name' => null, 'description' => null, 'agent_profile_id' => null];
         }
 
         $assistant = Assistant::find($chatUser->user_id);
 
         if (! $assistant) {
-            return ['id' => $chatUser->user_id, 'name' => null, 'description' => null];
+            return ['id' => $chatUser->user_id, 'name' => null, 'description' => null, 'agent_profile_id' => null];
         }
 
         return [
             'id' => $assistant->id,
             'name' => $assistant->name,
             'description' => $assistant->description,
+            'agent_profile_id' => $assistant->agent_profile_id,
+        ];
+    }
+
+    /**
+     * Reads this chat's assistant's own persona straight off the landlord
+     * agent_profiles table at send time — deliberately not cached/copied
+     * anywhere, so a GodAdmin editing a profile's prompt/model takes effect
+     * on the very next message, no propagation step involved. Runs on the
+     * `landlord` connection explicitly (AgentProfile's own $connection),
+     * same reasoning as resolveAiConfig() above.
+     *
+     * @return array{model: ?string, system_prompt: ?string}|null
+     */
+    private function resolveAgentProfileConfig(?string $agentProfileId): ?array
+    {
+        if (! $agentProfileId) {
+            return null;
+        }
+
+        $profile = AgentProfile::find($agentProfileId);
+
+        if (! $profile || ! $profile->is_active) {
+            return null;
+        }
+
+        return [
+            'model' => $profile->model,
+            'system_prompt' => $profile->system_prompt,
         ];
     }
 

@@ -21,6 +21,7 @@ class ChangeTenantSubscriptionPlanUseCase
         private LogAuditUseCase $logAudit,
         private LogLandlordAuditUseCase $logLandlordAudit,
         private RecordMockPaymentUseCase $recordMockPayment,
+        private SyncAgentProfilesForTenantUseCase $syncAgentProfiles,
     ) {}
 
     public function execute(string $tenantId, string $adminId, string $subscriptionPlanId): void
@@ -44,6 +45,7 @@ class ChangeTenantSubscriptionPlanUseCase
         try {
             $this->syncFeaturesFromPlan($subscriptionPlanId);
             $this->syncLimitsFromPlan($subscriptionPlanId);
+            $this->syncAgentProfiles->execute($subscriptionPlanId);
         } catch (Throwable $e) {
             $this->logAudit->execute(
                 userId: $adminId,

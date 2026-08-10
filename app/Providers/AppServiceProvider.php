@@ -75,6 +75,10 @@ class AppServiceProvider extends ServiceProvider
             \App\Domain\Services\TenantInfrastructureResolverInterface::class,
             \App\Infrastructure\Services\TenantInfrastructureResolver::class,
         );
+        $this->app->bind(
+            \App\Domain\Repositories\AgentProfileRepositoryInterface::class,
+            \App\Infrastructure\Repositories\AgentProfileRepository::class,
+        );
 
         // Template dependencies
         $this->app->bind(TemplateRepositoryInterface::class, TemplateRepository::class);

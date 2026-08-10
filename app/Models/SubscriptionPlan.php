@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SubscriptionPlan extends Model
@@ -59,6 +60,11 @@ class SubscriptionPlan extends Model
     public function aiProvider(): BelongsTo
     {
         return $this->belongsTo(InfrastructureProvider::class, 'ai_provider_id');
+    }
+
+    public function agentProfiles(): BelongsToMany
+    {
+        return $this->belongsToMany(AgentProfile::class, 'agent_profile_subscription_plan');
     }
 
     public function toEntity(): SubscriptionPlanEntity

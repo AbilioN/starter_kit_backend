@@ -25,6 +25,7 @@ use App\Http\Controllers\Api\Auth\ResetPasswordController;
 use App\Http\Controllers\Api\Admin\AdminProfileController;
 use App\Http\Controllers\Api\Admin\ChatController as AdminChatController;
 use App\Http\Controllers\Api\Admin\TenantController;
+use App\Http\Controllers\Api\Admin\AssistantController;
 use App\Http\Controllers\Api\Admin\TemplateController;
 use App\Http\Controllers\Api\Public\PublicSubscriptionPlanController;
 use App\Http\Controllers\Api\Public\PublicTenantSignupController;
@@ -167,6 +168,9 @@ Route::middleware(['tenant.identify'])->group(function () {
             // Admin chat management (requires chat-manage permission)
             Route::get('/chats', [AdminChatController::class, 'allChats']);
             Route::get('/chats/{chatId}/messages', [AdminChatController::class, 'chatMessages']);
+
+            // AI assistants available to chat with (tenant-scoped, active only)
+            Route::get('/assistants', [AssistantController::class, 'index']);
 
             // File management
             Route::get('/files', [FileController::class, 'index']);

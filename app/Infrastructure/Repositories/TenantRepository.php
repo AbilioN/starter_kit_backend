@@ -29,6 +29,13 @@ class TenantRepository implements TenantRepositoryInterface
             ->all();
     }
 
+    public function findBySubscriptionPlanId(string $planId): array
+    {
+        return TenantModel::where('subscription_plan_id', $planId)->get()
+            ->map(fn (TenantModel $tenant) => $tenant->toEntity())
+            ->all();
+    }
+
     public function create(
         string $name,
         string $subdomain,

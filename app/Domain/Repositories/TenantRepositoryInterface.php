@@ -9,6 +9,7 @@ interface TenantRepositoryInterface
     public function findById(string $id): ?Tenant;
     public function findBySubdomain(string $subdomain): ?Tenant;
     public function findAll(): array;
+    public function findBySubscriptionPlanId(string $planId): array;
     public function create(
         string $name,
         string $subdomain,
