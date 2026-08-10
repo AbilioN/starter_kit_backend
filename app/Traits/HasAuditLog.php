@@ -38,6 +38,15 @@ trait HasAuditLog
         ?array $oldValues = null,
         ?array $newValues = null
     ): void {
+        // Remove atributos $hidden antes de gravar. Sem isto, uma troca de senha
+        // escrevia os hashes bcrypt antigo E novo em audit_logs.old_values /
+        // new_values — a auditoria é imutável por design, logo esses hashes
+        // ficariam lá para sempre. Vale para todo modelo que usa o trait
+        // (password, remember_token, tokens de API, etc).
+        $hidden = array_flip($this->getHidden());
+        $oldValues = $oldValues !== null ? array_diff_key($oldValues, $hidden) : null;
+        $newValues = $newValues !== null ? array_diff_key($newValues, $hidden) : null;
+
         try {
             $user = Auth::user();
             

@@ -31,6 +31,10 @@ class AdminFactory
             password: $adminModel->password,
             isActive: $adminModel->is_active,
             isSuperAdmin: $adminModel->is_super_admin,
+            // isTenantOwner era descartado aqui — a entidade caía sempre no default
+            // `false`, mesmo para o dono do tenant.
+            isTenantOwner: (bool) $adminModel->is_tenant_owner,
+            avatarPath: $adminModel->avatar_path,
             lastLoginAt: $adminModel->last_login_at,
             createdAt: $adminModel->created_at,
             updatedAt: $adminModel->updated_at

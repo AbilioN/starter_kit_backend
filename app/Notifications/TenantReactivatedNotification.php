@@ -2,13 +2,14 @@
 
 namespace App\Notifications;
 
+use App\Notifications\Contracts\CriticalNotification;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 /**
  * Deliberately NOT ShouldQueue - see TenantSuspendedNotification for why.
  */
-class TenantReactivatedNotification extends Notification
+class TenantReactivatedNotification extends Notification implements CriticalNotification
 {
     public function via(object $notifiable): array
     {

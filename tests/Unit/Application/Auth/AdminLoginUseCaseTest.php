@@ -62,6 +62,8 @@ class AdminLoginUseCaseTest extends TestCase
                 'is_active' => true,
                 'is_super_admin' => false,
                 'is_tenant_owner' => false,
+                'avatar_path' => null,
+                'avatar_url' => null,
                 'last_login_at' => null,
                 'created_at' => null,
                 'updated_at' => null,

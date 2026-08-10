@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Domain\Entities\ChatUser;
+use App\Notifications\Contracts\CriticalNotification;
+use Illuminate\Notifications\Notification;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -30,6 +32,8 @@ class Admin extends Authenticatable implements ChatUser
         'is_active',
         'is_super_admin',
         'is_tenant_owner',
+        'notification_email',
+        'avatar_path',
         'last_login_at',
         'last_seen_at',
     ];
@@ -61,7 +65,12 @@ class Admin extends Authenticatable implements ChatUser
         ];
     }
 
-    public function toEntity(): ChatUser
+    /**
+     * Estreitado de `ChatUser` para `AdminEntity` (covariante, seguro): o tipo
+     * largo impedia `$model->toEntity()->toDto()`, já que `toDto()` só existe na
+     * entidade Admin. Todos os chamadores continuam válidos.
+     */
+    public function toEntity(): AdminEntity
     {
         return new AdminEntity(
             id: $this->id,
@@ -71,10 +80,24 @@ class Admin extends Authenticatable implements ChatUser
             isActive: $this->is_active,
             isSuperAdmin: $this->is_super_admin,
             isTenantOwner: (bool) $this->is_tenant_owner,
+            avatarPath: $this->avatar_path,
             lastLoginAt: $this->last_login_at,
             createdAt: $this->created_at,
             updatedAt: $this->updated_at
         );
+    }
+
+    /**
+     * O Laravel passa a instância da notificação para routeNotificationFor{Driver},
+     * o que permite rotear por tipo: só as marcadas como CriticalNotification
+     * (suspensão/reativação do tenant) vão para o endereço alternativo. Todo o
+     * resto — incluindo recuperação de senha — continua no e-mail de login.
+     */
+    public function routeNotificationForMail(Notification $notification): string
+    {
+        return $notification instanceof CriticalNotification && $this->notification_email
+            ? $this->notification_email
+            : $this->email;
     }
 
     public function isActive(): bool

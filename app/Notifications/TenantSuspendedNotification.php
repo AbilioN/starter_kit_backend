@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Notifications\Contracts\CriticalNotification;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -13,7 +14,7 @@ use Illuminate\Notifications\Notification;
  * channel entry to (the same class of bug EstablishTenantConnection exists
  * to prevent for other queued jobs).
  */
-class TenantSuspendedNotification extends Notification
+class TenantSuspendedNotification extends Notification implements CriticalNotification
 {
     public function via(object $notifiable): array
     {

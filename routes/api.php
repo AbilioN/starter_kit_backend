@@ -136,6 +136,10 @@ Route::middleware(['tenant.identify'])->group(function () {
             Route::get('/me', [AdminProfileController::class, 'show']);
             Route::patch('/me', [AdminProfileController::class, 'update']);
             Route::patch('/me/password', [AdminProfileController::class, 'changePassword']);
+            // POST, não PATCH: o PHP não parseia multipart num PATCH nativo.
+            // Fora de `tenant.owner` — todo admin pode ter foto.
+            Route::post('/me/avatar', [AdminProfileController::class, 'uploadAvatar']);
+            Route::delete('/me/avatar', [AdminProfileController::class, 'removeAvatar']);
 
             // Admin management routes
             Route::get('/admins', [AdminController::class, 'index']);
@@ -192,6 +196,7 @@ Route::middleware(['tenant.identify'])->group(function () {
             Route::middleware('tenant.owner')->group(function () {
                 Route::patch('/tenant/subscription-plan', [TenantController::class, 'updateSubscriptionPlan']);
                 Route::patch('/tenant/branding', [TenantController::class, 'updateBranding']);
+                Route::get('/tenant/subscription-history', [TenantController::class, 'subscriptionHistory']);
             });
 
             // Audit routes

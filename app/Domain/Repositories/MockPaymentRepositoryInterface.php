@@ -13,4 +13,11 @@ interface MockPaymentRepositoryInterface
         ?array $metadata = null,
         string $status = 'succeeded'
     ): MockPayment;
+
+    /**
+     * Pagamentos de UM tenant, mais recentes primeiro.
+     *
+     * @return array{data: MockPayment[], total: int, per_page: int, current_page: int, last_page: int, from: ?int, to: ?int}
+     */
+    public function findByTenantPaginated(string $tenantId, int $page = 1, int $perPage = 15): array;
 }
