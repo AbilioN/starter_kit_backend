@@ -275,21 +275,29 @@ class Chat extends Model
                   });
             })
             ->first();
-        if (!$chat) {
-            // Cria um novo chat privado
-            $chat = self::create([
-                'type' => 'private',
-                'created_by' => $user1->getId(),
-            ]);
 
-            // Adiciona os participantes
-            $chat->addParticipant($user1);
-            $chat->addParticipant($user2);
-            $chat->name = $user2->getName();
-            $chat->description = '';
-            $chat->save();
-            $chat->refresh();
-        }
+        return $chat ?? self::createPrivateChat($user1, $user2);
+    }
+
+    /**
+     * Cria um novo chat privado entre dois ChatUsers, sem checar se já
+     * existe um - usado pelo botão "nova conversa" do agente de IA, que
+     * precisa de uma thread genuinamente separada mesmo já havendo uma
+     * conversa anterior com o mesmo participante.
+     */
+    public static function createPrivateChat(ChatUser $user1, ChatUser $user2): self
+    {
+        $chat = self::create([
+            'type' => 'private',
+            'created_by' => $user1->getId(),
+        ]);
+
+        $chat->addParticipant($user1);
+        $chat->addParticipant($user2);
+        $chat->name = $user2->getName();
+        $chat->description = '';
+        $chat->save();
+        $chat->refresh();
 
         return $chat;
     }

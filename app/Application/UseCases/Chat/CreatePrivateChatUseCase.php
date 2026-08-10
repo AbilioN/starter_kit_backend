@@ -10,9 +10,10 @@ class CreatePrivateChatUseCase
 {
     public function __construct(private ChatRepositoryInterface $chatRepository) {}
 
-    public function execute(ChatUser $user1, ChatUser $user2): Chat
+    public function execute(ChatUser $user1, ChatUser $user2, bool $forceNew = false): Chat
     {
-        $chatData = $this->chatRepository->findOrCreatePrivateChat($user1, $user2);
-        return $chatData;
+        return $forceNew
+            ? $this->chatRepository->createNewPrivateChat($user1, $user2)
+            : $this->chatRepository->findOrCreatePrivateChat($user1, $user2);
     }
 } 

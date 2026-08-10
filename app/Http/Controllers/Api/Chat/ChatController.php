@@ -277,16 +277,17 @@ class ChatController extends Controller
             DB::beginTransaction();
             $request->validate([
                 'other_user_id' => 'required|string',
-                'other_user_type' => 'required|in:user,admin,assistant'
+                'other_user_type' => 'required|in:user,admin,assistant',
+                'new_conversation' => 'sometimes|boolean',
             ]);
-    
+
             $user = $request->user();
             $chatUser = ChatUserFactory::createFromModel($user);
             $otherChatUser = ChatUserFactory::createFromChatUserData(
                 $request->other_user_id,
                 $request->other_user_type
             );
-            $chat = $useCase->execute($chatUser, $otherChatUser);
+            $chat = $useCase->execute($chatUser, $otherChatUser, $request->boolean('new_conversation'));
             DB::commit();   
             return response()->json([
                 'success' => true, 

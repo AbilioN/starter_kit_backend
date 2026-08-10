@@ -169,6 +169,42 @@ class CreateChatTest extends TenantTestCase
         $this->assertDatabaseCount('chats', 1);
     }
 
+    public function test_new_conversation_flag_creates_a_separate_chat_instead_of_reusing_the_existing_one()
+    {
+        $token = $this->user1->createToken('test')->plainTextToken;
+
+        $response1 = $this->withHeader('Authorization', 'Bearer ' . $token)
+            ->postJson('/api/chat/create-private', [
+                'other_user_id' => $this->admin->id,
+                'other_user_type' => 'admin',
+            ]);
+        $chatId1 = $response1->json('data.id');
+
+        $response2 = $this->withHeader('Authorization', 'Bearer ' . $token)
+            ->postJson('/api/chat/create-private', [
+                'other_user_id' => $this->admin->id,
+                'other_user_type' => 'admin',
+                'new_conversation' => true,
+            ]);
+        $chatId2 = $response2->json('data.id');
+
+        $response2->assertStatus(201);
+        $this->assertNotEquals($chatId1, $chatId2);
+        $this->assertDatabaseCount('chats', 2);
+
+        // A third call without the flag should now find the most recently
+        // created chat is still ambiguous by design (both are valid private
+        // chats between the same pair) - what matters is it doesn't error
+        // and returns one of the two, not a third one.
+        $response3 = $this->withHeader('Authorization', 'Bearer ' . $token)
+            ->postJson('/api/chat/create-private', [
+                'other_user_id' => $this->admin->id,
+                'other_user_type' => 'admin',
+            ]);
+        $this->assertContains($response3->json('data.id'), [$chatId1, $chatId2]);
+        $this->assertDatabaseCount('chats', 2);
+    }
+
     public function test_created_by_type_is_derived_from_chat_user_table()
     {
         $token = $this->user1->createToken('test')->plainTextToken;

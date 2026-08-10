@@ -16,6 +16,12 @@ class ChatRepository implements ChatRepositoryInterface
         return $chatModel->toEntityFromReciever($reciever);
     }
 
+    public function createNewPrivateChat(ChatUser $sender, ChatUser $reciever): Chat
+    {
+        $chatModel = ChatModel::createPrivateChat($sender, $reciever);
+        return $chatModel->toEntityFromReciever($reciever);
+    }
+
     public function findById(string $id): ?Chat
     {
         $chatModel = ChatModel::find($id);
@@ -46,12 +52,23 @@ class ChatRepository implements ChatRepositoryInterface
      */
     public function getUserChats(ChatUser $user, int $page = 1, int $perPage = 20): \App\Domain\Entities\Chats
     {
-        $paginator = ChatModel::whereHas('users', function ($query) use ($user) {
-            $query->where('user_id', $user->getId())->where('user_type', $user->getType());
+        // Chat::users() always joins against the User::class table
+        // regardless of the pivot's user_type (same footgun as
+        // hasAssistant() had) - an admin or assistant participant's
+        // user_id never matches a users row, so whereHas('users', ...)
+        // silently excluded every chat for any admin/assistant querying
+        // their own list. A direct chat_id IN (...) subquery against
+        // chat_user, same pattern Chat::findOrCreatePrivateChat() already
+        // uses, works for every participant type.
+        $paginator = ChatModel::whereIn('id', function ($query) use ($user) {
+            $query->select('chat_id')->from('chat_user')
+                ->where('user_id', $user->getId())
+                ->where('user_type', $user->getType())
+                ->where('is_active', true);
         })
         ->with(['messages' => function ($query) {
             $query->latest()->limit(1);
-        }, 'users'])
+        }])
         ->orderBy('updated_at', 'desc')
         ->paginate($perPage, ['*'], 'page', $page);
 
@@ -119,8 +136,13 @@ class ChatRepository implements ChatRepositoryInterface
 
     public function getUnreadCount(ChatUser $user): int
     {
-        return ChatModel::whereHas('users', function ($query) use ($user) {
-            $query->where('user_id', $user->getId())->where('user_type', $user->getType());
+        // Same whereIn(chat_user) fix as getUserChats() above - whereHas('users', ...)
+        // silently excluded every admin/assistant participant.
+        return ChatModel::whereIn('id', function ($query) use ($user) {
+            $query->select('chat_id')->from('chat_user')
+                ->where('user_id', $user->getId())
+                ->where('user_type', $user->getType())
+                ->where('is_active', true);
         })
         ->whereHas('messages', function ($query) use ($user) {
             $query->where('sender_id', '!=', $user->getId())->where('is_read', false);
