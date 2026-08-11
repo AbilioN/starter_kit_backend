@@ -105,7 +105,15 @@ return [
 
     'failed' => [
         'driver' => env('QUEUE_FAILED_DRIVER', 'database-uuids'),
-        'database' => env('DB_CONNECTION', 'sqlite'),
+        // Landlord, not DB_CONNECTION. Failed jobs are infrastructure shared by
+        // every tenant, and a job can fail before (or without) a tenant
+        // connection being established, so a tenant database is not a place
+        // this can reliably be written. Pointing it at DB_CONNECTION meant the
+        // legacy `starter_kit_backend` database, which has no `failed_jobs`
+        // table — so recording a failure threw a SECOND exception and the
+        // original failure was lost entirely: nothing in `queue:failed`,
+        // nothing in Horizon, every failing job silent.
+        'database' => env('QUEUE_FAILED_DB_CONNECTION', 'landlord'),
         'table' => 'failed_jobs',
     ],
 
