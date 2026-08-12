@@ -6,6 +6,7 @@ use App\Livewire\Auth\Login;
 use App\Livewire\Dashboard;
 use App\Livewire\FinancialReport;
 use App\Livewire\InfrastructureProviders;
+use App\Livewire\Security;
 use App\Livewire\SubscriptionPlans;
 use App\Livewire\Tenants;
 use Illuminate\Support\Facades\Auth;
@@ -26,6 +27,8 @@ Route::post('/logout', function () {
 
 Route::middleware('auth:godadmin')->group(function () {
     Route::get('/dashboard', Dashboard::class)->name('god.dashboard');
+
+    Route::get('/security', Security::class)->name('god.security');
 
     Route::get('/financial-report', FinancialReport::class)->name('god.financial-report');
     Route::get('/financial-report/export', FinancialReportExportController::class)->name('god.financial-report.export');
