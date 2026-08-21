@@ -2,7 +2,9 @@
 
 namespace App\Application\UseCases\System;
 
+use App\Console\Commands\CheckTenantDatabasesCommand;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Laravel\Horizon\Contracts\MasterSupervisorRepository;
@@ -54,6 +56,7 @@ class CheckSystemHealthUseCase
             'redis' => $this->checkRedis(),
             'storage' => $this->checkStorage(),
             'horizon' => $this->checkHorizon(),
+            'tenant_databases' => $this->checkTenantDatabases(),
             'ai_bus' => $this->checkAiBus(),
             'failed_jobs' => $this->checkFailedJobs(),
         ];
@@ -137,6 +140,50 @@ class CheckSystemHealthUseCase
                 'masters' => count($masters),
                 'statuses' => array_values(array_unique($statuses)),
             ];
+        });
+    }
+
+    /**
+     * Reports the scheduled tenant-database check's last result (see
+     * CheckTenantDatabasesCommand) rather than doing the work here.
+     *
+     * The age of that result is part of the answer: a check that stopped
+     * running looks identical to a healthy system if you only read its verdict,
+     * which is how a dead cron goes unnoticed for weeks.
+     */
+    private function checkTenantDatabases(): array
+    {
+        return $this->timed(function () {
+            $last = Cache::get(CheckTenantDatabasesCommand::CACHE_KEY);
+
+            if (! is_array($last)) {
+                return [
+                    'status' => self::SKIPPED,
+                    'reason' => 'scheduled check has not run yet',
+                ];
+            }
+
+            $age = $this->ageInSeconds($last['checked_at']);
+            $maxAge = (int) config('health.tenant_databases.max_age_minutes') * 60;
+            $failed = $last['failed'] ?? [];
+
+            $problems = [];
+
+            if ($failed !== []) {
+                $problems[] = count($failed).' unreachable: '.implode(', ', array_column($failed, 'subdomain'));
+            }
+
+            if ($age > $maxAge) {
+                $problems[] = "last checked {$age}s ago";
+            }
+
+            return array_filter([
+                'status' => $problems === [] ? self::OK : self::DEGRADED,
+                'total' => $last['total'] ?? null,
+                'unreachable' => count($failed),
+                'checked_seconds_ago' => $age,
+                'problems' => $problems ?: null,
+            ], fn ($value) => $value !== null);
         });
     }
 

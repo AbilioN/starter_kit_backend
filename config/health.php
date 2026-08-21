@@ -35,6 +35,13 @@ return [
         'heartbeat_max_age_seconds' => (int) env('HEALTH_AI_HEARTBEAT_MAX_AGE_SECONDS', 60),
     ],
 
+    'tenant_databases' => [
+        // How old the scheduled check's result may be before the probe stops
+        // trusting it. Must stay comfortably above the schedule's interval
+        // (every 10 minutes) or a single skipped run reads as an incident.
+        'max_age_minutes' => (int) env('HEALTH_TENANT_DB_MAX_AGE_MINUTES', 30),
+    ],
+
     'failed_jobs' => [
         // Counted over a window rather than in total: old failures are
         // history, recent ones are an incident.

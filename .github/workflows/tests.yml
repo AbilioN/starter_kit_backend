@@ -1,0 +1,111 @@
+name: tests
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  # Fast gate. SQLite, in-memory where possible: this is the run that tells a
+  # pull request whether the logic still works.
+  sqlite:
+    name: PHPUnit (SQLite)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo, pdo_sqlite, pdo_mysql, gd, zip, bcmath, redis
+          coverage: none
+
+      - name: Cache composer packages
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+
+      - run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - run: php artisan test
+
+  # Slow gate, and the one that matters for anything touching the schema.
+  #
+  # SQLite is loosely typed and accepts writes MySQL rejects. That difference
+  # hid `notifications.notifiable_id` being a bigint while holding UUIDs, so no
+  # `database`-channel notification had ever been stored in production while the
+  # SQLite suite stayed green (found 2026-08-21). Column types, strict mode,
+  # foreign keys, index length limits and collation only exist in this job.
+  #
+  # It needs its own MySQL server, not a shared one: tenant provisioning tests
+  # CREATE and DROP whole databases named after their subdomain, which on a
+  # shared server can collide with real ones.
+  mysql:
+    name: PHPUnit (MySQL)
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: starter_kit_testing
+          MYSQL_USER: starter_kit_backend
+          MYSQL_PASSWORD: password
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo, pdo_mysql, gd, zip, bcmath, redis
+          coverage: none
+
+      - name: Cache composer packages
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+
+      - run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      # The landlord and tenant connections need their own databases, and the
+      # test user needs the privilege to create and drop the ones provisioning
+      # tests bring into being.
+      - name: Create databases
+        run: |
+          mysql -h 127.0.0.1 -uroot -proot -e "
+            CREATE DATABASE IF NOT EXISTS starter_kit_testing_landlord;
+            CREATE DATABASE IF NOT EXISTS starter_kit_testing_tenant;
+            GRANT ALL PRIVILEGES ON *.* TO 'starter_kit_backend'@'%';
+            FLUSH PRIVILEGES;"
+
+      - run: vendor/bin/phpunit -c phpunit.mysql.xml

@@ -119,6 +119,44 @@ services:
       - DB_USERNAME=${DB_USERNAME:-starter_kit_backend}
     command: ./docker/wait-for-db.sh php artisan horizon
 
+  # Runs everything time-based: the tenant database health check the readiness
+  # probe reads, token pruning, and Horizon's metric snapshots (routes/console.php).
+  # Long-running, so it reads config once at boot — restart it after changing
+  # .env, config/*.php or any class a scheduled command touches.
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: starter_kit_backend_scheduler
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./app:/var/www/app
+      - ./config:/var/www/config
+      - ./database:/var/www/database
+      - ./routes:/var/www/routes
+      - ./resources:/var/www/resources
+      - ./public:/var/www/public
+      - ./storage:/var/www/storage
+      - ./bootstrap:/var/www/bootstrap
+      - ./artisan:/var/www/artisan
+      - ./composer.json:/var/www/composer.json
+      - ./composer.lock:/var/www/composer.lock
+      - ./package.json:/var/www/package.json
+      - ./package-lock.json:/var/www/package-lock.json
+      - ./vite.config.js:/var/www/vite.config.js
+      - vendor_data:/var/www/vendor
+    networks:
+      - starter_kit_backend_network
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DB_PASSWORD=${DB_PASSWORD:-password}
+      - DB_DATABASE=${DB_DATABASE:-starter_kit_backend}
+      - DB_USERNAME=${DB_USERNAME:-starter_kit_backend}
+    command: ./docker/wait-for-db.sh php artisan schedule:work
+
   # Consumes openai_responses from Redis (pushed by the starter_kit_ai_microservice
   # Python worker) and dispatches ProcessOpenAIResponse for each one.
   openai-listener:

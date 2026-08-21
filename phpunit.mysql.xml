@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+>
+    <testsuites>
+        <testsuite name="Unit">
+            <directory suffix="Test.php">./tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Feature">
+            <directory suffix="Test.php">./tests/Feature</directory>
+        </testsuite>
+        <testsuite name="Integration">
+            <directory suffix="Test.php">./tests/Integration</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory suffix=".php">./app</directory>
+        </include>
+    </source>
+    <php>
+        <env name="APP_ENV" value="testing"/>
+        <env name="APP_MAINTENANCE_DRIVER" value="file"/>
+        <env name="BCRYPT_ROUNDS" value="4"/>
+        <env name="CACHE_STORE" value="array"/>
+        <!-- The whole point of this file: the same suite against the engine
+             production actually runs on.
+
+             SQLite is loosely typed and accepts writes MySQL rejects. That
+             difference hid `notifications.notifiable_id` being a bigint while
+             holding UUIDs, so no `database`-channel notification had ever been
+             stored in production while this suite stayed green (found
+             2026-08-21). Column types, strict mode, foreign keys, index length
+             limits and collation are all invisible to the SQLite run.
+
+             Values below are the CI defaults. PHPUnit does not overwrite an
+             environment variable that already exists, so any of them can be
+             overridden from the shell — which is how the same file runs against
+             the local docker stack (DB_HOST=db, credentials from .env). -->
+        <env name="DB_CONNECTION" value="mysql"/>
+        <env name="DB_HOST" value="127.0.0.1"/>
+        <env name="DB_PORT" value="3306"/>
+        <env name="DB_DATABASE" value="starter_kit_testing"/>
+        <env name="DB_USERNAME" value="starter_kit_backend"/>
+        <env name="DB_PASSWORD" value="password"/>
+        <env name="LANDLORD_DB_CONNECTION" value="mysql"/>
+        <env name="LANDLORD_DB_DATABASE" value="starter_kit_testing_landlord"/>
+        <env name="TENANT_DB_CONNECTION" value="mysql"/>
+        <env name="TENANT_DB_DATABASE" value="starter_kit_testing_tenant"/>
+        <!-- Own Redis DB index, isolated from the dev keyspace (REDIS_DB=0).
+             Tests push/pop raw, unprefixed keys like "openai_requests" (see
+             ProcessOpenAIRequestAgentProfileTest) - since REDIS_PREFIX had to
+             become empty for the real Python worker/openai-listener to see
+             Laravel's writes (see .env's REDIS_PREFIX comment), those same
+             raw keys are now also live in dev. Without a separate DB index
+             here, a real dev worker can pop a test's queued payload before
+             the test's own assertion does, flaking it. -->
+        <env name="REDIS_DB" value="5"/>
+        <env name="MAIL_MAILER" value="array"/>
+        <env name="PULSE_ENABLED" value="false"/>
+        <env name="QUEUE_CONNECTION" value="sync"/>
+        <env name="SESSION_DRIVER" value="array"/>
+        <env name="TELESCOPE_ENABLED" value="false"/>
+    </php>
+</phpunit>

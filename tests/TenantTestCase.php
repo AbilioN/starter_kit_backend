@@ -5,6 +5,7 @@ namespace Tests;
 use App\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 
 /**
@@ -23,11 +24,29 @@ abstract class TenantTestCase extends TestCase
 {
     use RefreshDatabase;
 
-    protected $connectionsToTransact = ['sqlite', 'landlord', 'tenant'];
+    /**
+     * The default connection is named 'sqlite' in the normal (SQLite) run and
+     * 'mysql' when the suite runs against the engine production uses
+     * (phpunit.mysql.xml). Hardcoding 'sqlite' here made every test under the
+     * MySQL config try to open a *file* named after the MySQL database, so the
+     * whole suite errored before reaching a single assertion.
+     */
+    protected function connectionsToTransact()
+    {
+        return [config('database.default'), 'landlord', 'tenant'];
+    }
 
     private static bool $landlordAndTenantMigrated = false;
 
     private ?string $actingTenantHost = null;
+
+    /**
+     * Database names the MySQL cleanup must never drop, captured before a test
+     * can move them. Provisioning repoints `database.connections.tenant.database`
+     * at the tenant it just created, so reading this at teardown time would
+     * leave the suite's own tenant database unprotected — and drop it.
+     */
+    private array $protectedDatabases = [];
 
     /**
      * Overrides MakesHttpRequests::prepareUrlForRequest() so every existing
@@ -78,8 +97,120 @@ abstract class TenantTestCase extends TestCase
         static::$landlordAndTenantMigrated = true;
     }
 
+    /**
+     * Undoes what a transaction cannot, when the suite runs on MySQL.
+     *
+     * RefreshDatabase relies on wrapping each test in a transaction and rolling
+     * it back. SQLite makes DDL transactional, so a test that provisions a
+     * tenant (CREATE DATABASE + migrations) rolls back like anything else. MySQL
+     * **implicitly commits** on DDL: the moment a test provisions a tenant, the
+     * enclosing transaction is gone and everything written so far is permanent.
+     *
+     * The visible symptom is not the provisioning test failing — it is the next
+     * hundred tests failing on duplicate keys for rows they never inserted.
+     *
+     * So on MySQL only, wipe what leaked: the databases the test created, and
+     * the rows left behind on landlord and tenant.
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->protectedDatabases = array_filter([
+            config('database.connections.tenant.database'),
+            config('database.connections.landlord.database'),
+            config('database.connections.'.config('database.default').'.database'),
+        ]);
+    }
+
+    protected function tearDown(): void
+    {
+        if ($this->usesTransactionalDdl()) {
+            parent::tearDown();
+
+            return;
+        }
+
+        $this->dropTenantDatabasesCreatedDuringTest();
+        $this->truncateAll('landlord');
+        $this->truncateAll('tenant');
+
+        parent::tearDown();
+    }
+
+    private function usesTransactionalDdl(): bool
+    {
+        return config('database.connections.'.config('database.default').'.driver') === 'sqlite';
+    }
+
+    /**
+     * Only databases named by tenant rows this test created, never a blanket
+     * "drop everything matching the prefix" — the MySQL server that runs the
+     * suite may be the same one holding real development tenants.
+     */
+    private function dropTenantDatabasesCreatedDuringTest(): void
+    {
+        $protected = $this->protectedDatabases;
+
+        try {
+            $databases = DB::connection('landlord')->table('tenants')->pluck('database_name');
+        } catch (\Throwable) {
+            return;
+        }
+
+        foreach ($databases as $database) {
+            if (! $database || in_array($database, $protected, true)) {
+                continue;
+            }
+
+            try {
+                DB::connection('landlord')->statement("DROP DATABASE IF EXISTS `{$database}`");
+            } catch (\Throwable) {
+                // A database that cannot be dropped must not fail the test that
+                // already passed; the next run's provisioning will overwrite it.
+            }
+        }
+    }
+
+    private function truncateAll(string $connection): void
+    {
+        try {
+            $tables = DB::connection($connection)->getSchemaBuilder()->getTableListing();
+        } catch (\Throwable) {
+            return;
+        }
+
+        DB::connection($connection)->statement('SET FOREIGN_KEY_CHECKS=0');
+
+        foreach ($tables as $table) {
+            $table = str_contains($table, '.') ? explode('.', $table)[1] : $table;
+
+            // `migrations` holds the schema state that beforeRefreshingDatabase
+            // builds once per process — truncating it would make every later
+            // test re-migrate from nothing.
+            if ($table === 'migrations') {
+                continue;
+            }
+
+            try {
+                DB::connection($connection)->table($table)->truncate();
+            } catch (\Throwable) {
+                // Ignore: a table that vanished with a dropped database.
+            }
+        }
+
+        DB::connection($connection)->statement('SET FOREIGN_KEY_CHECKS=1');
+    }
+
     private function ensureSqliteFileExists(string $connection): void
     {
+        // Under the MySQL config this value is a database name, not a path —
+        // without the driver check it would create a junk file named after the
+        // database in the project root.
+        if (config("database.connections.{$connection}.driver") !== 'sqlite') {
+            return;
+        }
+
         $path = config("database.connections.{$connection}.database");
 
         if (! $path || $path === ':memory:') {
