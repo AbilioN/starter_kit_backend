@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\God\FinancialReportExportController;
 use App\Livewire\AgentProfiles;
+use App\Livewire\Backups;
 use App\Livewire\Auth\Login;
 use App\Livewire\Dashboard;
 use App\Livewire\FinancialReport;
@@ -44,6 +45,8 @@ Route::middleware('auth:godadmin')->group(function () {
     Route::get('/agent-profiles', AgentProfiles\Index::class)->name('god.agent-profiles.index');
     Route::get('/agent-profiles/create', AgentProfiles\Form::class)->name('god.agent-profiles.create');
     Route::get('/agent-profiles/{profileId}/edit', AgentProfiles\Form::class)->name('god.agent-profiles.edit');
+
+    Route::get('/backups', Backups\Index::class)->name('god.backups.index');
 
     Route::get('/tenants', Tenants\Index::class)->name('god.tenants.index');
     Route::get('/tenants/create', Tenants\Create::class)->name('god.tenants.create');

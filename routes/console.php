@@ -49,3 +49,19 @@ Schedule::command('tenant:prune-tokens')
 // Horizon's own metrics snapshot — without it the dashboard's throughput and
 // wait-time graphs stay empty.
 Schedule::command('horizon:snapshot')->everyFiveMinutes();
+
+// Backups (5.3). Prune first, so the night's dumps land in room that has
+// already been made — a capacity ceiling should cost the oldest copy, not
+// tonight's.
+Schedule::command('backup:prune')
+    ->dailyAt('02:30')
+    ->withoutOverlapping();
+
+// Hourly, not daily: the command itself enforces each plan's
+// `limits.backup_frequency_hours`, so one schedule serves a daily plan and a
+// weekly one without a second entry. runInBackground() keeps a slow tenant from
+// delaying everything else due in the same minute.
+Schedule::command('backup:run')
+    ->hourly()
+    ->withoutOverlapping()
+    ->runInBackground();

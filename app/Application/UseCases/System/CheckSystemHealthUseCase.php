@@ -2,6 +2,7 @@
 
 namespace App\Application\UseCases\System;
 
+use App\Application\UseCases\Backup\CheckBackupStalenessUseCase;
 use App\Console\Commands\CheckTenantDatabasesCommand;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
@@ -59,6 +60,7 @@ class CheckSystemHealthUseCase
             'tenant_databases' => $this->checkTenantDatabases(),
             'ai_bus' => $this->checkAiBus(),
             'failed_jobs' => $this->checkFailedJobs(),
+            'backups' => $this->checkBackups(),
         ];
 
         return [
@@ -183,6 +185,43 @@ class CheckSystemHealthUseCase
                 'unreachable' => count($failed),
                 'checked_seconds_ago' => $age,
                 'problems' => $problems ?: null,
+            ], fn ($value) => $value !== null);
+        });
+    }
+
+    /**
+     * Tenants whose last successful backup is older than their own plan allows.
+     *
+     * Reads the landlord ledger and the plans, never a tenant connection — so
+     * it still answers for a tenant whose database is the broken thing, which
+     * is the case that matters most here.
+     *
+     * Memoised for five minutes rather than computed per probe: the underlying
+     * question changes at most once per backup run, and a readiness probe polled
+     * every few seconds must not turn into a few hundred landlord queries a
+     * second as the tenant count grows.
+     */
+    private function checkBackups(): array
+    {
+        return $this->timed(function () {
+            $result = Cache::remember(
+                'health:backup-staleness',
+                now()->addMinutes(5),
+                fn () => app(CheckBackupStalenessUseCase::class)->execute(),
+            );
+
+            if ($result['checked'] === 0) {
+                return ['status' => self::SKIPPED, 'reason' => 'no subject has backups enabled'];
+            }
+
+            $stale = $result['stale'];
+
+            return array_filter([
+                'status' => $stale === [] ? self::OK : self::DEGRADED,
+                'checked' => $result['checked'],
+                'stale' => count($stale),
+                'never_backed_up' => $result['never'],
+                'subjects' => $stale === [] ? null : array_column($stale, 'tenant'),
             ], fn ($value) => $value !== null);
         });
     }

@@ -56,6 +56,7 @@ class SubscriptionPlanRepository implements SubscriptionPlanRepositoryInterface
         ?string $broadcastingProviderId = null,
         ?string $storageProviderId = null,
         ?string $aiProviderId = null,
+        ?string $backupProviderId = null,
     ): SubscriptionPlan {
         $plan = SubscriptionPlanModel::create([
             'name' => $name,
@@ -70,6 +71,7 @@ class SubscriptionPlanRepository implements SubscriptionPlanRepositoryInterface
             'broadcasting_provider_id' => $broadcastingProviderId,
             'storage_provider_id' => $storageProviderId,
             'ai_provider_id' => $aiProviderId,
+            'backup_provider_id' => $backupProviderId,
         ]);
 
         return $plan->toEntity();
@@ -88,9 +90,11 @@ class SubscriptionPlanRepository implements SubscriptionPlanRepositoryInterface
         ?string $broadcastingProviderId = null,
         ?string $storageProviderId = null,
         ?string $aiProviderId = null,
+        ?string $backupProviderId = null,
         bool $clearBroadcastingProvider = false,
         bool $clearStorageProvider = false,
         bool $clearAiProvider = false,
+        bool $clearBackupProvider = false,
     ): SubscriptionPlan {
         $plan = SubscriptionPlanModel::findOrFail($id);
 
@@ -106,6 +110,7 @@ class SubscriptionPlanRepository implements SubscriptionPlanRepositoryInterface
             'broadcasting_provider_id' => $broadcastingProviderId,
             'storage_provider_id' => $storageProviderId,
             'ai_provider_id' => $aiProviderId,
+            'backup_provider_id' => $backupProviderId,
         ], fn ($value) => $value !== null);
 
         // array_filter() above treats null as "don't touch" (existing
@@ -121,6 +126,9 @@ class SubscriptionPlanRepository implements SubscriptionPlanRepositoryInterface
         }
         if ($clearAiProvider) {
             $updateData['ai_provider_id'] = null;
+        }
+        if ($clearBackupProvider) {
+            $updateData['backup_provider_id'] = null;
         }
 
         $plan->update($updateData);

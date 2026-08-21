@@ -15,6 +15,7 @@
                         <option value="broadcasting">Broadcasting (Pusher)</option>
                         <option value="storage">Storage (S3)</option>
                         <option value="ai">AI (OpenAI)</option>
+                        <option value="backup">Backup (S3 destination)</option>
                     </select>
                     @if ($providerId)
                         <p class="mt-1.5 text-xs text-slate-500">Type can't be changed after creation.</p>
@@ -115,6 +116,57 @@
                             <input type="checkbox" wire:model="configUsePathStyle"
                                    class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-600">
                             Use path-style endpoint
+                        </label>
+                    </div>
+                </div>
+            </div>
+        @elseif ($type === 'backup')
+            <div class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-900/5">
+                <h2 class="text-sm font-semibold text-slate-900">Backup Destination</h2>
+                <p class="mt-1 text-xs text-slate-500">
+                    Keep this separate from the Storage provider above. A backup written to the same bucket it
+                    exists to protect is not a backup.
+                </p>
+                <div class="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2">
+                    <div>
+                        <label for="configBucket" class="block text-sm font-medium text-slate-700">Bucket</label>
+                        <input type="text" id="configBucket" wire:model="configBucket"
+                               class="mt-1.5 block w-full rounded-md border-0 px-3 py-2 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm font-mono">
+                        @error('configBucket') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label for="configRegion" class="block text-sm font-medium text-slate-700">Region</label>
+                        <input type="text" id="configRegion" wire:model="configRegion" placeholder="us-east-1"
+                               class="mt-1.5 block w-full rounded-md border-0 px-3 py-2 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm font-mono">
+                    </div>
+                    <div>
+                        <label for="configKey" class="block text-sm font-medium text-slate-700">Access Key ID</label>
+                        <input type="text" id="configKey" wire:model="configKey"
+                               class="mt-1.5 block w-full rounded-md border-0 px-3 py-2 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm font-mono">
+                        @error('configKey') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label for="configSecret" class="block text-sm font-medium text-slate-700">Secret Access Key</label>
+                        <input type="password" id="configSecret" wire:model="configSecret" autocomplete="new-password"
+                               class="mt-1.5 block w-full rounded-md border-0 px-3 py-2 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm font-mono">
+                        @error('configSecret') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label for="configEndpoint" class="block text-sm font-medium text-slate-700">Endpoint (optional)</label>
+                        <input type="text" id="configEndpoint" wire:model="configEndpoint" placeholder="for S3-compatible providers (Backblaze B2, Wasabi, MinIO, ...)"
+                               class="mt-1.5 block w-full rounded-md border-0 px-3 py-2 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm font-mono">
+                    </div>
+                    <div>
+                        <label for="configPathPrefix" class="block text-sm font-medium text-slate-700">Path prefix</label>
+                        <input type="text" id="configPathPrefix" wire:model="configPathPrefix" placeholder="backups"
+                               class="mt-1.5 block w-full rounded-md border-0 px-3 py-2 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm font-mono">
+                        <p class="mt-1.5 text-xs text-slate-500">Files land under <code>{prefix}/{subdomain}/database/</code>.</p>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="inline-flex items-center gap-2">
+                            <input type="checkbox" wire:model="configUsePathStyle"
+                                   class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-600">
+                            <span class="text-sm text-slate-700">Use path-style endpoint</span>
                         </label>
                     </div>
                 </div>

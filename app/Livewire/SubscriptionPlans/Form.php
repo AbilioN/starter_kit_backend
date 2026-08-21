@@ -66,6 +66,19 @@ class Form extends Component
 
     public string $aiProviderId = '';
 
+    public string $backupProviderId = '';
+
+    /** Plans predating backups keep being backed up — absence is not "off". */
+    public bool $featureBackup = true;
+
+    /** Hours between backups. '' = never, which is the only way to switch a plan's backups off through limits. */
+    public string $backupFrequencyHours = '24';
+
+    public int $backupRetentionDays = 30;
+
+    /** MB ceiling for everything this tenant has stored; '' = uncapped. */
+    public string $backupMaxTotalMb = '10240';
+
     private SubscriptionPlanRepositoryInterface $subscriptionPlanRepository;
 
     // Livewire re-instantiates the component via `new static` on every
@@ -126,6 +139,15 @@ class Form extends Component
         $this->broadcastingProviderId = $plan->broadcastingProviderId ?? '';
         $this->storageProviderId = $plan->storageProviderId ?? '';
         $this->aiProviderId = $plan->aiProviderId ?? '';
+        $this->backupProviderId = $plan->backupProviderId ?? '';
+        $this->featureBackup = (bool) ($plan->features['backup'] ?? true);
+        $this->backupFrequencyHours = array_key_exists('backup_frequency_hours', $plan->limits)
+            ? (string) ($plan->limits['backup_frequency_hours'] ?? '')
+            : '24';
+        $this->backupRetentionDays = (int) ($plan->limits['backup_retention_days'] ?? 30);
+        $this->backupMaxTotalMb = array_key_exists('backup_max_total_mb', $plan->limits)
+            ? (string) ($plan->limits['backup_max_total_mb'] ?? '')
+            : '10240';
     }
 
     public function save(
@@ -140,6 +162,9 @@ class Form extends Component
             'tertiaryColor' => 'nullable|string|regex:/^#[0-9a-fA-F]{6}$/',
             'iconUpload' => 'nullable|image|max:4096',
             'maxStorageMbCustom' => 'required_if:maxStoragePreset,custom|nullable|integer|min:1',
+            'backupFrequencyHours' => 'nullable|integer|min:1',
+            'backupRetentionDays' => 'required|integer|min:1',
+            'backupMaxTotalMb' => 'nullable|integer|min:1',
         ]);
 
         $actorId = Auth::guard('godadmin')->id();
@@ -148,6 +173,7 @@ class Form extends Component
             'file_upload' => $this->featureFileUpload,
             'notifications' => $this->featureNotifications,
             'ai_agent' => $this->featureAiAgent,
+            'backup' => $this->featureBackup,
         ];
         $limits = [
             'max_admins' => $this->maxAdmins,
@@ -160,6 +186,12 @@ class Form extends Component
                 'custom' => $this->maxStorageMbCustom,
                 default => (int) $this->maxStoragePreset,
             },
+            // Read by the scheduler from HERE, on the landlord connection —
+            // never from the copy mirrored into the tenant's settings table.
+            // See ResolveBackupPolicyUseCase.
+            'backup_frequency_hours' => $this->backupFrequencyHours === '' ? null : (int) $this->backupFrequencyHours,
+            'backup_retention_days' => $this->backupRetentionDays,
+            'backup_max_total_mb' => $this->backupMaxTotalMb === '' ? null : (int) $this->backupMaxTotalMb,
         ];
 
         $iconPaths = $this->iconUpload
@@ -181,9 +213,11 @@ class Form extends Component
                 broadcastingProviderId: $this->broadcastingProviderId ?: null,
                 storageProviderId: $this->storageProviderId ?: null,
                 aiProviderId: $this->aiProviderId ?: null,
+                backupProviderId: $this->backupProviderId ?: null,
                 clearBroadcastingProvider: $this->broadcastingProviderId === '',
                 clearStorageProvider: $this->storageProviderId === '',
                 clearAiProvider: $this->aiProviderId === '',
+                clearBackupProvider: $this->backupProviderId === '',
             );
         } else {
             $createSubscriptionPlan->execute(
@@ -200,6 +234,7 @@ class Form extends Component
                 broadcastingProviderId: $this->broadcastingProviderId ?: null,
                 storageProviderId: $this->storageProviderId ?: null,
                 aiProviderId: $this->aiProviderId ?: null,
+                backupProviderId: $this->backupProviderId ?: null,
             );
         }
 
@@ -214,6 +249,7 @@ class Form extends Component
             'broadcastingProviders' => $providerRepository->findByType('broadcasting'),
             'storageProviders' => $providerRepository->findByType('storage'),
             'aiProviders' => $providerRepository->findByType('ai'),
+            'backupProviders' => $providerRepository->findByType('backup'),
         ])->layout('layouts.god');
     }
 }

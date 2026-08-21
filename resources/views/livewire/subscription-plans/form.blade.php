@@ -113,6 +113,10 @@
                     <input type="checkbox" wire:model="featureAiAgent" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-600">
                     AI Agent
                 </label>
+                <label class="flex items-center gap-2 text-sm text-slate-700">
+                    <input type="checkbox" wire:model="featureBackup" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-600">
+                    Backups
+                </label>
             </div>
         </div>
 
@@ -187,6 +191,50 @@
                             <option value="{{ $provider->id }}">{{ $provider->name }}</option>
                         @endforeach
                     </select>
+                </div>
+                <div>
+                    <label for="backupProviderId" class="block text-sm font-medium text-slate-700">Backup Destination</label>
+                    <select id="backupProviderId" wire:model="backupProviderId"
+                            class="mt-1.5 block w-full rounded-md border-0 px-3 py-2 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+                        <option value="">— global default —</option>
+                        @foreach ($backupProviders as $provider)
+                            <option value="{{ $provider->id }}">{{ $provider->name }}</option>
+                        @endforeach
+                    </select>
+                    <p class="mt-1.5 text-xs text-slate-500">
+                        "Global default" means the <code>BACKUP_*</code> disk, not "no backup".
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-900/5">
+            <h2 class="text-sm font-semibold text-slate-900">Backup Policy</h2>
+            <p class="mt-1 text-xs text-slate-500">
+                Read straight from this plan by the scheduler. Changing it takes effect on the next run — there is
+                nothing to re-sync into the tenant.
+            </p>
+            <div class="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-3">
+                <div>
+                    <label for="backupFrequencyHours" class="block text-sm font-medium text-slate-700">Frequency (hours)</label>
+                    <input type="number" id="backupFrequencyHours" wire:model="backupFrequencyHours" min="1" placeholder="24"
+                           class="mt-1.5 block w-full rounded-md border-0 px-3 py-2 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+                    <p class="mt-1.5 text-xs text-slate-500">24 = daily, 168 = weekly. Blank = never.</p>
+                    @error('backupFrequencyHours') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
+                </div>
+                <div>
+                    <label for="backupRetentionDays" class="block text-sm font-medium text-slate-700">Retention (days)</label>
+                    <input type="number" id="backupRetentionDays" wire:model="backupRetentionDays" min="1"
+                           class="mt-1.5 block w-full rounded-md border-0 px-3 py-2 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+                    <p class="mt-1.5 text-xs text-slate-500">The most recent backup is never deleted, whatever this says.</p>
+                    @error('backupRetentionDays') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
+                </div>
+                <div>
+                    <label for="backupMaxTotalMb" class="block text-sm font-medium text-slate-700">Capacity (MB)</label>
+                    <input type="number" id="backupMaxTotalMb" wire:model="backupMaxTotalMb" min="1" placeholder="10240"
+                           class="mt-1.5 block w-full rounded-md border-0 px-3 py-2 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+                    <p class="mt-1.5 text-xs text-slate-500">Blank = uncapped. Over the cap, the run fails loudly rather than skipping.</p>
+                    @error('backupMaxTotalMb') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
                 </div>
             </div>
         </div>

@@ -14,6 +14,11 @@ RUN apt-get update && apt-get install -y \
     nodejs \
     npm \
     supervisor \
+    # Backups (5.3): mysqldump/mysql are NOT in php:8.2-fpm. Adding them here
+    # means app, horizon and scheduler must be REBUILT, not just restarted —
+    # `docker compose restart` keeps running the old image and every backup
+    # fails with "mysqldump not available".
+    default-mysql-client \
     && docker-php-ext-configure gd --with-jpeg \
     && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
 

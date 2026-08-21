@@ -61,15 +61,21 @@ class TenantRepository implements TenantRepositoryInterface
         ?string $name = null,
         ?string $status = null,
         ?string $subscriptionPlanId = null,
+        // Only ever written by a restore: pointing a tenant at a different
+        // database is the flip that makes RestoreTenantBackupUseCase
+        // reversible, and it is not something any other caller should do.
+        ?string $databaseName = null,
         ?string $themePrimaryColor = null,
         ?string $themeSecondaryColor = null,
         ?string $logoPath = null,
         ?string $broadcastingProviderId = null,
         ?string $storageProviderId = null,
         ?string $aiProviderId = null,
+        ?string $backupProviderId = null,
         bool $clearBroadcastingProvider = false,
         bool $clearStorageProvider = false,
         bool $clearAiProvider = false,
+        bool $clearBackupProvider = false,
     ): Tenant {
         $tenant = TenantModel::findOrFail($id);
 
@@ -77,12 +83,14 @@ class TenantRepository implements TenantRepositoryInterface
             'name' => $name,
             'status' => $status,
             'subscription_plan_id' => $subscriptionPlanId,
+            'database_name' => $databaseName,
             'theme_primary_color' => $themePrimaryColor,
             'theme_secondary_color' => $themeSecondaryColor,
             'logo_path' => $logoPath,
             'broadcasting_provider_id' => $broadcastingProviderId,
             'storage_provider_id' => $storageProviderId,
             'ai_provider_id' => $aiProviderId,
+            'backup_provider_id' => $backupProviderId,
         ], fn ($value) => $value !== null);
 
         // Same "null = don't touch" convention as SubscriptionPlanRepository
@@ -96,6 +104,9 @@ class TenantRepository implements TenantRepositoryInterface
         }
         if ($clearAiProvider) {
             $updateData['ai_provider_id'] = null;
+        }
+        if ($clearBackupProvider) {
+            $updateData['backup_provider_id'] = null;
         }
 
         $tenant->update($updateData);

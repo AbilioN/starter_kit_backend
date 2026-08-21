@@ -42,6 +42,12 @@ class Form extends Component
 
     public string $configUrl = '';
 
+    // backup only — the destination bucket reuses key/secret/region/bucket
+    // /endpoint/use_path_style above; only the prefix and driver are its own.
+    public string $configPathPrefix = 'backups';
+
+    public string $configDriver = 's3';
+
     // ai only
     public string $configApiKey = '';
 
@@ -85,6 +91,8 @@ class Form extends Component
         $this->configEndpoint = $config['endpoint'] ?? '';
         $this->configUsePathStyle = (bool) ($config['use_path_style'] ?? false);
         $this->configUrl = $config['url'] ?? '';
+        $this->configPathPrefix = $config['path_prefix'] ?? 'backups';
+        $this->configDriver = $config['driver'] ?? 's3';
         $this->configApiKey = $config['api_key'] ?? '';
         $this->configModel = $config['model'] ?? '';
         $this->configSystemPrompt = $config['system_prompt'] ?? '';
@@ -95,13 +103,13 @@ class Form extends Component
         UpdateInfrastructureProviderUseCase $updateProvider,
     ): void {
         $this->validate([
-            'type' => 'required|in:broadcasting,storage,ai',
+            'type' => 'required|in:broadcasting,storage,ai,backup',
             'name' => 'required|string|max:255',
-            'configKey' => 'required_if:type,broadcasting|required_if:type,storage|string',
-            'configSecret' => 'required_if:type,broadcasting|required_if:type,storage|string',
+            'configKey' => 'required_if:type,broadcasting|required_if:type,storage|required_if:type,backup|string',
+            'configSecret' => 'required_if:type,broadcasting|required_if:type,storage|required_if:type,backup|string',
             'configAppId' => 'required_if:type,broadcasting|string',
             'configCluster' => 'required_if:type,broadcasting|string',
-            'configBucket' => 'required_if:type,storage|string',
+            'configBucket' => 'required_if:type,storage|required_if:type,backup|string',
             'configApiKey' => 'required_if:type,ai|string',
         ]);
 
@@ -126,6 +134,19 @@ class Form extends Component
                 'api_key' => $this->configApiKey,
                 'model' => $this->configModel ?: null,
                 'system_prompt' => $this->configSystemPrompt ?: null,
+            ],
+            // Deliberately a separate destination from the `storage` type, even
+            // though the fields are the same shape: a backup sitting in the
+            // bucket it exists to protect is not a backup.
+            'backup' => [
+                'driver' => $this->configDriver,
+                'key' => $this->configKey,
+                'secret' => $this->configSecret,
+                'region' => $this->configRegion ?: null,
+                'bucket' => $this->configBucket,
+                'endpoint' => $this->configEndpoint ?: null,
+                'use_path_style' => $this->configUsePathStyle,
+                'path_prefix' => $this->configPathPrefix ?: 'backups',
             ],
         };
 

@@ -23,14 +23,17 @@ interface TenantRepositoryInterface
         ?string $name = null,
         ?string $status = null,
         ?string $subscriptionPlanId = null,
+        ?string $databaseName = null,
         ?string $themePrimaryColor = null,
         ?string $themeSecondaryColor = null,
         ?string $logoPath = null,
         ?string $broadcastingProviderId = null,
         ?string $storageProviderId = null,
         ?string $aiProviderId = null,
+        ?string $backupProviderId = null,
         bool $clearBroadcastingProvider = false,
         bool $clearStorageProvider = false,
         bool $clearAiProvider = false,
+        bool $clearBackupProvider = false,
     ): Tenant;
 }

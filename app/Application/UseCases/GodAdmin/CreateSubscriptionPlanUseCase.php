@@ -27,6 +27,7 @@ class CreateSubscriptionPlanUseCase
         ?string $broadcastingProviderId = null,
         ?string $storageProviderId = null,
         ?string $aiProviderId = null,
+        ?string $backupProviderId = null,
     ): SubscriptionPlan {
         $plan = $this->subscriptionPlanRepository->create(
             name: $name,
@@ -41,6 +42,7 @@ class CreateSubscriptionPlanUseCase
             broadcastingProviderId: $broadcastingProviderId,
             storageProviderId: $storageProviderId,
             aiProviderId: $aiProviderId,
+            backupProviderId: $backupProviderId,
         );
 
         $this->logLandlordAudit->execute(

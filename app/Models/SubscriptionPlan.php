@@ -29,6 +29,7 @@ class SubscriptionPlan extends Model
         'broadcasting_provider_id',
         'storage_provider_id',
         'ai_provider_id',
+        'backup_provider_id',
     ];
 
     protected function casts(): array
@@ -62,6 +63,11 @@ class SubscriptionPlan extends Model
         return $this->belongsTo(InfrastructureProvider::class, 'ai_provider_id');
     }
 
+    public function backupProvider(): BelongsTo
+    {
+        return $this->belongsTo(InfrastructureProvider::class, 'backup_provider_id');
+    }
+
     public function agentProfiles(): BelongsToMany
     {
         return $this->belongsToMany(AgentProfile::class, 'agent_profile_subscription_plan');
@@ -83,6 +89,7 @@ class SubscriptionPlan extends Model
             broadcastingProviderId: $this->broadcasting_provider_id,
             storageProviderId: $this->storage_provider_id,
             aiProviderId: $this->ai_provider_id,
+            backupProviderId: $this->backup_provider_id,
             createdAt: $this->created_at,
             updatedAt: $this->updated_at,
         );

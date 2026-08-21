@@ -84,6 +84,20 @@ class AppServiceProvider extends ServiceProvider
             \App\Infrastructure\Repositories\AgentProfileRepository::class,
         );
 
+        // Backup (5.3)
+        $this->app->bind(
+            \App\Domain\Repositories\BackupRepositoryInterface::class,
+            \App\Infrastructure\Repositories\BackupRepository::class,
+        );
+        $this->app->bind(
+            \App\Domain\Services\DatabaseDumperInterface::class,
+            \App\Infrastructure\Services\MysqlDatabaseDumper::class,
+        );
+        $this->app->bind(
+            \App\Domain\Services\BackupArchiverInterface::class,
+            \App\Infrastructure\Services\BackupArchiver::class,
+        );
+
         // Template dependencies
         $this->app->bind(TemplateRepositoryInterface::class, TemplateRepository::class);
         // StubMergeContext until a real business entity is wired in — see

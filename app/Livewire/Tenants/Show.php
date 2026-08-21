@@ -44,6 +44,8 @@ class Show extends Component
 
     public string $aiProviderId = '';
 
+    public string $backupProviderId = '';
+
     public string $infraSaved = '';
 
     /**
@@ -71,6 +73,7 @@ class Show extends Component
         $this->broadcastingProviderId = $tenant->broadcastingProviderId ?? '';
         $this->storageProviderId = $tenant->storageProviderId ?? '';
         $this->aiProviderId = $tenant->aiProviderId ?? '';
+        $this->backupProviderId = $tenant->backupProviderId ?? '';
     }
 
     public function saveInfrastructure(UpdateTenantInfrastructureUseCase $updateInfrastructure): void
@@ -83,9 +86,11 @@ class Show extends Component
             broadcastingProviderId: $this->broadcastingProviderId ?: null,
             storageProviderId: $this->storageProviderId ?: null,
             aiProviderId: $this->aiProviderId ?: null,
+            backupProviderId: $this->backupProviderId ?: null,
             clearBroadcastingProvider: $this->broadcastingProviderId === '',
             clearStorageProvider: $this->storageProviderId === '',
             clearAiProvider: $this->aiProviderId === '',
+            clearBackupProvider: $this->backupProviderId === '',
         );
 
         $this->infraSaved = 'Infrastructure overrides updated.';
@@ -231,6 +236,7 @@ class Show extends Component
             'broadcastingProviders' => $providerRepository->findByType('broadcasting'),
             'storageProviders' => $providerRepository->findByType('storage'),
             'aiProviders' => $providerRepository->findByType('ai'),
+            'backupProviders' => $providerRepository->findByType('backup'),
         ])->layout('layouts.god');
     }
 }

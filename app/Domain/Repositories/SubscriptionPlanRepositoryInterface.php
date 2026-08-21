@@ -24,6 +24,7 @@ interface SubscriptionPlanRepositoryInterface
         ?string $broadcastingProviderId = null,
         ?string $storageProviderId = null,
         ?string $aiProviderId = null,
+        ?string $backupProviderId = null,
     ): SubscriptionPlan;
     public function update(
         string $id,
@@ -38,9 +39,11 @@ interface SubscriptionPlanRepositoryInterface
         ?string $broadcastingProviderId = null,
         ?string $storageProviderId = null,
         ?string $aiProviderId = null,
+        ?string $backupProviderId = null,
         bool $clearBroadcastingProvider = false,
         bool $clearStorageProvider = false,
         bool $clearAiProvider = false,
+        bool $clearBackupProvider = false,
     ): SubscriptionPlan;
     public function delete(string $id): void;
 }

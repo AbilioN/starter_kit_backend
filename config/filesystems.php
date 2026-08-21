@@ -60,6 +60,28 @@ return [
             'report' => false,
         ],
 
+        /*
+         * Backup destination of last resort — the end of the chain when
+         * neither the tenant nor its plan names a `backup` provider.
+         *
+         * Kept separate from the `s3` disk on purpose: that one is swapped
+         * per tenant by IdentifyTenant, and a backup written to the very
+         * bucket it exists to protect is not a backup. If BACKUP_BUCKET is
+         * unset the resolver throws rather than quietly writing nowhere.
+         */
+        'backup' => [
+            'driver' => env('BACKUP_DRIVER', 's3'),
+            'key' => env('BACKUP_ACCESS_KEY_ID'),
+            'secret' => env('BACKUP_SECRET_ACCESS_KEY'),
+            'region' => env('BACKUP_DEFAULT_REGION'),
+            'bucket' => env('BACKUP_BUCKET'),
+            'endpoint' => env('BACKUP_ENDPOINT'),
+            'use_path_style_endpoint' => env('BACKUP_USE_PATH_STYLE_ENDPOINT', false),
+            'root' => env('BACKUP_ROOT', storage_path('app/backups')),
+            'throw' => true,
+            'report' => false,
+        ],
+
     ],
 
     /*

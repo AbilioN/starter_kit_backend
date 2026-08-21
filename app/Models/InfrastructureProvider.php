@@ -23,7 +23,12 @@ class InfrastructureProvider extends Model
     protected function casts(): array
     {
         return [
-            'config' => 'array',
+            // Encrypted, not plain JSON: this column holds every tenant's
+            // Pusher secret, S3 secret and BYOK provider key, and backups (5.3)
+            // copy the landlord off-host by design. Existing rows are converted
+            // by the 2026_08_21_000003 migration, which must run with this code
+            // rather than after it — the cast cannot read a plaintext row.
+            'config' => 'encrypted:array',
             'is_active' => 'boolean',
         ];
     }

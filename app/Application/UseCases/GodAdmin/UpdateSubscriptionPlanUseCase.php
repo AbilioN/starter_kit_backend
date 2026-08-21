@@ -27,9 +27,11 @@ class UpdateSubscriptionPlanUseCase
         ?string $broadcastingProviderId = null,
         ?string $storageProviderId = null,
         ?string $aiProviderId = null,
+        ?string $backupProviderId = null,
         bool $clearBroadcastingProvider = false,
         bool $clearStorageProvider = false,
         bool $clearAiProvider = false,
+        bool $clearBackupProvider = false,
     ): SubscriptionPlan {
         $plan = $this->subscriptionPlanRepository->update(
             id: $planId,
@@ -44,9 +46,11 @@ class UpdateSubscriptionPlanUseCase
             broadcastingProviderId: $broadcastingProviderId,
             storageProviderId: $storageProviderId,
             aiProviderId: $aiProviderId,
+            backupProviderId: $backupProviderId,
             clearBroadcastingProvider: $clearBroadcastingProvider,
             clearStorageProvider: $clearStorageProvider,
             clearAiProvider: $clearAiProvider,
+            clearBackupProvider: $clearBackupProvider,
         );
 
         $this->logLandlordAudit->execute(

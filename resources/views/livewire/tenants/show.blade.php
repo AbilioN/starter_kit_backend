@@ -127,6 +127,16 @@
                         @endforeach
                     </select>
                 </div>
+                <div>
+                    <label for="backupProviderId" class="block text-xs font-medium text-slate-500">Backup Destination</label>
+                    <select id="backupProviderId" wire:model="backupProviderId"
+                            class="mt-1.5 block w-full rounded-md border-0 px-3 py-2 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+                        <option value="">— inherit from plan —</option>
+                        @foreach ($backupProviders as $provider)
+                            <option value="{{ $provider->id }}">{{ $provider->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
             <div class="flex justify-end">
                 <button type="submit"

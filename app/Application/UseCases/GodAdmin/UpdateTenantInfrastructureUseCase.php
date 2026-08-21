@@ -7,7 +7,7 @@ use App\Domain\Entities\Tenant;
 use App\Domain\Repositories\TenantRepositoryInterface;
 
 /**
- * Sets/clears a tenant's own broadcasting/storage provider override — a
+ * Sets/clears a tenant's own broadcasting/storage/ai/backup provider override — a
  * landlord-only write (unlike ChangeTenantSubscriptionPlanAsGodAdminUseCase,
  * this never touches the tenant's own database, so no connection-pointing
  * dance is needed: no Setting rows to sync, just tenants.broadcasting_provider_id
@@ -26,18 +26,22 @@ class UpdateTenantInfrastructureUseCase
         ?string $broadcastingProviderId = null,
         ?string $storageProviderId = null,
         ?string $aiProviderId = null,
+        ?string $backupProviderId = null,
         bool $clearBroadcastingProvider = false,
         bool $clearStorageProvider = false,
         bool $clearAiProvider = false,
+        bool $clearBackupProvider = false,
     ): Tenant {
         $tenant = $this->tenantRepository->update(
             id: $tenantId,
             broadcastingProviderId: $broadcastingProviderId,
             storageProviderId: $storageProviderId,
             aiProviderId: $aiProviderId,
+            backupProviderId: $backupProviderId,
             clearBroadcastingProvider: $clearBroadcastingProvider,
             clearStorageProvider: $clearStorageProvider,
             clearAiProvider: $clearAiProvider,
+            clearBackupProvider: $clearBackupProvider,
         );
 
         $this->logLandlordAudit->execute(
