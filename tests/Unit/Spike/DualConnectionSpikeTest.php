@@ -18,6 +18,20 @@ class DualConnectionSpikeTest extends TenantTestCase
     {
         parent::setUp();
 
+        // This spike creates its probe tables in setUp — DDL, inside the test's
+        // own transaction. SQLite makes DDL transactional so that is harmless
+        // there, but MySQL implicitly commits on DDL: the first test's rows
+        // escape the rollback and the next test sees them, which is precisely
+        // the isolation this spike claims to demonstrate.
+        //
+        // The premise is therefore engine-specific, so the spike only runs on
+        // the engine it was written for. Its own docblock marks it for deletion
+        // once TenantProvisioningTest covers the same ground against real
+        // schemas — which it now does.
+        if (config('database.connections.'.config('database.default').'.driver') !== 'sqlite') {
+            $this->markTestSkipped('Spike relies on transactional DDL; see phpunit.mysql.xml.');
+        }
+
         foreach (['landlord', 'tenant'] as $connection) {
             if (! Schema::connection($connection)->hasTable('spike_probe')) {
                 Schema::connection($connection)->create('spike_probe', function ($table) {

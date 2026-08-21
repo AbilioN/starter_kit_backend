@@ -30,10 +30,23 @@ abstract class TenantTestCase extends TestCase
      * (phpunit.mysql.xml). Hardcoding 'sqlite' here made every test under the
      * MySQL config try to open a *file* named after the MySQL database, so the
      * whole suite errored before reaching a single assertion.
+     *
+     * **Memoised, and that is not an optimisation.** RefreshDatabase calls this
+     * twice: once to open the transactions, and again from its
+     * beforeApplicationDestroyed callback to roll them back. Tests routinely
+     * repoint `database.default` at 'tenant' in between (IdentifyTenant does it
+     * on every request), so recomputing it at teardown returned a different
+     * list — rolling 'tenant' back twice and leaving the default connection's
+     * transaction open. The next test then died on "There is already an active
+     * transaction", one test after the one that actually caused it.
      */
     protected function connectionsToTransact()
     {
-        return [config('database.default'), 'landlord', 'tenant'];
+        return $this->transactedConnections ??= array_values(array_unique([
+            config('database.default'),
+            'landlord',
+            'tenant',
+        ]));
     }
 
     private static bool $landlordAndTenantMigrated = false;
@@ -47,6 +60,16 @@ abstract class TenantTestCase extends TestCase
      * leave the suite's own tenant database unprotected — and drop it.
      */
     private array $protectedDatabases = [];
+
+    /**
+     * The databases that existed before the test ran. Comparing against this at
+     * teardown is how the expensive cleanup is skipped for the overwhelming
+     * majority of tests, which never run DDL at all.
+     */
+    private array $databasesBefore = [];
+
+    /** @var array<int, string>|null */
+    private ?array $transactedConnections = null;
 
     /**
      * Overrides MakesHttpRequests::prepareUrlForRequest() so every existing
@@ -97,6 +120,21 @@ abstract class TenantTestCase extends TestCase
         static::$landlordAndTenantMigrated = true;
     }
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->protectedDatabases = array_filter([
+            config('database.connections.tenant.database'),
+            config('database.connections.landlord.database'),
+            config('database.connections.'.config('database.default').'.database'),
+        ]);
+
+        if (! $this->usesTransactionalDdl()) {
+            $this->databasesBefore = $this->listDatabases();
+        }
+    }
+
     /**
      * Undoes what a transaction cannot, when the suite runs on MySQL.
      *
@@ -108,21 +146,7 @@ abstract class TenantTestCase extends TestCase
      *
      * The visible symptom is not the provisioning test failing — it is the next
      * hundred tests failing on duplicate keys for rows they never inserted.
-     *
-     * So on MySQL only, wipe what leaked: the databases the test created, and
-     * the rows left behind on landlord and tenant.
      */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->protectedDatabases = array_filter([
-            config('database.connections.tenant.database'),
-            config('database.connections.landlord.database'),
-            config('database.connections.'.config('database.default').'.database'),
-        ]);
-    }
-
     protected function tearDown(): void
     {
         if ($this->usesTransactionalDdl()) {
@@ -131,45 +155,61 @@ abstract class TenantTestCase extends TestCase
             return;
         }
 
-        $this->dropTenantDatabasesCreatedDuringTest();
-        $this->truncateAll('landlord');
-        $this->truncateAll('tenant');
+        // CREATE DATABASE is the DDL that actually happens here (tenant
+        // provisioning), and it is what triggers MySQL's implicit commit. If no
+        // database appeared, no provisioning ran, the transaction did its job,
+        // and there is nothing to undo — which is the case for the overwhelming
+        // majority of tests. Two cheap queries beat truncating ~50 tables every
+        // time: doing it unconditionally turned a 90-second suite into a
+        // 45-minute one.
+        $created = array_diff($this->listDatabases(), $this->databasesBefore);
+
+        if ($created !== []) {
+            $this->dropDatabases($created);
+            $this->truncateAll('landlord');
+            $this->truncateAll('tenant');
+        }
 
         parent::tearDown();
     }
 
-    private function usesTransactionalDdl(): bool
+    /**
+     * @return array<int, string>
+     */
+    private function listDatabases(): array
     {
-        return config('database.connections.'.config('database.default').'.driver') === 'sqlite';
+        try {
+            return array_map(
+                fn ($row) => (string) array_values((array) $row)[0],
+                DB::connection('landlord')->select('show databases'),
+            );
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     /**
-     * Only databases named by tenant rows this test created, never a blanket
-     * "drop everything matching the prefix" — the MySQL server that runs the
-     * suite may be the same one holding real development tenants.
+     * @param  array<int, string>  $databases
      */
-    private function dropTenantDatabasesCreatedDuringTest(): void
+    private function dropDatabases(array $databases): void
     {
-        $protected = $this->protectedDatabases;
-
-        try {
-            $databases = DB::connection('landlord')->table('tenants')->pluck('database_name');
-        } catch (\Throwable) {
-            return;
-        }
-
         foreach ($databases as $database) {
-            if (! $database || in_array($database, $protected, true)) {
+            if (in_array($database, $this->protectedDatabases, true)) {
                 continue;
             }
 
             try {
                 DB::connection('landlord')->statement("DROP DATABASE IF EXISTS `{$database}`");
             } catch (\Throwable) {
-                // A database that cannot be dropped must not fail the test that
-                // already passed; the next run's provisioning will overwrite it.
+                // A database that cannot be dropped must not fail a test that
+                // already passed; the next provisioning run overwrites it.
             }
         }
+    }
+
+    private function usesTransactionalDdl(): bool
+    {
+        return config('database.connections.'.config('database.default').'.driver') === 'sqlite';
     }
 
     private function truncateAll(string $connection): void
