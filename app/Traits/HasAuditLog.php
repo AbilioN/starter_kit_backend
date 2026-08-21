@@ -67,6 +67,7 @@ trait HasAuditLog
             
             $description = $this->getAuditDescription($action);
             $tags = $this->getAuditTags($action);
+            $impersonation = $this->currentImpersonation($user);
 
             $useCase->execute(
                 userId: $userId,
@@ -76,14 +77,41 @@ trait HasAuditLog
                 modelId: $this->id ?? null,
                 oldValues: $oldValues,
                 newValues: $newValues,
-                description: $description,
-                tags: $tags
+                description: $impersonation
+                    ? $description.' (via platform support session)'
+                    : $description,
+                tags: $impersonation ? array_merge($tags ?? [], ['impersonation']) : $tags,
+                metadata: $impersonation,
             );
         } catch (\Exception $e) {
             // Não quebra a aplicação se houver erro no audit
             // Log do erro mas não interrompe o fluxo
             Log::warning('Audit log failed: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Returns the GodAdmin behind this write when it happens inside a support
+     * session, or null for an ordinary one.
+     *
+     * Without this the audit trail would attribute an operator's action to the
+     * tenant's own admin — a record that reads as true and is not, which is
+     * worse than no record at all. Read from the token's own column, so it
+     * cannot be influenced by anything the client sends.
+     */
+    protected function currentImpersonation($user): ?array
+    {
+        if (! $user || ! method_exists($user, 'currentAccessToken')) {
+            return null;
+        }
+
+        $token = $user->currentAccessToken();
+
+        if (! $token || ! ($token->impersonated_by ?? null)) {
+            return null;
+        }
+
+        return ['impersonated_by' => (string) $token->impersonated_by];
     }
 
     /**

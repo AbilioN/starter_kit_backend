@@ -15,9 +15,11 @@ use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\Admin\RoleController;
 use App\Http\Controllers\Api\Admin\AuditController;
 use App\Http\Controllers\Api\Admin\FileController;
+use App\Http\Controllers\Api\Admin\ImpersonationController;
 use App\Http\Controllers\Api\Admin\NotificationController as AdminNotificationController;
 use App\Http\Controllers\Api\Admin\SettingController;
 use App\Http\Controllers\Api\Chat\ChatController;
+use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\UserProfileController;
 use App\Http\Controllers\Api\Auth\ForgotPasswordController;
@@ -46,6 +48,13 @@ use Illuminate\Support\Facades\Broadcast;
 | Sprint 0.3) are registered separately and are never wrapped by this.
 |
 */
+
+// Health probes - never wrapped by `tenant.identify` (a probe has no
+// subdomain and no ?tenant=, and must not fail for that reason) and never
+// authenticated. /api/health is liveness and touches no dependency;
+// /api/health/ready is the one that reports on them. See HealthController.
+Route::get('/health', [HealthController::class, 'live']);
+Route::get('/health/ready', [HealthController::class, 'ready']);
 
 // Landlord-level public marketing/signup surface - deliberately NOT wrapped
 // by `tenant.identify` below, since these run on the root domain before any
@@ -123,6 +132,13 @@ Route::middleware(['tenant.identify'])->group(function () {
 
         // Protected admin routes
         Route::middleware(['auth:sanctum', 'admin.auth', 'update.last.seen'])->group(function () {
+
+            // GodAdmin support session (roadmap 5.6). `stop` is named because
+            // ImpersonationGuard exempts it by name — otherwise a read-only
+            // session could never end itself, since ending is a POST.
+            Route::get('/impersonation', [ImpersonationController::class, 'show'])->name('admin.impersonation.show');
+            Route::post('/impersonation/stop', [ImpersonationController::class, 'stop'])->name('admin.impersonation.stop');
+
             // Role management routes
             Route::get('/roles', [RoleController::class, 'index']);
             Route::post('/role/create', [RoleController::class, 'create']);

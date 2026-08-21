@@ -8,6 +8,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -72,6 +73,15 @@ class IdentifyTenant
         $this->applyInfrastructureConfig($tenant);
 
         app()->instance('currentTenant', $tenant);
+
+        // Every log line from here on says which tenant it belongs to. Under
+        // database-per-tenant an error report without this is close to
+        // useless — the same stack trace means something different depending
+        // on whose database it ran against.
+        Log::shareContext([
+            'tenant_id' => $tenant->id,
+            'tenant' => $tenant->subdomain,
+        ]);
 
         return $next($request);
     }

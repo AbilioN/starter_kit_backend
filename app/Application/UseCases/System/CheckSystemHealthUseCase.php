@@ -1,0 +1,315 @@
+<?php
+
+namespace App\Application\UseCases\System;
+
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Redis;
+use Laravel\Horizon\Contracts\MasterSupervisorRepository;
+use Throwable;
+
+/**
+ * Readiness: can this instance actually serve traffic, and is the work it
+ * hands off still being picked up?
+ *
+ * Deliberately NOT the liveness probe. Liveness answers "is the process
+ * alive" and must not touch a single dependency — a liveness check that
+ * queries MySQL turns a 30-second database blip into a container restart
+ * loop, which is strictly worse than the blip. See HealthController.
+ *
+ * Two rules hold every check below together:
+ *
+ *  - **No check may throw.** A readiness probe that 500s tells the operator
+ *    nothing about *which* dependency broke, which is the only thing it
+ *    exists to say.
+ *  - **No check may iterate tenants.** This runs at probe frequency; opening
+ *    one connection per tenant database each time is a self-inflicted
+ *    outage as the tenant count grows. Per-tenant database health belongs on
+ *    a schedule (Sprint 5.2), reporting its last result here.
+ */
+class CheckSystemHealthUseCase
+{
+    private const OK = 'ok';
+
+    private const DEGRADED = 'degraded';
+
+    private const DOWN = 'down';
+
+    private const SKIPPED = 'skipped';
+
+    /**
+     * Dependencies whose failure means this instance cannot serve requests at
+     * all. Everything else degrades the system without taking it down: the
+     * API still answers, some work is delayed.
+     */
+    private const CRITICAL = ['database', 'redis'];
+
+    /**
+     * @return array{status: string, checks: array<string, array<string, mixed>>}
+     */
+    public function execute(): array
+    {
+        $checks = [
+            'database' => $this->checkLandlordDatabase(),
+            'redis' => $this->checkRedis(),
+            'storage' => $this->checkStorage(),
+            'horizon' => $this->checkHorizon(),
+            'ai_bus' => $this->checkAiBus(),
+            'failed_jobs' => $this->checkFailedJobs(),
+        ];
+
+        return [
+            'status' => $this->aggregate($checks),
+            'checks' => $checks,
+        ];
+    }
+
+    /**
+     * Landlord, not tenant: it is the connection every request needs before a
+     * tenant is even resolved, and it is the same for all of them.
+     */
+    private function checkLandlordDatabase(): array
+    {
+        return $this->timed(function () {
+            DB::connection('landlord')->select('select 1');
+
+            return ['status' => self::OK];
+        });
+    }
+
+    private function checkRedis(): array
+    {
+        return $this->timed(function () {
+            $pong = Redis::connection()->ping();
+
+            // phpredis returns true, predis returns '+PONG' — neither is
+            // worth asserting on beyond "it answered".
+            return $pong ? ['status' => self::OK] : ['status' => self::DOWN, 'error' => 'no response to PING'];
+        });
+    }
+
+    /**
+     * Only the local disk is probed. Reaching an S3-compatible endpoint is a
+     * network round trip on every probe, and a probe that is slow or flaky
+     * under load is worse than no probe — that belongs on the scheduled check
+     * (Sprint 5.2), not here.
+     */
+    private function checkStorage(): array
+    {
+        return $this->timed(function () {
+            $disk = config('filesystems.default');
+
+            if (! in_array($disk, ['local', 'public'], true)) {
+                return [
+                    'status' => self::SKIPPED,
+                    'disk' => $disk,
+                    'reason' => 'remote disk not probed per request',
+                ];
+            }
+
+            $root = config("filesystems.disks.{$disk}.root");
+
+            return is_writable($root)
+                ? ['status' => self::OK, 'disk' => $disk]
+                : ['status' => self::DEGRADED, 'disk' => $disk, 'error' => 'root not writable'];
+        });
+    }
+
+    /**
+     * Horizon's master supervisor is what actually runs the queue workers —
+     * the chat, notifications and the whole AI pipeline are queued jobs, so
+     * "API up, Horizon down" is a system that accepts messages and never
+     * delivers them. That state used to be entirely invisible.
+     */
+    private function checkHorizon(): array
+    {
+        return $this->timed(function () {
+            $masters = app(MasterSupervisorRepository::class)->all();
+
+            if ($masters === []) {
+                return ['status' => self::DEGRADED, 'error' => 'no master supervisor running'];
+            }
+
+            $statuses = array_map(fn ($master) => $master->status ?? 'unknown', $masters);
+
+            return [
+                'status' => in_array('paused', $statuses, true) ? self::DEGRADED : self::OK,
+                'masters' => count($masters),
+                'statuses' => array_values(array_unique($statuses)),
+            ];
+        });
+    }
+
+    /**
+     * The AI request/response bus. These are raw Redis lists shared with the
+     * Python worker, not Laravel queues, so nothing else in the system
+     * observes them — not Horizon, not `queue:failed`.
+     *
+     * Depth alone is ambiguous (a busy worker and a dead one both leave items
+     * on the list), so age of the oldest entry and the worker heartbeat are
+     * what actually separate "loaded" from "broken".
+     */
+    private function checkAiBus(): array
+    {
+        return $this->timed(function () {
+            $config = config('health.ai_bus');
+
+            $depth = (int) Redis::llen($config['request_queue']);
+            $oldestAge = $this->oldestRequestAgeSeconds($config['request_queue']);
+            $heartbeatAge = $this->heartbeatAgeSeconds($config['heartbeat_key']);
+
+            $status = self::OK;
+            $problems = [];
+
+            if ($heartbeatAge === null) {
+                $status = self::DEGRADED;
+                $problems[] = 'no worker heartbeat';
+            } elseif ($heartbeatAge > $config['heartbeat_max_age_seconds']) {
+                $status = self::DEGRADED;
+                $problems[] = "worker heartbeat stale ({$heartbeatAge}s)";
+            }
+
+            if ($oldestAge !== null && $oldestAge > $config['max_age_seconds']) {
+                $status = self::DEGRADED;
+                $problems[] = "oldest request waiting {$oldestAge}s";
+            }
+
+            if ($depth > $config['max_depth']) {
+                $status = self::DEGRADED;
+                $problems[] = "queue depth {$depth}";
+            }
+
+            return array_filter([
+                'status' => $status,
+                'depth' => $depth,
+                'response_depth' => (int) Redis::llen($config['response_queue']),
+                'oldest_request_age_seconds' => $oldestAge,
+                'worker_heartbeat_age_seconds' => $heartbeatAge,
+                'problems' => $problems ?: null,
+            ], fn ($value) => $value !== null);
+        });
+    }
+
+    /**
+     * The oldest queued request sits at the tail: Laravel LPUSHes and the
+     * worker BRPOPs (FIFO), so index -1 is the next one to be handled.
+     */
+    private function oldestRequestAgeSeconds(string $queue): ?int
+    {
+        $raw = Redis::lindex($queue, -1);
+
+        if (! $raw) {
+            return null;
+        }
+
+        $timestamp = json_decode($raw, true)['timestamp'] ?? null;
+
+        if (! is_string($timestamp)) {
+            return null;
+        }
+
+        try {
+            return $this->ageInSeconds($timestamp);
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    private function heartbeatAgeSeconds(string $key): ?int
+    {
+        $raw = Redis::get($key);
+
+        if (! $raw) {
+            return null;
+        }
+
+        $beatAt = json_decode($raw, true)['at'] ?? null;
+
+        if (! is_string($beatAt)) {
+            return null;
+        }
+
+        try {
+            return $this->ageInSeconds($beatAt);
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * Seconds elapsed since an ISO timestamp, never negative — a worker whose
+     * clock is slightly ahead should read as "just now", not as a negative
+     * age that then compares as healthy against every threshold.
+     */
+    private function ageInSeconds(string $isoTimestamp): int
+    {
+        $seconds = CarbonImmutable::parse($isoTimestamp)->diffInSeconds(CarbonImmutable::now(), false);
+
+        return (int) max(0, round($seconds));
+    }
+
+    /**
+     * `failed_jobs` is single and on landlord by design (see
+     * docs/07-queue-isolation-and-worker-concurrency.md §1). Counting over a
+     * window rather than in total: old failures are history, recent ones are
+     * an incident in progress.
+     */
+    private function checkFailedJobs(): array
+    {
+        return $this->timed(function () {
+            $window = (int) config('health.failed_jobs.window_minutes');
+            $max = (int) config('health.failed_jobs.max');
+
+            $recent = DB::connection('landlord')
+                ->table('failed_jobs')
+                ->where('failed_at', '>=', CarbonImmutable::now()->subMinutes($window))
+                ->count();
+
+            return [
+                'status' => $recent > $max ? self::DEGRADED : self::OK,
+                'recent' => $recent,
+                'window_minutes' => $window,
+            ];
+        });
+    }
+
+    /**
+     * Runs one check, times it, and turns any throwable into a `down` result.
+     * The message is included because "which dependency, and what did it say"
+     * is the entire value of this endpoint during an incident.
+     */
+    private function timed(callable $check): array
+    {
+        $startedAt = microtime(true);
+
+        try {
+            $result = $check();
+        } catch (Throwable $e) {
+            $result = ['status' => self::DOWN, 'error' => $e->getMessage()];
+        }
+
+        $result['latency_ms'] = round((microtime(true) - $startedAt) * 1000, 1);
+
+        return $result;
+    }
+
+    /**
+     * @param  array<string, array<string, mixed>>  $checks
+     */
+    private function aggregate(array $checks): string
+    {
+        foreach (self::CRITICAL as $name) {
+            if (($checks[$name]['status'] ?? null) === self::DOWN) {
+                return self::DOWN;
+            }
+        }
+
+        foreach ($checks as $check) {
+            if (in_array($check['status'], [self::DEGRADED, self::DOWN], true)) {
+                return self::DEGRADED;
+            }
+        }
+
+        return self::OK;
+    }
+}

@@ -1,5 +1,6 @@
 <?php
 
+use Monolog\Formatter\JsonFormatter;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
@@ -56,6 +57,29 @@ return [
             'driver' => 'stack',
             'channels' => explode(',', env('LOG_STACK', 'single')),
             'ignore_exceptions' => false,
+        ],
+
+        /*
+         * One JSON object per line on stderr, which is where a container's
+         * logs belong: Docker collects them, and anything downstream can
+         * filter on request_id / tenant_id instead of grepping prose.
+         *
+         * Shared log context (request id, tenant — see AssignRequestContext,
+         * IdentifyTenant and ObservabilityServiceProvider) is serialised into
+         * each record's `context` object, which is the whole point of using
+         * this channel over `single`.
+         *
+         * Not the default: local development is easier to read with the plain
+         * formatter. Set LOG_CHANNEL=json wherever logs are collected rather
+         * than read by eye.
+         */
+        'json' => [
+            'driver' => 'monolog',
+            'level' => env('LOG_LEVEL', 'debug'),
+            'handler' => StreamHandler::class,
+            'handler_with' => ['stream' => 'php://stderr'],
+            'formatter' => JsonFormatter::class,
+            'processors' => [PsrLogMessageProcessor::class],
         ],
 
         'single' => [

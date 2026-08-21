@@ -53,6 +53,22 @@ return Application::configure(basePath: dirname(__DIR__))
         // Adiciona CORS globalmente
         $middleware->append(\App\Http\Middleware\CorsMiddleware::class);
 
+        // Guards the read-only default of a GodAdmin support session. On the
+        // whole api group, not per route, so a route group added later cannot
+        // silently end up unguarded — and pinned to run AFTER authentication,
+        // since it needs $request->user() to exist.
+        $middleware->appendToGroup('api', \App\Http\Middleware\ImpersonationGuard::class);
+        $middleware->appendToPriorityList(
+            after: \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
+            append: \App\Http\Middleware\ImpersonationGuard::class,
+        );
+
+        // First in the global stack: every log line written from here on
+        // carries a request id, including lines written by middleware that
+        // rejects the request before it ever reaches a controller (an
+        // unresolved tenant, a suspended one, a failed auth).
+        $middleware->prepend(\App\Http\Middleware\AssignRequestContext::class);
+
         // auth:sanctum requests already short-circuit to a 401 JSON response
         // (expectsJson()) before this is ever consulted - this only affects
         // auth:godadmin's web/Livewire routes, the only guest-redirectable

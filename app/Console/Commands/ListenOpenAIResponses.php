@@ -98,7 +98,19 @@ class ListenOpenAIResponses extends Command
                             // worker echoes back - look it up from our own
                             // bookkeeping (set by ProcessOpenAIRequest).
                             $storedRequest = Redis::get("openai_request:{$responseData['id']}");
-                            $tenantId = $storedRequest ? (json_decode($storedRequest, true)['tenant_id'] ?? null) : null;
+                            $stored = $storedRequest ? json_decode($storedRequest, true) : [];
+                            $tenantId = $stored['tenant_id'] ?? null;
+
+                            // Re-attach the originating request's id for this
+                            // iteration only. This is a long-running process
+                            // handling one response after another, so the
+                            // context has to be flushed each time round or
+                            // every line would be stamped with the first
+                            // response's id for the life of the process.
+                            Log::flushSharedContext();
+                            if (! empty($stored['request_id'])) {
+                                Log::shareContext(['request_id' => $stored['request_id']]);
+                            }
 
                             // Dispatch job to process the response with the full response data
                             ProcessOpenAIResponse::dispatch(

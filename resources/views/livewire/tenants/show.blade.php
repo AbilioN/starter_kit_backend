@@ -197,4 +197,71 @@
             </div>
         </form>
     </div>
+
+    <div class="rounded-lg bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <h2 class="text-base font-semibold text-slate-900">Support access</h2>
+        <p class="mt-1 text-sm text-slate-500">
+            Open a session as one of this tenant's admins to see exactly what they see &mdash; no password needed.
+            The tenant owner is notified and the access is written to this tenant's own immutable audit log,
+            so the customer can see it too.
+        </p>
+
+        @if ($impersonationError)
+            <p class="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{{ $impersonationError }}</p>
+        @endif
+
+        <div class="mt-4">
+            <label for="impersonation-reason" class="block text-xs font-medium text-slate-500">
+                Reason (shown to the customer)
+            </label>
+            <input type="text" id="impersonation-reason" wire:model="impersonationReason"
+                   placeholder="e.g. Ticket #1234 &mdash; chat not loading"
+                   class="mt-1.5 block w-full rounded-md border-slate-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+        </div>
+
+        @if ($tenantAdminsError)
+            <p class="mt-3 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">{{ $tenantAdminsError }}</p>
+        @endif
+
+        <div class="mt-4 divide-y divide-slate-100 border-t border-slate-100">
+            @forelse ($tenantAdmins as $admin)
+                <div class="flex items-center justify-between gap-4 py-3">
+                    <div class="min-w-0">
+                        <p class="truncate text-sm font-medium text-slate-900">
+                            {{ $admin['name'] }}
+                            @if ($admin['is_tenant_owner'])
+                                <span class="ml-1.5 rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600">owner</span>
+                            @endif
+                            @if (! $admin['is_active'])
+                                <span class="ml-1.5 rounded bg-amber-50 px-1.5 py-0.5 text-[11px] font-medium text-amber-700">inactive</span>
+                            @endif
+                        </p>
+                        <p class="truncate text-xs text-slate-500">{{ $admin['email'] }}</p>
+                    </div>
+
+                    <div class="flex shrink-0 items-center gap-2">
+                        <button type="button"
+                                wire:click="startImpersonation('{{ $admin['id'] }}', 'read')"
+                                @disabled(! $admin['is_active'])
+                                class="rounded-md bg-slate-800 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300 transition">
+                            View as
+                        </button>
+                        {{-- Separate button, not a checkbox: write access should be a
+                             deliberate act with its own audit entry, not a setting
+                             someone leaves switched on. --}}
+                        <button type="button"
+                                wire:click="startImpersonation('{{ $admin['id'] }}', 'write')"
+                                wire:confirm="This session will be able to CHANGE this customer's data. Continue?"
+                                @disabled(! $admin['is_active'])
+                                class="rounded-md px-3 py-2 text-sm font-semibold text-red-700 ring-1 ring-inset ring-red-200 hover:bg-red-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:ring-slate-200 transition">
+                            With write access
+                        </button>
+                    </div>
+                </div>
+            @empty
+                <p class="py-3 text-sm text-slate-500">This tenant has no admins yet.</p>
+            @endforelse
+        </div>
+    </div>
+
 </div>

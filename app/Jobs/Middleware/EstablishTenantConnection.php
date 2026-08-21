@@ -7,6 +7,7 @@ use App\Models\Tenant;
 use Closure;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -42,6 +43,13 @@ class EstablishTenantConnection
             config(['database.default' => 'tenant']);
 
             $this->applyInfrastructureConfig($tenant);
+
+            // Mirrors what IdentifyTenant shares per request. The request id
+            // itself is carried into the worker by ObservabilityServiceProvider.
+            Log::shareContext([
+                'tenant_id' => $tenant->id,
+                'tenant' => $tenant->subdomain,
+            ]);
         }
 
         $next($job);

@@ -75,6 +75,13 @@ class ProcessOpenAIRequest implements ShouldQueue
                 'tenant_id' => $this->tenantId,
                 'timestamp' => now()->toISOString(),
                 'status' => 'pending',
+                // The HTTP request that started this. Carried into the worker
+                // by ObservabilityServiceProvider, so it is already in the
+                // shared log context here — no constructor argument needed.
+                // The Python worker logs it, and it is stored below so the
+                // response leg picks it up again: one id across Laravel,
+                // Python and back.
+                'request_id' => Log::sharedContext()['request_id'] ?? null,
                 // api_key never comes from an agent profile — it's always
                 // the tenant's own BYOK credential (infrastructure_providers,
                 // type=ai) or null (Python worker's global .env default).
@@ -106,6 +113,9 @@ class ProcessOpenAIRequest implements ShouldQueue
                 'user_id' => $this->userId,
                 'message' => $this->userMessage,
                 'tenant_id' => $this->tenantId,
+                // Read back by ListenOpenAIResponses rather than trusted from
+                // what the worker echoes, for the same reason as tenant_id.
+                'request_id' => Log::sharedContext()['request_id'] ?? null,
                 'timestamp' => now()->toISOString()
             ]));
 

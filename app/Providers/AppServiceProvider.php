@@ -76,6 +76,10 @@ class AppServiceProvider extends ServiceProvider
             \App\Infrastructure\Services\TenantInfrastructureResolver::class,
         );
         $this->app->bind(
+            \App\Domain\Services\TenantConnectionSwitcherInterface::class,
+            \App\Infrastructure\Services\TenantConnectionSwitcher::class,
+        );
+        $this->app->bind(
             \App\Domain\Repositories\AgentProfileRepositoryInterface::class,
             \App\Infrastructure\Repositories\AgentProfileRepository::class,
         );
