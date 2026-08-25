@@ -11,6 +11,7 @@ use App\Application\UseCases\GodAdmin\UpdateTenantInfrastructureUseCase;
 use App\Domain\Repositories\InfrastructureProviderRepositoryInterface;
 use App\Domain\Repositories\SubscriptionPlanRepositoryInterface;
 use App\Domain\Repositories\TenantRepositoryInterface;
+use App\Domain\Services\IconResizingServiceInterface;
 use DomainException;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
@@ -26,6 +27,8 @@ class Show extends Component
     public string $themePrimaryColor = '#4F46E5';
 
     public string $themeSecondaryColor = '#64748B';
+
+    public string $themeTertiaryColor = '#94A3B8';
 
     public $logo = null;
 
@@ -69,6 +72,7 @@ class Show extends Component
 
         $this->themePrimaryColor = $tenant->themePrimaryColor ?? '#4F46E5';
         $this->themeSecondaryColor = $tenant->themeSecondaryColor ?? '#64748B';
+        $this->themeTertiaryColor = $tenant->themeTertiaryColor ?? '#94A3B8';
         $this->selectedPlanId = $tenant->subscriptionPlanId;
         $this->broadcastingProviderId = $tenant->broadcastingProviderId ?? '';
         $this->storageProviderId = $tenant->storageProviderId ?? '';
@@ -140,17 +144,23 @@ class Show extends Component
         $this->validate([
             'themePrimaryColor' => 'nullable|string|regex:/^#[0-9a-fA-F]{6}$/',
             'themeSecondaryColor' => 'nullable|string|regex:/^#[0-9a-fA-F]{6}$/',
+            'themeTertiaryColor' => 'nullable|string|regex:/^#[0-9a-fA-F]{6}$/',
             'logo' => 'nullable|image|max:2048',
         ]);
 
         $logoPath = $this->logo?->store('tenant-logos', 'public');
+        $iconPaths = $this->logo
+            ? app(IconResizingServiceInterface::class)->generateSizes($this->logo, 'tenant-icons')
+            : null;
 
         $updateBranding->execute(
             actorId: Auth::guard('godadmin')->id(),
             tenantId: $this->tenantId,
             themePrimaryColor: $this->themePrimaryColor,
             themeSecondaryColor: $this->themeSecondaryColor,
+            themeTertiaryColor: $this->themeTertiaryColor,
             logoPath: $logoPath,
+            iconPaths: $iconPaths,
         );
 
         $this->logo = null;

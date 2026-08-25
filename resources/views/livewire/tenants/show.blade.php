@@ -181,6 +181,11 @@
                     <input type="color" id="show-themeSecondaryColor" wire:model="themeSecondaryColor"
                            class="mt-1 h-9 w-16 rounded-md border-0 ring-1 ring-inset ring-slate-300 cursor-pointer">
                 </div>
+                <div>
+                    <label for="show-themeTertiaryColor" class="block text-xs font-medium text-slate-500">Tertiary color</label>
+                    <input type="color" id="show-themeTertiaryColor" wire:model="themeTertiaryColor"
+                           class="mt-1 h-9 w-16 rounded-md border-0 ring-1 ring-inset ring-slate-300 cursor-pointer">
+                </div>
             </div>
 
             <div>

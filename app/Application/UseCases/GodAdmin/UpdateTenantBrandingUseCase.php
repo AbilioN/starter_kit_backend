@@ -18,13 +18,17 @@ class UpdateTenantBrandingUseCase
         string $tenantId,
         ?string $themePrimaryColor = null,
         ?string $themeSecondaryColor = null,
+        ?string $themeTertiaryColor = null,
         ?string $logoPath = null,
+        ?array $iconPaths = null,
     ): Tenant {
         $tenant = $this->tenantRepository->update(
             id: $tenantId,
             themePrimaryColor: $themePrimaryColor,
             themeSecondaryColor: $themeSecondaryColor,
+            themeTertiaryColor: $themeTertiaryColor,
             logoPath: $logoPath,
+            iconPaths: $iconPaths,
         );
 
         $this->logLandlordAudit->execute(

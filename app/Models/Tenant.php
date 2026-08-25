@@ -21,7 +21,9 @@ class Tenant extends Model
         'subscription_plan_id',
         'theme_primary_color',
         'theme_secondary_color',
+        'theme_tertiary_color',
         'logo_path',
+        'icon_paths',
         'status',
         'created_via',
         'broadcasting_provider_id',
@@ -29,6 +31,13 @@ class Tenant extends Model
         'ai_provider_id',
         'backup_provider_id',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'icon_paths' => 'array',
+        ];
+    }
 
     public function subscriptionPlan(): BelongsTo
     {
@@ -65,7 +74,9 @@ class Tenant extends Model
             subscriptionPlanId: $this->subscription_plan_id,
             themePrimaryColor: $this->theme_primary_color,
             themeSecondaryColor: $this->theme_secondary_color,
+            themeTertiaryColor: $this->theme_tertiary_color,
             logoPath: $this->logo_path,
+            iconPaths: $this->icon_paths ?? [],
             status: $this->status,
             createdVia: $this->created_via,
             broadcastingProviderId: $this->broadcasting_provider_id,
