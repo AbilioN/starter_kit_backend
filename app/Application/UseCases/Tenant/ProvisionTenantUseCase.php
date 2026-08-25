@@ -10,7 +10,9 @@ use App\Domain\Services\TenantProvisioningServiceInterface;
 use App\Models\Admin;
 use App\Models\Setting;
 use Database\Seeders\PermissionSeeder;
+use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\RoleSeeder;
+use Database\Seeders\SettingSeeder;
 use Database\Seeders\SystemTemplateSeeder;
 use DomainException;
 use Illuminate\Support\Facades\Artisan;
@@ -73,9 +75,17 @@ class ProvisionTenantUseCase
             '--force' => true,
         ]);
 
-        (new RoleSeeder())->run();
-        (new PermissionSeeder())->run();
-        (new SystemTemplateSeeder())->run();
+        (new RoleSeeder)->run();
+        (new PermissionSeeder)->run();
+        // Without this, the roles the two seeders above just created carry no
+        // permissions at all — see RolePermissionSeeder.
+        (new RolePermissionSeeder)->run();
+        (new SystemTemplateSeeder)->run();
+        // Platform defaults (app.*, email.*, storage.*, locales.*). Must come
+        // BEFORE the plan-derived settings below, which overwrite the
+        // features.*/limits.* subset with what the tenant is actually paying
+        // for.
+        (new SettingSeeder)->run();
 
         Admin::create([
             'name' => $adminName ?? "{$name} Owner",
@@ -123,13 +133,19 @@ class ProvisionTenantUseCase
         }
 
         foreach ($plan->features as $key => $value) {
-            Setting::create([
-                'key' => "features.{$key}",
-                'value' => is_bool($value) ? ($value ? '1' : '0') : (string) $value,
-                'type' => is_bool($value) ? 'boolean' : 'string',
-                'group' => 'features',
-                'label' => Str::headline($key),
-            ]);
+            // updateOrCreate, not create: SettingSeeder has already written a
+            // platform default for several of these keys, and settings.key is
+            // unique — create() would abort provisioning outright. The plan
+            // winning over the default is the intended precedence anyway.
+            Setting::updateOrCreate(
+                ['key' => "features.{$key}"],
+                [
+                    'value' => is_bool($value) ? ($value ? '1' : '0') : (string) $value,
+                    'type' => is_bool($value) ? 'boolean' : 'string',
+                    'group' => 'features',
+                    'label' => Str::headline($key),
+                ],
+            );
         }
     }
 
@@ -150,13 +166,15 @@ class ProvisionTenantUseCase
                 continue;
             }
 
-            Setting::create([
-                'key' => "limits.{$key}",
-                'value' => (string) $value,
-                'type' => 'integer',
-                'group' => 'limits',
-                'label' => Str::headline($key),
-            ]);
+            Setting::updateOrCreate(
+                ['key' => "limits.{$key}"],
+                [
+                    'value' => (string) $value,
+                    'type' => 'integer',
+                    'group' => 'limits',
+                    'label' => Str::headline($key),
+                ],
+            );
         }
     }
 }
