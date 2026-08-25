@@ -65,3 +65,19 @@ Schedule::command('backup:run')
     ->hourly()
     ->withoutOverlapping()
     ->runInBackground();
+
+// Alerting (5.1.E). The detection has existed since 5.1; this is the run that
+// actually tells someone.
+//
+// Every five minutes, and the noise control lives in DispatchHealthAlertsUseCase
+// rather than in this interval: alerting only when the check runs rarely would
+// mean noticing an outage late, while alerting on every run would mean nobody
+// reads them. Two consecutive failures are required before the first message,
+// and an unresolved problem repeats only every few hours.
+//
+// --alert is passed ONLY here. A human running `health:check` to see what is
+// wrong must not, by looking, page everyone else.
+Schedule::command('health:check --alert')
+    ->everyFiveMinutes()
+    ->withoutOverlapping()
+    ->runInBackground();

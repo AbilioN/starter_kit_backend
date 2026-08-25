@@ -98,6 +98,23 @@ class AppServiceProvider extends ServiceProvider
             \App\Infrastructure\Services\BackupArchiver::class,
         );
 
+        // Alerting (5.1.E). Composed from config rather than bound to one
+        // implementation: which destination a deployment uses is an operational
+        // choice, and a team that starts on e-mail usually ends up on Slack.
+        $this->app->singleton(\App\Domain\Services\AlertNotifierInterface::class, function () {
+            $channels = [];
+
+            if (config('alerting.mail.enabled')) {
+                $channels[] = new \App\Infrastructure\Services\Alerting\MailAlertNotifier;
+            }
+
+            if (config('alerting.slack.enabled')) {
+                $channels[] = new \App\Infrastructure\Services\Alerting\SlackAlertNotifier;
+            }
+
+            return new \App\Infrastructure\Services\Alerting\ChannelAlertNotifier($channels);
+        });
+
         // Template dependencies
         $this->app->bind(TemplateRepositoryInterface::class, TemplateRepository::class);
         // StubMergeContext until a real business entity is wired in — see
