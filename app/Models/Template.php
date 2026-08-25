@@ -16,6 +16,8 @@ class Template extends Model
 
     protected $fillable = [
         'key',
+        'locale',
+        'translation_group_id',
         'name',
         'type',
         'body_format',
@@ -51,6 +53,8 @@ class Template extends Model
         return new TemplateEntity(
             id: $this->id,
             key: $this->key,
+            locale: $this->locale,
+            translationGroupId: $this->translation_group_id,
             name: $this->name,
             type: $this->type,
             bodyFormat: $this->body_format,

@@ -38,7 +38,7 @@ class ChangeAdminPasswordUseCase
             ->delete();
 
         $tenant = app()->bound('currentTenant') ? app('currentTenant') : null;
-        $rendered = $this->renderSystemTemplate->execute('password_changed_email');
+        $rendered = $this->renderSystemTemplate->execute('password_changed_email', preferredLocale: $admin->locale);
 
         $admin->notify(new PasswordChangedNotification(
             $rendered['subject'],

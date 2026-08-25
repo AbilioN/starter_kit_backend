@@ -5,6 +5,7 @@ namespace App\Infrastructure\Repositories;
 use App\Domain\Entities\Template;
 use App\Domain\Repositories\TemplateRepositoryInterface;
 use App\Models\Template as TemplateModel;
+use Illuminate\Support\Str;
 
 class TemplateRepository implements TemplateRepositoryInterface
 {
@@ -13,9 +14,30 @@ class TemplateRepository implements TemplateRepositoryInterface
         return TemplateModel::find($id)?->toEntity();
     }
 
-    public function findByKey(string $key): ?Template
+    public function findByKey(string $key, ?string $locale = null): ?Template
     {
-        return TemplateModel::where('key', $key)->first()?->toEntity();
+        $query = TemplateModel::where('key', $key);
+
+        if ($locale !== null) {
+            $query->where('locale', $locale);
+        }
+
+        return $query->first()?->toEntity();
+    }
+
+    public function findAllByKey(string $key): array
+    {
+        return TemplateModel::where('key', $key)->orderBy('locale')->get()
+            ->map(fn (TemplateModel $template) => $template->toEntity())
+            ->all();
+    }
+
+    public function findTranslationGroup(string $translationGroupId): array
+    {
+        return TemplateModel::where('translation_group_id', $translationGroupId)
+            ->orderBy('locale')->get()
+            ->map(fn (TemplateModel $template) => $template->toEntity())
+            ->all();
     }
 
     public function findAll(?string $type = null): array
@@ -62,9 +84,16 @@ class TemplateRepository implements TemplateRepositoryInterface
         bool $isActive = true,
         array $options = [],
         ?string $key = null,
+        ?string $locale = null,
+        ?string $translationGroupId = null,
     ): Template {
         $template = TemplateModel::create([
             'key' => $key,
+            'locale' => $locale,
+            // A template with no group is a group of one — every row has a
+            // group id, so adding a second language later never has to
+            // backfill the first one.
+            'translation_group_id' => $translationGroupId ?? (string) Str::uuid(),
             'name' => $name,
             'type' => $type,
             'body_format' => $bodyFormat,

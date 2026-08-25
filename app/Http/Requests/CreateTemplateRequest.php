@@ -38,6 +38,11 @@ class CreateTemplateRequest extends FormRequest
             'options' => 'nullable|array',
             'options.sender' => 'nullable|email',
             'options.locked' => 'nullable|boolean',
+            // Which language this body is written in. Omitted means the
+            // tenant's default — a monolingual tenant never sends it.
+            'locale' => 'nullable|string|max:10',
+            // Present only when adding a language to an existing template.
+            'translation_group_id' => 'nullable|uuid',
         ];
     }
 

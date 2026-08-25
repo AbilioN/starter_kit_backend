@@ -198,6 +198,9 @@ Route::middleware(['tenant.identify'])->group(function () {
             Route::delete('/files/{id}', [FileController::class, 'delete']);
 
             // Templates (email/SMS/PDF/AI-prompt content)
+            // Before /templates/{id} — otherwise 'fields' is captured as an id.
+            Route::get('/templates/fields', [TemplateController::class, 'fields']);
+            Route::post('/templates/validate', [TemplateController::class, 'validateBody']);
             Route::get('/templates', [TemplateController::class, 'index']);
             Route::post('/templates', [TemplateController::class, 'store']);
             Route::get('/templates/{id}', [TemplateController::class, 'show']);
@@ -206,6 +209,7 @@ Route::middleware(['tenant.identify'])->group(function () {
             Route::get('/templates/{id}/background', [TemplateController::class, 'listBackground']);
             Route::post('/templates/{id}/background', [TemplateController::class, 'uploadBackground']);
             Route::delete('/templates/{id}/background/{fileId}', [TemplateController::class, 'deleteBackground']);
+            Route::get('/templates/{id}/translations', [TemplateController::class, 'translations']);
             Route::post('/templates/{id}/preview', [TemplateController::class, 'preview']);
 
             // Tenant subscription plan / branding (tenant owner only)

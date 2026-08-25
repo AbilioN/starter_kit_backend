@@ -3,25 +3,29 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Application\Services\AdminFactory;
+use App\Application\Services\TemplateFieldCatalogService;
 use App\Application\UseCases\Admin\Authorization\AuthorizeActionUseCase;
 use App\Application\UseCases\Template\CreateTemplateUseCase;
 use App\Application\UseCases\Template\DeleteTemplateBackgroundUseCase;
 use App\Application\UseCases\Template\DeleteTemplateUseCase;
 use App\Application\UseCases\Template\GetTemplateBackgroundFilesUseCase;
 use App\Application\UseCases\Template\GetTemplatesUseCase;
+use App\Application\UseCases\Template\GetTemplateTranslationsUseCase;
 use App\Application\UseCases\Template\GetTemplateUseCase;
 use App\Application\UseCases\Template\RenderTemplateUseCase;
+use App\Application\UseCases\Template\ResolveTemplateLocaleUseCase;
 use App\Application\UseCases\Template\UpdateTemplateUseCase;
 use App\Application\UseCases\Template\UploadTemplateBackgroundUseCase;
+use App\Application\UseCases\Template\ValidateTemplateBodyUseCase;
 use App\Domain\Exceptions\AuthorizationException;
 use App\Domain\Exceptions\FileNotFoundException;
 use App\Domain\Exceptions\TemplateNotFoundException;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateTemplateRequest;
 use App\Http\Requests\UpdateTemplateRequest;
 use App\Http\Requests\UploadTemplateBackgroundRequest;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class TemplateController extends Controller
 {
@@ -73,6 +77,8 @@ class TemplateController extends Controller
                 description: $request->input('description'),
                 isActive: $request->boolean('is_active', true),
                 options: $request->input('options', []),
+                locale: $request->input('locale') ?: app(ResolveTemplateLocaleUseCase::class)->tenantDefault(),
+                translationGroupId: $request->input('translation_group_id'),
             );
 
             return response()->json(['success' => true, 'data' => $this->toArray($template)], 201);
@@ -198,8 +204,13 @@ class TemplateController extends Controller
         }
     }
 
-    public function preview(string $id, Request $request, RenderTemplateUseCase $renderTemplate): JsonResponse|\Symfony\Component\HttpFoundation\Response
-    {
+    public function preview(
+        string $id,
+        Request $request,
+        RenderTemplateUseCase $renderTemplate,
+        GetTemplateUseCase $getTemplate,
+        ValidateTemplateBodyUseCase $validateBody,
+    ): JsonResponse|\Symfony\Component\HttpFoundation\Response {
         try {
             $this->authorizeAction->execute($this->currentAdmin($request), 'template-read');
 
@@ -214,7 +225,81 @@ class TemplateController extends Controller
                 return response($result['content'], 200, ['Content-Type' => 'application/pdf']);
             }
 
-            return response()->json(['success' => true, 'data' => $result]);
+            // Shipped WITH the preview, not behind a separate call: a preview
+            // renders an unknown placeholder as empty, which looks like a
+            // field the record simply has no value for. The findings are what
+            // tell the two apart.
+            $template = $getTemplate->execute($id);
+
+            return response()->json(['success' => true, 'data' => $result + [
+                'findings' => $validateBody->execute($template->body, $template->subject),
+            ]]);
+        } catch (AuthorizationException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 403);
+        } catch (TemplateNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * The field picker's data source. Also carries the tenant's languages —
+     * the editor needs both to draw its tabs and its variable panel, and one
+     * request for both keeps them from disagreeing.
+     */
+    public function fields(
+        Request $request,
+        TemplateFieldCatalogService $catalog,
+        ResolveTemplateLocaleUseCase $resolveLocale,
+    ): JsonResponse {
+        try {
+            $this->authorizeAction->execute($this->currentAdmin($request), 'template-read');
+
+            return response()->json(['success' => true, 'data' => [
+                'groups' => $catalog->groups(),
+                'locales' => [
+                    'enabled' => $resolveLocale->enabledLocales(),
+                    'default' => $resolveLocale->tenantDefault(),
+                ],
+            ]]);
+        } catch (AuthorizationException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 403);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Checks a body the author is still typing — deliberately takes the raw
+     * text rather than a template id, so the editor can report a bad
+     * placeholder before anything is saved.
+     */
+    public function validateBody(Request $request, ValidateTemplateBodyUseCase $validateBody): JsonResponse
+    {
+        try {
+            $this->authorizeAction->execute($this->currentAdmin($request), 'template-read');
+
+            return response()->json(['success' => true, 'data' => $validateBody->execute(
+                $request->input('body'),
+                $request->input('subject'),
+            )]);
+        } catch (AuthorizationException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 403);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function translations(string $id, Request $request, GetTemplateTranslationsUseCase $getTranslations): JsonResponse
+    {
+        try {
+            $this->authorizeAction->execute($this->currentAdmin($request), 'template-read');
+
+            return response()->json([
+                'success' => true,
+                'data' => array_map(fn ($t) => $this->toArray($t), $getTranslations->execute($id)),
+            ]);
         } catch (AuthorizationException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 403);
         } catch (TemplateNotFoundException $e) {
@@ -237,6 +322,8 @@ class TemplateController extends Controller
             // 'welcome_email'), never settable through this API. Null for
             // every ordinary, user-authored template.
             'key' => $template->key,
+            'locale' => $template->locale,
+            'translation_group_id' => $template->translationGroupId,
             'name' => $template->name,
             'type' => $template->type,
             'body_format' => $template->bodyFormat,

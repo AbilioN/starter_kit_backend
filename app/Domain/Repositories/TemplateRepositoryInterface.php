@@ -11,7 +11,18 @@ interface TemplateRepositoryInterface
     // Well-known system-slot lookup (e.g. 'welcome_email') — see the `key`
     // column's docblock in its migration for why this is the only way a
     // template gets tagged with one, never through create()/update().
-    public function findByKey(string $key): ?Template;
+    //
+    // $locale null means "any" and returns whichever translation exists,
+    // deliberately: callers that resolve a language do it through
+    // ResolveTemplateLocaleUseCase, and a caller that has NOT resolved one
+    // should still get a sendable template rather than nothing.
+    public function findByKey(string $key, ?string $locale = null): ?Template;
+
+    /** Every language a system slot is authored in. */
+    public function findAllByKey(string $key): array;
+
+    /** Every language of one template, the row itself included. */
+    public function findTranslationGroup(string $translationGroupId): array;
 
     public function findAll(?string $type = null): array;
 
@@ -27,6 +38,8 @@ interface TemplateRepositoryInterface
         bool $isActive = true,
         array $options = [],
         ?string $key = null,
+        ?string $locale = null,
+        ?string $translationGroupId = null,
     ): Template;
 
     public function update(

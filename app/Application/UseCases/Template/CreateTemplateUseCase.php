@@ -20,6 +20,11 @@ class CreateTemplateUseCase
         ?string $description = null,
         bool $isActive = true,
         array $options = [],
+        ?string $locale = null,
+        // Set when creating ANOTHER LANGUAGE of an existing template: the new
+        // row joins that group instead of starting one of its own. Null (the
+        // normal create) lets the repository open a fresh group.
+        ?string $translationGroupId = null,
     ): Template {
         return $this->templateRepository->create(
             name: $name,
@@ -30,6 +35,8 @@ class CreateTemplateUseCase
             description: $description,
             isActive: $isActive,
             options: $options,
+            locale: $locale,
+            translationGroupId: $translationGroupId,
         );
     }
 }

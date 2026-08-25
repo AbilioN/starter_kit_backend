@@ -20,6 +20,15 @@ class SettingSeeder extends Seeder
             ['key' => 'features.notifications', 'value' => 'true', 'type' => 'boolean', 'group' => 'features', 'label' => 'Notifications', 'description' => 'Enable or disable in-app notifications.', 'is_public' => false],
             ['key' => 'features.ai_agent', 'value' => 'false', 'type' => 'boolean', 'group' => 'features', 'label' => 'AI Agent', 'description' => 'Enable or disable AI agent integration.', 'is_public' => false],
 
+            // Languages — how many a tenant runs. `locales.enabled` is what the
+            // tenant OFFERS (the tabs the template editor draws, empty ones
+            // included); `locales.default` is the fallback when a recipient
+            // never chose one. Neither says what has actually been translated:
+            // only an authored template can be sent, which is why
+            // ResolveTemplateLocaleUseCase takes the available list separately.
+            ['key' => 'locales.enabled', 'value' => '["en"]', 'type' => 'array', 'group' => 'general', 'label' => 'Enabled Languages', 'description' => 'Languages this organization publishes templates in.', 'is_public' => true],
+            ['key' => 'locales.default', 'value' => 'en', 'type' => 'string', 'group' => 'general', 'label' => 'Default Language', 'description' => 'Used when a recipient has no language of their own.', 'is_public' => true],
+
             // Email
             ['key' => 'email.from_name', 'value' => 'Starter Kit', 'type' => 'string', 'group' => 'email', 'label' => 'Email Sender Name', 'description' => 'Name shown in the From field of emails.', 'is_public' => false],
             ['key' => 'email.from_address', 'value' => 'hello@example.com', 'type' => 'string', 'group' => 'email', 'label' => 'Email Sender Address', 'description' => 'Address used in the From field of emails.', 'is_public' => false],

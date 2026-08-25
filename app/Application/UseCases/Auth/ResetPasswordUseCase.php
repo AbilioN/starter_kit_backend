@@ -28,7 +28,7 @@ class ResetPasswordUseCase
             function (User $user, string $password) use ($tenant) {
                 $user->forceFill(['password' => Hash::make($password)])->save();
 
-                $rendered = $this->renderSystemTemplate->execute('password_changed_email');
+                $rendered = $this->renderSystemTemplate->execute('password_changed_email', preferredLocale: $user->locale);
 
                 $user->notify(new PasswordChangedNotification(
                     $rendered['subject'],

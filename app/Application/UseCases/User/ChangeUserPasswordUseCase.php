@@ -24,7 +24,7 @@ class ChangeUserPasswordUseCase
         $user->update(['password' => Hash::make($newPassword)]);
 
         $tenant = app()->bound('currentTenant') ? app('currentTenant') : null;
-        $rendered = $this->renderSystemTemplate->execute('password_changed_email');
+        $rendered = $this->renderSystemTemplate->execute('password_changed_email', preferredLocale: $user->locale);
 
         $user->notify(new PasswordChangedNotification(
             $rendered['subject'],

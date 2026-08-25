@@ -26,6 +26,7 @@ class UpdateTemplateRequest extends FormRequest
             'options' => 'sometimes|array',
             'options.sender' => 'nullable|email',
             'options.locked' => 'nullable|boolean',
+            'locale' => 'nullable|string|max:10',
         ];
     }
 }

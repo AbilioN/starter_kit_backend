@@ -28,7 +28,7 @@ class ForgotPasswordUseCase
 
                 $rendered = $this->renderSystemTemplate->execute('password_reset_email', [
                     'reset_url' => $resetUrl,
-                ]);
+                ], preferredLocale: $user->locale);
 
                 $user->notify(new PasswordResetNotification(
                     $rendered['subject'],
