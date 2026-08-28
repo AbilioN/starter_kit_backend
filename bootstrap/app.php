@@ -24,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'update.last.seen'  => \App\Http\Middleware\UpdateLastSeen::class,
             'tenant.identify'   => \App\Http\Middleware\IdentifyTenant::class,
             'tenant.owner'      => \App\Http\Middleware\RequireTenantOwner::class,
+            'agent.worker'      => \App\Http\Middleware\AgentWorkerAuth::class,
         ]);
 
         // Laravel's default $middlewarePriority list reorders framework

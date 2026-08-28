@@ -35,6 +35,15 @@ class AgentProfile extends Model
         return $this->belongsToMany(SubscriptionPlan::class, 'agent_profile_subscription_plan');
     }
 
+    /**
+     * Which tools this agent may call (roadmap 4.11). Read live at send time,
+     * like the prompt above — attaching one takes effect on the next message.
+     */
+    public function agentTools(): BelongsToMany
+    {
+        return $this->belongsToMany(AgentTool::class, 'agent_profile_agent_tool');
+    }
+
     public function toEntity(): AgentProfileEntity
     {
         return new AgentProfileEntity(

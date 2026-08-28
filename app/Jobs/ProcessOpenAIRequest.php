@@ -17,6 +17,10 @@ use App\Models\User;
 use App\Models\Assistant;
 use App\Models\AgentProfile;
 use App\Models\Tenant;
+use App\Application\UseCases\AgentTool\ComposeAgentSystemPromptUseCase;
+use App\Application\UseCases\AgentTool\IssueAgentGrantUseCase;
+use App\Application\UseCases\AgentTool\ResolveAgentToolsUseCase;
+use App\Domain\AgentTools\AgentGrant;
 use App\Domain\Services\TenantInfrastructureResolverInterface;
 use App\Events\MessageSent;
 use Exception;
@@ -66,6 +70,13 @@ class ProcessOpenAIRequest implements ShouldQueue
             $agentProfileConfig = $this->resolveAgentProfileConfig($assistant['agent_profile_id'] ?? null);
             $history = $this->buildHistory();
 
+            // Agent tools (roadmap 4.11). Read live from the landlord catalogue,
+            // same as the agent profile above — attaching a tool takes effect on
+            // the very next message. Empty whenever the feature is off, the
+            // agent has no profile, or nothing is attached.
+            $tools = app(ResolveAgentToolsUseCase::class)->execute($assistant['agent_profile_id'] ?? null);
+            $persona = $agentProfileConfig['system_prompt'] ?? $aiConfig['system_prompt'] ?? null;
+
             // Prepare the request data
             $requestData = [
                 'id' => $requestId,
@@ -94,11 +105,29 @@ class ProcessOpenAIRequest implements ShouldQueue
                 // .env model, and assistant_name/description below for the
                 // prompt).
                 'model' => $agentProfileConfig['model'] ?? $aiConfig['model'] ?? null,
-                'system_prompt' => $agentProfileConfig['system_prompt'] ?? $aiConfig['system_prompt'] ?? null,
+                'system_prompt' => $this->composeSystemPrompt($persona, $assistant, $tools['specs']),
                 'assistant_name' => $assistant['name'] ?? null,
                 'assistant_description' => $assistant['description'] ?? null,
                 'history' => $history,
             ];
+
+            // The one-turn credential. Minted only when this agent actually has
+            // tools: without these keys the payload is byte-identical to one
+            // from before agent tools existed, which is what makes the rollout
+            // safe and an older worker's behaviour unchanged.
+            $grantToken = null;
+
+            if ($tools['specs'] !== []) {
+                $grant = $this->issueGrant($requestId, $assistant, $tools['names']);
+
+                if ($grant !== null) {
+                    $grantToken = $grant['token'];
+                    $requestData['tools'] = $tools['specs'];
+                    $requestData['tool_grant'] = $grant;
+                    $requestData['max_tool_calls'] = (int) config('agent_tools.max_tool_calls');
+                    $requestData['max_rounds'] = (int) config('agent_tools.max_rounds');
+                }
+            }
 
             // Send request to Redis queue for Python worker
             Redis::lpush($this->queueName, json_encode($requestData));
@@ -116,6 +145,10 @@ class ProcessOpenAIRequest implements ShouldQueue
                 // Read back by ListenOpenAIResponses rather than trusted from
                 // what the worker echoes, for the same reason as tenant_id.
                 'request_id' => Log::sharedContext()['request_id'] ?? null,
+                // Read back by ListenOpenAIResponses, which revokes the grant
+                // the moment the reply lands — so the normal lifetime of a
+                // credential is seconds rather than its full TTL.
+                'grant_token' => $grantToken,
                 'timestamp' => now()->toISOString()
             ]));
 
@@ -139,6 +172,83 @@ class ProcessOpenAIRequest implements ShouldQueue
 
             throw $e; // Re-throw to trigger retry mechanism
         }
+    }
+
+    /**
+     * Persona first, tool block second — never the other way round, and never
+     * instead of. See ComposeAgentSystemPromptUseCase.
+     *
+     * The name/description fallback is applied HERE rather than left to the
+     * worker: once a tool block exists, `system_prompt` is non-null, and the
+     * worker's own fallback would never fire — silently dropping the assistant's
+     * persona from every tool-enabled agent.
+     */
+    private function composeSystemPrompt(?string $persona, array $assistant, array $toolSpecs): ?string
+    {
+        if ($toolSpecs === []) {
+            return $persona;
+        }
+
+        if (($persona === null || trim($persona) === '') && ! empty($assistant['name'])) {
+            $persona = trim("You are {$assistant['name']}. ".($assistant['description'] ?? ''));
+        }
+
+        return app(ComposeAgentSystemPromptUseCase::class)->execute($persona, $toolSpecs);
+    }
+
+    /**
+     * @param  array<int, string>  $toolNames  this turn's allowlist
+     * @return array{token: string, endpoint: string, expires_at: string}|null
+     */
+    private function issueGrant(string $requestId, array $assistant, array $toolNames): ?array
+    {
+        // No tenant means no database claim to resolve, and the tenant is the
+        // one thing a grant must never be vague about. Console-dispatched jobs
+        // land here; they simply get no tools.
+        if (! $this->tenantId) {
+            return null;
+        }
+
+        $tenant = Tenant::find($this->tenantId);
+
+        if (! $tenant) {
+            return null;
+        }
+
+        return app(IssueAgentGrantUseCase::class)->execute(new AgentGrant(
+            tenantId: (string) $this->tenantId,
+            database: (string) $tenant->database_name,
+            actorId: $this->userId,
+            actorType: $this->resolveActorType(),
+            chatId: $this->chatId,
+            agentProfileId: $assistant['agent_profile_id'] ?? null,
+            openaiRequestId: $requestId,
+            requestId: (string) (Log::sharedContext()['request_id'] ?? ''),
+            tools: $toolNames,
+            // Carried through the queue by ObservabilityServiceProvider from
+            // ImpersonationGuard, exactly like request_id. Without it a support
+            // session could be laundered into a write once mutating tools exist.
+            impersonatedBy: Log::sharedContext()['impersonated_by'] ?? null,
+            maxCalls: (int) config('agent_tools.max_tool_calls'),
+            issuedAt: now()->toIso8601String(),
+        ));
+    }
+
+    /**
+     * chat_user.user_type is the source of truth for participant type — never
+     * messages.sender_type. Defaults to 'admin' because the AI chat is an
+     * admin-panel surface today; a wrong guess here would authorize the turn
+     * against the wrong table.
+     */
+    private function resolveActorType(): string
+    {
+        $type = DB::table('chat_user')
+            ->where('chat_id', $this->chatId)
+            ->where('user_id', $this->userId)
+            ->where('is_active', true)
+            ->value('user_type');
+
+        return in_array($type, ['admin', 'user'], true) ? $type : 'admin';
     }
 
     /**

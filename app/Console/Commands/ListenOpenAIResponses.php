@@ -112,6 +112,16 @@ class ListenOpenAIResponses extends Command
                                 Log::shareContext(['request_id' => $stored['request_id']]);
                             }
 
+                            // The turn is over, so its credential is spent.
+                            // Revoking here rather than waiting for the TTL is
+                            // the whole reason the grant is an opaque token
+                            // instead of a signed payload: a signed one stays
+                            // valid until it expires, whatever happens.
+                            if (! empty($stored['grant_token'])) {
+                                app(\App\Domain\AgentTools\AgentGrantStoreInterface::class)
+                                    ->revoke($stored['grant_token']);
+                            }
+
                             // Dispatch job to process the response with the full response data
                             ProcessOpenAIResponse::dispatch(
                                 $responseData['id'],

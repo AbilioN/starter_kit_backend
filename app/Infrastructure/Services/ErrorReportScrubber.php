@@ -73,6 +73,10 @@ class ErrorReportScrubber
             config('broadcasting.connections.pusher.secret'),
             config('backup.encryption.key'),
             config('services.openai.api_key'),
+            // The agent worker's shared secret. The per-turn GRANT token cannot be
+            // listed here — it is random per turn and unknown at scrub time; it
+            // is protected by never being logged in the first place.
+            config('agent_tools.worker_key'),
         ];
 
         return array_values(array_unique(array_filter(

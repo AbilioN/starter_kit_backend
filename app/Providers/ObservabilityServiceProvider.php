@@ -33,6 +33,13 @@ class ObservabilityServiceProvider extends ServiceProvider
 
             return array_filter([
                 'request_id' => $requestId,
+                // Stamped by ImpersonationGuard, carried for a reason the
+                // request id does not have: ProcessOpenAIRequest mints an agent
+                // grant from inside a job, and that grant must say whether the
+                // session behind it is a support session. Without this the
+                // claim is always null and a read-only session stops being
+                // read-only the day a mutating tool ships (roadmap 4.11).
+                'impersonated_by' => Log::sharedContext()['impersonated_by'] ?? null,
                 // Carried for the same reason and by the same route as the
                 // request id, but for a different consumer: a notification
                 // e-mail is RENDERED by a job, minutes after the request that
@@ -54,6 +61,7 @@ class ObservabilityServiceProvider extends ServiceProvider
 
             Log::shareContext(array_filter([
                 'request_id' => $payload['request_id'] ?? null,
+                'impersonated_by' => $payload['impersonated_by'] ?? null,
                 'job' => $payload['displayName'] ?? null,
                 'job_id' => $event->job->getJobId() ?: null,
             ]));

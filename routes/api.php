@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\Admin\NotificationController as AdminNotificationCo
 use App\Http\Controllers\Api\Admin\SettingController;
 use App\Http\Controllers\Api\Chat\ChatController;
 use App\Http\Controllers\Api\HealthController;
+use App\Http\Controllers\Api\Internal\AgentToolController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\UserProfileController;
 use App\Http\Controllers\Api\Auth\ForgotPasswordController;
@@ -65,6 +66,19 @@ Route::prefix('public')->group(function () {
     Route::get('/subscription-plans/{slug}', [PublicSubscriptionPlanController::class, 'show'])->middleware('throttle:60,1');
     Route::post('/signup', [PublicTenantSignupController::class, 'store'])->middleware('throttle:5,60');
 });
+
+// The AI worker's tool callback (roadmap 4.11). Deliberately OUTSIDE
+// `tenant.identify`: the worker has no subdomain and no ?tenant=, and the
+// tenant is a claim in the signed grant rather than anything the caller
+// chooses. `agent.worker` 404s the route entirely when no worker key is
+// configured, which is the shipped default.
+//
+// NOTE: ImpersonationGuard runs on the whole api group but returns early when
+// there is no $request->user() — which is always the case here. It neither
+// crashes nor protects this route, so ExecuteAgentToolUseCase enforces the
+// read-only rule itself. See docs/11 §8 step 7.
+Route::middleware(['agent.worker'])
+    ->post('/internal/agent/tool-call', AgentToolController::class);
 
 Route::middleware(['tenant.identify'])->group(function () {
 
