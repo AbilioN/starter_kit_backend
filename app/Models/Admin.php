@@ -33,6 +33,7 @@ class Admin extends Authenticatable implements ChatUser
         'is_super_admin',
         'is_tenant_owner',
         'notification_email',
+        'locale',
         'avatar_path',
         'last_login_at',
         'last_seen_at',

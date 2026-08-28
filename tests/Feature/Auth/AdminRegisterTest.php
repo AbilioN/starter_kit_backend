@@ -72,11 +72,14 @@ class AdminRegisterTest extends TenantTestCase
             'password_confirmation' => 'password123'
         ];
         $response = $this->postJson('/api/admin/register', $registerData);
+        // Built from the translation files rather than written out: since
+        // roadmap 5.8 this message is Laravel's own translated `unique`, in
+        // whatever language the request resolved to. Hardcoding the English
+        // sentence here would pin the test to one locale and to a package's
+        // wording.
         $response->assertStatus(422)
-            ->assertJson([
-                'message' => 'Email is already taken'
-            ])
-            ->assertJsonValidationErrors(['email']);
+            ->assertJsonValidationErrors(['email'])
+            ->assertJsonPath('errors.email.0', trans('validation.unique', ['attribute' => trans('validation.attributes.email')]));
     }
 
     public function test_register_requires_name()

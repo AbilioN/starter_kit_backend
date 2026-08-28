@@ -23,6 +23,8 @@ class UpdateAdminProfileUseCase
         ?string $name = null,
         bool $updateNotificationEmail = false,
         ?string $notificationEmail = null,
+        bool $updateLocale = false,
+        ?string $locale = null,
     ): array {
         $admin = Admin::findOrFail($adminId);
 
@@ -32,6 +34,12 @@ class UpdateAdminProfileUseCase
         }
         if ($updateNotificationEmail) {
             $changes['notification_email'] = $notificationEmail;
+        }
+        // Mesma distinção do campo acima, e aqui ela tem significado próprio:
+        // null é "nunca escolhi", que faz o admin seguir a língua do tenant
+        // mesmo quando o tenant a muda depois (roadmap 5.8).
+        if ($updateLocale) {
+            $changes['locale'] = $locale;
         }
 
         if ($changes !== []) {

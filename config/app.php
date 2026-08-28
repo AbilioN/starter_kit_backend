@@ -97,6 +97,24 @@ return [
 
     'locale' => env('APP_LOCALE', 'en'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Available Locales
+    |--------------------------------------------------------------------------
+    |
+    | The languages this application ships translations for — the directories
+    | under lang/, and the same four the admin panel offers.
+    |
+    | Bounds what Accept-Language may resolve to on requests with no tenant
+    | (signup, public pricing, health probes). A tenant's own list is a
+    | different question and lives in its `locales.enabled` setting: what an
+    | organisation chooses to publish in is a subset of what the product can
+    | speak, never the other way round.
+    |
+    */
+
+    'available_locales' => ['en', 'pt', 'es', 'fr'],
+
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),

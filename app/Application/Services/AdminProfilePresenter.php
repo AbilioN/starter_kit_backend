@@ -24,7 +24,14 @@ class AdminProfilePresenter
     {
         return array_merge(
             $admin->toEntity()->toDto()->toArray(),
-            ['notification_email' => $admin->notification_email],
+            [
+                'notification_email' => $admin->notification_email,
+                // Fora do DTO pela mesma razão do campo acima: é do próprio
+                // dono. null aqui significa "nunca escolhi", e o painel precisa
+                // de distinguir isso de "escolhi a língua do tenant" para saber
+                // se mostra a opção como herdada.
+                'locale' => $admin->locale,
+            ],
         );
     }
 

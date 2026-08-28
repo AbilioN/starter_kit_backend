@@ -20,20 +20,16 @@ class RegisterRequest extends FormRequest
         ];
     }
 
-    public function messages(): array
-    {
-        return [
-            'name.required' => 'The name field is required.',
-            'name.string' => 'The name must be a string.',
-            'name.max' => 'The name may not be greater than 255 characters.',
-            'email.required' => 'The email field is required.',
-            'email.email' => 'The email must be a valid email address.',
-            'email.max' => 'The email may not be greater than 255 characters.',
-            'email.unique' => 'This email is already in use.',
-            'password.required' => 'The password field is required.',
-            'password.string' => 'The password must be a string.',
-            'password.min' => 'The password must be at least 8 characters.',
-            'password.confirmed' => 'The password confirmation does not match.',
-        ];
-    }
+    /*
+     * No messages() override on purpose. Every message this class used to carry
+     * restated the rule it came from ("Email is required"), which is what
+     * Laravel's own translated defaults already say — in four languages since
+     * roadmap 5.8, where these hardcoded strings said it in one. Two of these
+     * classes said it in Portuguese and six in English, so the API answered a
+     * single request in two languages depending on which endpoint you hit.
+     *
+     * Override this again only for a message that carries product meaning a
+     * validation rule cannot express (see PublicTenantSignupRequest), and put
+     * the text in lang/<locale>/validation.php under `custom`, never inline.
+     */
 } 

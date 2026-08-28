@@ -40,7 +40,10 @@ class PublicTenantSignupRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'plan_id.exists' => 'The selected plan is not available for self-service signup.',
+            // Kept, and translated, because it says something the `exists`
+            // rule cannot: the plan may well exist and still not be one a
+            // stranger is allowed to sign up to.
+            'plan_id.exists' => __('validation.custom.plan_id.not_public'),
         ];
     }
 }

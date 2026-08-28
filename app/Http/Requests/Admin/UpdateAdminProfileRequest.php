@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateAdminProfileRequest extends FormRequest
 {
@@ -31,6 +32,12 @@ class UpdateAdminProfileRequest extends FormRequest
             // quando o campo é enviado.
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'notification_email' => ['sometimes', 'nullable', 'email:rfc', 'max:255'],
+            // Nullable e isso importa: limpar volta a seguir o tenant, que é
+            // diferente de escolher a língua que o tenant usa hoje. Validado
+            // contra o que o produto fala (app.available_locales), não contra
+            // `locales.enabled` do tenant — esse diz em que línguas a
+            // organização PUBLICA templates, que é outro eixo.
+            'locale' => ['sometimes', 'nullable', 'string', Rule::in(config('app.available_locales', []))],
         ];
     }
 }

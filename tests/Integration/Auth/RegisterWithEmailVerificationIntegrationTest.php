@@ -69,12 +69,7 @@ class RegisterWithEmailVerificationIntegrationTest extends TenantTestCase
         $response = $this->postJson('/api/register', $userData);
 
         $response->assertStatus(422)
-            ->assertJson([
-                'message' => 'This email is already in use.',
-                'errors' => [
-                    'email' => ['This email is already in use.']
-                ]
-            ]);
+            ->assertJsonPath('errors.email.0', trans('validation.unique', ['attribute' => trans('validation.attributes.email')]));
     }
 
     public function test_register_with_invalid_data_returns_validation_errors(): void

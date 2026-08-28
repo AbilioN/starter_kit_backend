@@ -63,6 +63,16 @@ return Application::configure(basePath: dirname(__DIR__))
             append: \App\Http\Middleware\ImpersonationGuard::class,
         );
 
+        // Which language the API answers in (roadmap 5.8). Group-wide and
+        // pinned after authentication for the same two reasons as the guard
+        // above: it needs $request->user() to read that person's own choice,
+        // and a route group added later must not silently lose it.
+        $middleware->appendToGroup('api', \App\Http\Middleware\SetLocale::class);
+        $middleware->appendToPriorityList(
+            after: \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
+            append: \App\Http\Middleware\SetLocale::class,
+        );
+
         // First in the global stack: every log line written from here on
         // carries a request id, including lines written by middleware that
         // rejects the request before it ever reaches a controller (an

@@ -31,7 +31,16 @@ class ObservabilityServiceProvider extends ServiceProvider
         Queue::createPayloadUsing(function ($connection, $queue, $payload) {
             $requestId = Log::sharedContext()['request_id'] ?? null;
 
-            return $requestId ? ['request_id' => $requestId] : [];
+            return array_filter([
+                'request_id' => $requestId,
+                // Carried for the same reason and by the same route as the
+                // request id, but for a different consumer: a notification
+                // e-mail is RENDERED by a job, minutes after the request that
+                // asked for it is gone. Without this the queue always renders
+                // in the app default, so a tenant running in Portuguese sends
+                // English mail no matter what anyone chose (roadmap 5.8).
+                'locale' => app()->getLocale(),
+            ]);
         });
 
         // Runs in the worker. The context is flushed first: a Horizon worker
@@ -48,10 +57,22 @@ class ObservabilityServiceProvider extends ServiceProvider
                 'job' => $payload['displayName'] ?? null,
                 'job_id' => $event->job->getJobId() ?: null,
             ]));
+
+            // Restored per job, and reset below with the context: a worker is a
+            // long-lived process, so a locale left over from the previous job
+            // would silently translate the next one.
+            app()->setLocale($payload['locale'] ?? config('app.locale'));
         });
 
-        Queue::after(fn (JobProcessed $event) => Log::flushSharedContext());
-        Queue::failing(fn (JobFailed $event) => Log::flushSharedContext());
+        Queue::after(function (JobProcessed $event): void {
+            Log::flushSharedContext();
+            app()->setLocale(config('app.locale'));
+        });
+
+        Queue::failing(function (JobFailed $event): void {
+            Log::flushSharedContext();
+            app()->setLocale(config('app.locale'));
+        });
 
         $this->tagErrorReportsWithRequestContext();
     }

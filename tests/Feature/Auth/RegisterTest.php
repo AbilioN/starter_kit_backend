@@ -67,16 +67,16 @@ class RegisterTest extends TenantTestCase
         $response = $this->postJson('/api/register', $registerData);
 
         // Assert
+        // Built from the translation files rather than written out: since
+        // roadmap 5.8 this message is Laravel's own translated `unique`, in
+        // whatever language the request resolved to. Hardcoding the English
+        // sentence here would pin the test to one locale and to a package's
+        // wording.
+        $expected = trans('validation.unique', ['attribute' => trans('validation.attributes.email')]);
+
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['email'])
-            ->assertJson([
-                'message' => 'This email is already in use.',
-                'errors' => [
-                    'email' => [
-                        'This email is already in use.'
-                    ]
-                ]
-            ]);
+            ->assertJsonPath('errors.email.0', $expected);
     }
 
     public function test_user_cannot_register_without_name()

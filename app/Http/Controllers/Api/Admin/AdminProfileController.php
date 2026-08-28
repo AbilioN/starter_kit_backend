@@ -28,6 +28,8 @@ class AdminProfileController extends Controller
             // `has()` distingue "não enviado" de "enviado como null" (= limpar).
             $request->has('notification_email'),
             $request->validated('notification_email'),
+            $request->has('locale'),
+            $request->validated('locale'),
         ));
     }
 
