@@ -38,6 +38,21 @@ services:
       - APP_ENV=local
       - APP_DEBUG=true
 
+  # The whole source tree, .env included. The base file mounts named subpaths
+  # (./app, ./config, ...) which deliberately leave .env out, so without this
+  # entry the scheduler runs current CODE against the ENV baked into the image
+  # at build time. That skew is silent and it bites hardest here, because this
+  # is the container that runs the backups and sends the alerts: between
+  # 2026-08-21 and 2026-08-28 every scheduled backup died on an empty
+  # BACKUP_ENCRYPTION_KEY, and the alerting that should have said so had no
+  # ALERT_* variables either. Keep this in step with `horizon` above.
+  scheduler:
+    volumes:
+      - ./:/var/www
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+
   openai-listener:
     volumes:
       - ./:/var/www

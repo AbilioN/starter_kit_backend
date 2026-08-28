@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Application\UseCases\Backup\FailStuckBackupRunsUseCase;
 use App\Application\UseCases\Backup\PruneBackupsUseCase;
 use App\Domain\Repositories\BackupRepositoryInterface;
 use App\Domain\Repositories\TenantRepositoryInterface;
@@ -23,32 +24,15 @@ class PruneBackupsCommand extends Command
 
     protected $description = 'Delete backups past their plan retention or capacity';
 
-    /**
-     * A row still `running` long after any real dump could have finished is a
-     * crashed process — the container was killed, the host rebooted. Left
-     * alone it sits there forever looking like work in progress, and the
-     * staleness check keeps waiting for a run that will never report.
-     */
-    private function failStuckRuns(BackupRepositoryInterface $backupRepository): void
-    {
-        $cutoff = now()->subMinutes((int) config('backup.running_timeout_minutes'));
-
-        foreach ($backupRepository->findStuckRunning($cutoff) as $stuck) {
-            $backupRepository->markFailed(
-                $stuck->id,
-                'Marked failed by backup:prune: still running '.$stuck->startedAt?->diffForHumans().' after being started. The process did not finish.'
-            );
-
-            $this->warn("[{$stuck->id}] stuck run marked failed");
-        }
-    }
-
     public function handle(
         TenantRepositoryInterface $tenantRepository,
         PruneBackupsUseCase $pruneBackups,
         BackupRepositoryInterface $backupRepository,
+        FailStuckBackupRunsUseCase $failStuckRuns,
     ): int {
-        $this->failStuckRuns($backupRepository);
+        foreach ($failStuckRuns->execute() as $stuck) {
+            $this->warn("[{$stuck->id}] stuck run marked failed");
+        }
 
         $subdomain = $this->option('tenant');
 

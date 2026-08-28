@@ -21,9 +21,27 @@ class BackupArchiver implements BackupArchiverInterface
 {
     private const KEY_ENV = 'BACKUP_ARCHIVE_KEY';
 
+    private const MISSING_KEY_MESSAGE = 'Backup encryption is enabled but BACKUP_ENCRYPTION_KEY is not set. '
+        .'Set a key distinct from APP_KEY, or set BACKUP_ENCRYPTION_ENABLED=false deliberately.';
+
     public function extension(string $base = '.sql'): string
     {
-        return $this->isEncryptionEnabled() ? $base.'.gz.enc' : $base.'.gz';
+        // Deliberately does NOT validate the key, and must not start doing so:
+        // callers use this to NAME a file, which typically happens before their
+        // own failure handling is in place. It used to go through
+        // isEncryptionEnabled(), so a missing key threw from here — two lines
+        // above the try/catch that marks a backup failed — and every run
+        // between 2026-08-21 and 2026-08-28 left its ledger row stuck on
+        // `running` with no reason recorded. Whether the key exists is
+        // archive()'s question, and assertUsable()'s.
+        return config('backup.encryption.enabled') ? $base.'.gz.enc' : $base.'.gz';
+    }
+
+    public function assertUsable(): void
+    {
+        if (config('backup.encryption.enabled') && blank(config('backup.encryption.key'))) {
+            throw new BackupFailedException(self::MISSING_KEY_MESSAGE);
+        }
     }
 
     public function archive(string $sourcePath, string $targetPath): array
@@ -73,12 +91,9 @@ class BackupArchiver implements BackupArchiverInterface
             return false;
         }
 
-        if (blank(config('backup.encryption.key'))) {
-            throw new BackupFailedException(
-                'Backup encryption is enabled but BACKUP_ENCRYPTION_KEY is not set. '
-                .'Set a key distinct from APP_KEY, or set BACKUP_ENCRYPTION_ENABLED=false deliberately.'
-            );
-        }
+        // Still throws — but only from archive()/extract(), which their callers
+        // run inside the try that marks the ledger row failed.
+        $this->assertUsable();
 
         return true;
     }

@@ -2,14 +2,17 @@
 
 namespace App\Console\Commands;
 
+use App\Application\UseCases\Backup\FailStuckBackupRunsUseCase;
 use App\Application\UseCases\Backup\ResolveBackupPolicyUseCase;
 use App\Application\UseCases\Backup\RunDatabaseBackupUseCase;
 use App\Application\UseCases\Backup\RunFilesBackupUseCase;
 use App\Application\UseCases\Tenant\RunForEachTenantUseCase;
 use App\Domain\Entities\Backup;
 use App\Domain\Entities\Tenant;
+use App\Domain\Exceptions\BackupFailedException;
 use App\Domain\Repositories\BackupRepositoryInterface;
 use App\Domain\Repositories\TenantRepositoryInterface;
+use App\Domain\Services\BackupArchiverInterface;
 use App\Domain\Services\DatabaseDumperInterface;
 use DomainException;
 use Illuminate\Console\Command;
@@ -46,6 +49,8 @@ class RunBackupCommand extends Command
         RunFilesBackupUseCase $runFilesBackup,
         RunForEachTenantUseCase $runForEachTenant,
         DatabaseDumperInterface $dumper,
+        BackupArchiverInterface $archiver,
+        FailStuckBackupRunsUseCase $failStuckRuns,
     ): int {
         $kind = $this->option('kind');
 
@@ -64,6 +69,26 @@ class RunBackupCommand extends Command
             );
 
             return self::FAILURE;
+        }
+
+        // Same reasoning as the dumper check above, for the other half of the
+        // pipeline. Asked once, before a single ledger row exists: a key that
+        // is missing for the first tenant is missing for all of them, and the
+        // useful output is one line saying so rather than N identical failures
+        // buried in a nightly sweep.
+        try {
+            $archiver->assertUsable();
+        } catch (BackupFailedException $e) {
+            $this->error($e->getMessage());
+
+            return self::FAILURE;
+        }
+
+        // Hourly, where prune only gets to this daily. A run this sweep is
+        // about to replace should already read as failed, not as one still in
+        // flight from four hours ago.
+        foreach ($failStuckRuns->execute() as $stuck) {
+            $this->warn("[{$stuck->id}] previous run abandoned — marked failed");
         }
 
         $subdomain = $this->option('tenant');

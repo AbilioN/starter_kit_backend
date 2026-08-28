@@ -56,9 +56,17 @@ class RunDatabaseBackupUseCase
 
         $workDir = storage_path('app/backup-work');
         $dumpPath = "{$workDir}/{$run->id}.sql";
-        $archivePath = $dumpPath.$this->archiver->extension();
+        // Declared out here so the finally can always clean up, including when
+        // the first statement inside the try is the one that throws.
+        $archivePath = null;
 
+        // Everything after startRun() belongs inside the try, with no
+        // exceptions: a throw between the two leaves a ledger row on `running`
+        // for ever, which reads as "in progress" to every consumer and can
+        // never become the recorded failure rule 4 promises.
         try {
+            $archivePath = $dumpPath.$this->archiver->extension();
+
             if (! is_dir($workDir) && ! mkdir($workDir, 0775, true) && ! is_dir($workDir)) {
                 throw new BackupFailedException("Cannot create backup work directory '{$workDir}'.");
             }
@@ -132,7 +140,10 @@ class RunDatabaseBackupUseCase
             // deleted whether the run succeeded or not — a failed backup must
             // not leave a decrypted copy of a tenant's database behind.
             @unlink($dumpPath);
-            @unlink($archivePath);
+
+            if ($archivePath !== null) {
+                @unlink($archivePath);
+            }
         }
     }
 

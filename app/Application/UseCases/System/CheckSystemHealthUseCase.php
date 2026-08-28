@@ -61,6 +61,7 @@ class CheckSystemHealthUseCase
             'ai_bus' => $this->checkAiBus(),
             'failed_jobs' => $this->checkFailedJobs(),
             'backups' => $this->checkBackups(),
+            'configuration' => $this->checkConfiguration(),
         ];
 
         return [
@@ -201,6 +202,52 @@ class CheckSystemHealthUseCase
      * every few seconds must not turn into a few hundred landlord queries a
      * second as the tenant count grows.
      */
+    /**
+     * Settings this process cannot work without, read from the environment this
+     * process actually has.
+     *
+     * That last part is the whole point, and it is why this is a health check
+     * rather than a startup assertion or a test. Every check above asks about a
+     * shared dependency, so it answers the same in any container. This one
+     * answers differently in each, which is what makes it able to catch the
+     * failure it was written for: on 2026-08-28 the scheduler was found running
+     * current code against the .env baked into the image a week earlier —
+     * APP_KEY empty, BACKUP_ENCRYPTION_KEY empty, no ALERT_* at all. Every
+     * scheduled backup had been dying on that for a week, and the process meant
+     * to report it was the same one that could not send.
+     *
+     * Degraded, never down: the API serves fine in this state. It is the
+     * background work that quietly does not happen.
+     */
+    private function checkConfiguration(): array
+    {
+        return $this->timed(function () {
+            $problems = [];
+
+            // Empty here means every encrypted:array cast fails in this
+            // process — infrastructure_providers.config above all, which holds
+            // each tenant's Pusher, S3 and BYOK credentials.
+            if (blank(config('app.key'))) {
+                $problems[] = 'APP_KEY is not set';
+            }
+
+            if (config('backup.encryption.enabled') && blank(config('backup.encryption.key'))) {
+                $problems[] = 'BACKUP_ENCRYPTION_KEY is not set while backup encryption is enabled';
+            }
+
+            // A process that can detect problems and not report them is worse
+            // than one that cannot detect them, because it looks covered.
+            if (! config('alerting.mail.enabled') && ! config('alerting.slack.enabled')) {
+                $problems[] = 'no alert channel is enabled — failures will be detected and never reported';
+            }
+
+            return array_filter([
+                'status' => $problems === [] ? self::OK : self::DEGRADED,
+                'problems' => $problems === [] ? null : $problems,
+            ], fn ($value) => $value !== null);
+        });
+    }
+
     private function checkBackups(): array
     {
         return $this->timed(function () {

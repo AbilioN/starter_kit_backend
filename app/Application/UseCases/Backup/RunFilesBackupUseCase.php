@@ -53,9 +53,11 @@ class RunFilesBackupUseCase
         $workDir = storage_path("app/backup-work/{$run->id}");
         $stageDir = "{$workDir}/files";
         $tarPath = "{$workDir}/files.tar";
-        $archivePath = $tarPath.$this->archiver->extension('.tar');
 
+        // Inside the try on purpose — see the note in RunDatabaseBackupUseCase.
         try {
+            $archivePath = $tarPath.$this->archiver->extension('.tar');
+
             if (! is_dir($stageDir) && ! mkdir($stageDir, 0775, true) && ! is_dir($stageDir)) {
                 throw new BackupFailedException("Cannot create backup work directory '{$stageDir}'.");
             }
