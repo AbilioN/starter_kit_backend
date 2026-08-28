@@ -52,5 +52,48 @@ class ObservabilityServiceProvider extends ServiceProvider
 
         Queue::after(fn (JobProcessed $event) => Log::flushSharedContext());
         Queue::failing(fn (JobFailed $event) => Log::flushSharedContext());
+
+        $this->tagErrorReportsWithRequestContext();
+    }
+
+    /**
+     * Puts the same request_id and tenant_id on the error report that the logs
+     * already carry (roadmap 5.1.B).
+     *
+     * Done as an event processor rather than by setting tags at the point the
+     * context is created: the processor reads the shared context at *send*
+     * time, so it works identically in an HTTP request and inside a Horizon
+     * worker, and no future entry point can forget to opt in — the same reason
+     * the queue hooks above are payload hooks and not a trait.
+     *
+     * **With no DSN configured this is dead code and nothing leaves this
+     * infrastructure.** That is deliberate: whether stack traces from a
+     * multi-tenant BtoB product may be sent to a third party is a decision for
+     * whoever owns the data, not a consequence of installing a package. The
+     * SDK speaks one protocol and both candidate destinations accept it —
+     * Sentry's own service and a self-hosted GlitchTip — so the choice stays a
+     * DSN, and stays reversible.
+     */
+    private function tagErrorReportsWithRequestContext(): void
+    {
+        if (blank(config('sentry.dsn')) || ! class_exists(\Sentry\State\Scope::class)) {
+            return;
+        }
+
+        $scrubber = new \App\Infrastructure\Services\ErrorReportScrubber;
+
+        \Sentry\configureScope(function (\Sentry\State\Scope $scope) use ($scrubber): void {
+            $scope->addEventProcessor(function (\Sentry\Event $event) use ($scrubber): \Sentry\Event {
+                foreach (Log::sharedContext() as $key => $value) {
+                    if (is_scalar($value)) {
+                        $event->setTag($key, (string) $value);
+                    }
+                }
+
+                // Last thing before the event leaves: see ErrorReportScrubber
+                // for what and why. send_default_pii=false does not cover it.
+                return $scrubber->scrub($event);
+            });
+        });
     }
 }
