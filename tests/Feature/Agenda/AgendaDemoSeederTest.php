@@ -46,7 +46,7 @@ class AgendaDemoSeederTest extends TenantTestCase
         $this->assertDatabaseHas('appointments', ['id' => $real->id]);
     }
 
-    public function test_every_stop_is_routable_and_in_a_week_that_has_not_passed(): void
+    public function test_every_stop_is_routable_and_the_current_week_is_populated(): void
     {
         Artisan::call('db:seed', ['--class' => AgendaDemoSeeder::class, '--force' => true]);
 
@@ -57,11 +57,18 @@ class AgendaDemoSeederTest extends TenantTestCase
             Appointment::routable()->count(),
         );
 
-        // And the week must be ahead, or the first impression is a diary of
-        // things that already happened.
-        $this->assertTrue(
-            Appointment::min('starts_at') >= CarbonImmutable::now()->startOfWeek()->toDateTimeString(),
-        );
+        // The agenda opens on today, so the CURRENT week must have something in
+        // it — otherwise the first thing anyone sees is an empty grid — and
+        // there must be something ahead too, so "next" is not a dead end.
+        $thisWeek = CarbonImmutable::now()->startOfWeek();
+
+        $this->assertGreaterThan(0, Appointment::whereBetween('starts_at', [
+            $thisWeek->toDateTimeString(), $thisWeek->endOfWeek()->toDateTimeString(),
+        ])->count(), 'The current week must not open empty.');
+
+        $this->assertGreaterThan(0, Appointment::where(
+            'starts_at', '>', $thisWeek->endOfWeek()->toDateTimeString(),
+        )->count(), 'There must be something in the following week too.');
     }
 
     public function test_it_seeds_both_cities_so_grouping_and_routing_have_something_to_show(): void

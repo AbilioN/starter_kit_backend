@@ -55,19 +55,27 @@ class AgendaDemoSeeder extends Seeder
         $admins = Admin::where('is_active', true)->orderBy('created_at')->take(2)->get();
         $rep = fn (int $i) => $admins->get($i % max(1, $admins->count()))?->id;
 
-        // The Monday of a week that still lies ahead. Anchoring on the current
-        // week means that from Friday onwards the demo opens on appointments
-        // that already happened — which is exactly the wrong first impression
-        // when the audience is deciding whether to trust the product.
-        $monday = CarbonImmutable::now()->startOfWeek();
-
-        if (CarbonImmutable::now()->dayOfWeekIso >= 5) {
-            $monday = $monday->addWeek();
-        }
+        // Two weeks: the current one and the next.
+        //
+        // One week is not enough, and both single-week choices are wrong in
+        // their own way. Anchor on the current week and from Friday the demo
+        // opens on appointments that already happened; anchor on the next one
+        // and the agenda opens EMPTY, because it opens on today. Seeding both
+        // means whichever day someone opens it, there is a populated week on
+        // screen and another one a click away.
+        $weeks = [
+            CarbonImmutable::now()->startOfWeek(),
+            CarbonImmutable::now()->startOfWeek()->addWeek(),
+        ];
 
         $created = 0;
 
-        foreach ($this->rounds($monday) as $round) {
+        $rounds = [];
+        foreach ($weeks as $week) {
+            $rounds = [...$rounds, ...$this->rounds($week)];
+        }
+
+        foreach ($rounds as $round) {
             foreach ($round['stops'] as $index => $stop) {
                 Appointment::create([
                     'appointment_type_id' => $types[$stop['type']],
@@ -93,7 +101,8 @@ class AgendaDemoSeeder extends Seeder
             }
         }
 
-        $this->command?->info("  {$created} demo appointments across Porto and Lisbon, week of {$monday->toDateString()}.");
+        $this->command?->info("  {$created} demo appointments across Porto and Lisbon, weeks of "
+            .$weeks[0]->toDateString().' and '.$weeks[1]->toDateString().'.');
     }
 
     /**
