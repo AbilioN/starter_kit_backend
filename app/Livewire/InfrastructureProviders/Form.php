@@ -103,7 +103,7 @@ class Form extends Component
         UpdateInfrastructureProviderUseCase $updateProvider,
     ): void {
         $this->validate([
-            'type' => 'required|in:broadcasting,storage,ai,backup',
+            'type' => 'required|in:broadcasting,storage,ai,backup,maps',
             'name' => 'required|string|max:255',
             'configKey' => 'required_if:type,broadcasting|required_if:type,storage|required_if:type,backup|string',
             'configSecret' => 'required_if:type,broadcasting|required_if:type,storage|required_if:type,backup|string',

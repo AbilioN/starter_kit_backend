@@ -66,6 +66,16 @@ interface TenantInfrastructureResolverInterface
      *
      * @throws \App\Domain\Exceptions\BackupDestinationException
      */
+    /**
+     * The tenant's own maps/routing credentials (type=maps), falling back
+     * through its plan's default, else null.
+     *
+     * Null is a normal answer here, not a failure: with no provider the routing
+     * feature falls back to the local optimiser, so a tenant that has bought
+     * nothing still gets ordered stops — just estimated ones.
+     */
+    public function resolveMapsConfig(Tenant $tenant): ?array;
+
     public function resolveBackupConfig(?Tenant $tenant): array;
 
     /**

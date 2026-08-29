@@ -49,6 +49,17 @@ class TenantInfrastructureResolver implements TenantInfrastructureResolverInterf
         return $provider ? $this->mapAiConfig($provider) : null;
     }
 
+    public function resolveMapsConfig(Tenant $tenant): ?array
+    {
+        $provider = $this->resolveProvider(
+            $tenant,
+            tenantProviderId: $tenant->mapsProviderId,
+            planProviderId: fn ($plan) => $plan->mapsProviderId,
+        );
+
+        return $provider ? ['api_key' => $provider->config['api_key'] ?? null] : null;
+    }
+
     /**
      * Never returns null and never falls back silently — see the interface for
      * why this one type is different.

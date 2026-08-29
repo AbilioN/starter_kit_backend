@@ -1,6 +1,7 @@
 <?php
 
 return [
+    App\Providers\AgendaServiceProvider::class,
     App\Providers\AgentToolServiceProvider::class,
     App\Providers\AppServiceProvider::class,
     App\Providers\DomainServiceProvider::class,

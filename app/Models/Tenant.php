@@ -30,6 +30,7 @@ class Tenant extends Model
         'storage_provider_id',
         'ai_provider_id',
         'backup_provider_id',
+        'maps_provider_id',
     ];
 
     protected function casts(): array
@@ -83,6 +84,7 @@ class Tenant extends Model
             storageProviderId: $this->storage_provider_id,
             aiProviderId: $this->ai_provider_id,
             backupProviderId: $this->backup_provider_id,
+            mapsProviderId: $this->maps_provider_id,
             createdAt: $this->created_at,
             updatedAt: $this->updated_at,
         );

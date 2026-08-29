@@ -10,6 +10,9 @@ use App\Http\Controllers\Api\Auth\VerifyEmailController;
 use App\Http\Controllers\Api\Auth\ResendVerificationCodeController;
 use App\Http\Controllers\Api\Auth\AdminLoginController;
 use App\Http\Controllers\Api\Auth\AdminRegisterController;
+use App\Http\Controllers\Api\Admin\AgendaController;
+use App\Http\Controllers\Api\Admin\AppointmentController;
+use App\Http\Controllers\Api\Admin\RouteController;
 use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\Admin\RoleController;
@@ -213,6 +216,21 @@ Route::middleware(['tenant.identify'])->group(function () {
 
             // AI assistants available to chat with (tenant-scoped, active only)
             Route::get('/assistants', [AssistantController::class, 'index']);
+
+            // Agenda — one endpoint returns the whole screen (grid, counts,
+            // cards and their menus) for the requested view/date/grouping.
+            Route::get('/agenda', [AgendaController::class, 'index']);
+
+            Route::post('/appointments', [AppointmentController::class, 'store']);
+            Route::patch('/appointments/{id}', [AppointmentController::class, 'update']);
+            // Its own route: the one-click change a triage screen makes
+            // constantly should not require sending the rest of the record.
+            Route::patch('/appointments/{id}/status', [AppointmentController::class, 'changeStatus']);
+            Route::delete('/appointments/{id}', [AppointmentController::class, 'destroy']);
+
+            // Route optimisation, server-side (key, ledger and cache all stay
+            // out of the browser).
+            Route::post('/routes/optimize', [RouteController::class, 'optimize']);
 
             // File management
             Route::get('/files', [FileController::class, 'index']);

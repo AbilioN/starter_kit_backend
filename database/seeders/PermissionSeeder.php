@@ -112,6 +112,55 @@ class PermissionSeeder extends Seeder
             'route' => 'chat/read',
         ]);
 
+        // Agenda permissions. Route optimisation is its own slug rather
+        // than folded into appointment-read: MADCRM excludes sales reps from
+        // it deliberately — the round is planned FOR them, not BY them — and
+        // that only stays expressible if the two rights are separable.
+        Permission::create([
+            'slug' => 'appointment-read',
+            'name' => 'View Agenda',
+            'description' => 'Allows viewing the agenda and its appointments',
+            'resource' => 'appointment',
+            'action' => 'read',
+            'route' => 'appointment/read',
+        ]);
+
+        Permission::create([
+            'slug' => 'appointment-create',
+            'name' => 'Create Appointments',
+            'description' => 'Allows creating appointments',
+            'resource' => 'appointment',
+            'action' => 'create',
+            'route' => 'appointment/create',
+        ]);
+
+        Permission::create([
+            'slug' => 'appointment-update',
+            'name' => 'Update Appointments',
+            'description' => 'Allows editing appointments and changing their status',
+            'resource' => 'appointment',
+            'action' => 'update',
+            'route' => 'appointment/update',
+        ]);
+
+        Permission::create([
+            'slug' => 'appointment-delete',
+            'name' => 'Delete Appointments',
+            'description' => 'Allows deleting appointments',
+            'resource' => 'appointment',
+            'action' => 'delete',
+            'route' => 'appointment/delete',
+        ]);
+
+        Permission::create([
+            'slug' => 'route-optimize',
+            'name' => 'Optimise Routes',
+            'description' => 'Allows computing an optimised route through a set of appointments',
+            'resource' => 'route',
+            'action' => 'optimize',
+            'route' => 'route/optimize',
+        ]);
+
         // Role permissions
         Permission::create([
             'slug' => 'role-assign',

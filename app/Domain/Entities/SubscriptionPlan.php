@@ -21,6 +21,7 @@ class SubscriptionPlan
         public readonly ?string $storageProviderId = null,
         public readonly ?string $aiProviderId = null,
         public readonly ?string $backupProviderId = null,
+        public readonly ?string $mapsProviderId = null,
         public readonly ?DateTime $createdAt = null,
         public readonly ?DateTime $updatedAt = null
     ) {}
