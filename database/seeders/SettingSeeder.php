@@ -18,6 +18,14 @@ class SettingSeeder extends Seeder
             ['key' => 'features.chat', 'value' => 'true', 'type' => 'boolean', 'group' => 'features', 'label' => 'Chat Module', 'description' => 'Enable or disable the real-time chat module.', 'is_public' => false],
             ['key' => 'features.file_upload', 'value' => 'true', 'type' => 'boolean', 'group' => 'features', 'label' => 'File Upload', 'description' => 'Enable or disable file uploads.', 'is_public' => false],
             ['key' => 'features.notifications', 'value' => 'true', 'type' => 'boolean', 'group' => 'features', 'label' => 'Notifications', 'description' => 'Enable or disable in-app notifications.', 'is_public' => false],
+            // Free on every plan: the agenda is the screen the product is used
+            // from, and gating it would mean selling a diary that cannot be
+            // opened. The flag exists so a vertical with no use for it can hide
+            // it, not as a paywall.
+            ['key' => 'features.agenda', 'value' => 'true', 'type' => 'boolean', 'group' => 'features', 'label' => 'Agenda', 'description' => 'Enable or disable the appointments agenda.', 'is_public' => false],
+            // Off by default: this is the one that costs money per use once a
+            // real maps provider is behind it.
+            ['key' => 'features.route_optimization', 'value' => 'false', 'type' => 'boolean', 'group' => 'features', 'label' => 'Route Optimisation', 'description' => 'Enable or disable distance calculation and route optimisation.', 'is_public' => false],
             ['key' => 'features.ai_agent', 'value' => 'false', 'type' => 'boolean', 'group' => 'features', 'label' => 'AI Agent', 'description' => 'Enable or disable AI agent integration.', 'is_public' => false],
 
             // Languages — how many a tenant runs. `locales.enabled` is what the

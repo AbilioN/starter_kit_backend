@@ -7,6 +7,7 @@ use App\Models\Appointment;
 use App\Models\AppointmentStatus;
 use App\Models\AppointmentType;
 use App\Models\MapsUsageLog;
+use App\Models\Setting;
 use Carbon\CarbonImmutable;
 use Database\Seeders\AgendaSeeder;
 use Illuminate\Support\Facades\Artisan;
@@ -21,6 +22,15 @@ class RouteEndpointTest extends TenantTestCase
 
         $this->actingAsTenant('routes');
         Artisan::call('db:seed', ['--class' => AgendaSeeder::class, '--force' => true]);
+
+        // The paid gate, switched on the way a plan switches it on. Absence
+        // means off for this one — a metered feature must never arrive by
+        // default.
+        Setting::create([
+            'key' => 'features.route_optimization', 'value' => 'true', 'type' => 'boolean',
+            'group' => 'features', 'label' => 'Route Optimisation', 'is_public' => false,
+        ]);
+
         Sanctum::actingAs(Admin::factory()->create(['is_super_admin' => true, 'is_active' => true]));
     }
 
@@ -112,5 +122,23 @@ class RouteEndpointTest extends TenantTestCase
         ])->assertOk();
 
         $this->assertSame(0, MapsUsageLog::count());
+    }
+
+    public function test_routing_is_refused_when_the_plan_does_not_include_it(): void
+    {
+        // The commercial gate, separate from the RBAC one: this admin may plan
+        // rounds, but the workspace did not buy the feature. Refused with a
+        // machine-readable code so the panel can hide the button rather than
+        // show one that fails.
+        Setting::where('key', 'features.route_optimization')->update(['value' => 'false']);
+        \Illuminate\Support\Facades\Cache::flush();
+
+        $a = $this->stopAt('A', 0.0, 0.0);
+        $b = $this->stopAt('B', 0.0, 0.1);
+
+        $this->postJson('/api/admin/routes/optimize', ['appointment_ids' => [$a->id, $b->id]])
+            ->assertStatus(403)
+            ->assertJsonPath('error', 'feature_disabled')
+            ->assertJsonPath('feature', 'route_optimization');
     }
 }

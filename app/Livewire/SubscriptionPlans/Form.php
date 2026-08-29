@@ -71,6 +71,22 @@ class Form extends Component
     /** Plans predating backups keep being backed up — absence is not "off". */
     public bool $featureBackup = true;
 
+    /**
+     * The agenda ships on every plan, including the base one. It is the screen
+     * the product is used FROM, so gating it would mean selling a diary that
+     * cannot be opened. The toggle exists so a vertical that has no use for it
+     * can hide it, not as a paywall — hence the default.
+     */
+    public bool $featureAgenda = true;
+
+    /**
+     * Route optimisation is off by default, and that is the one commercial
+     * decision on this screen: it is the feature that costs money per use when
+     * a real maps provider is behind it. A plan that includes it is a plan that
+     * priced it.
+     */
+    public bool $featureRouteOptimization = false;
+
     /** Hours between backups. '' = never, which is the only way to switch a plan's backups off through limits. */
     public string $backupFrequencyHours = '24';
 
@@ -141,6 +157,11 @@ class Form extends Component
         $this->aiProviderId = $plan->aiProviderId ?? '';
         $this->backupProviderId = $plan->backupProviderId ?? '';
         $this->featureBackup = (bool) ($plan->features['backup'] ?? true);
+        // Absence means "on" for the agenda and "off" for routing, matching
+        // their defaults: plans written before either existed should keep
+        // working and should not silently acquire a metered feature.
+        $this->featureAgenda = (bool) ($plan->features['agenda'] ?? true);
+        $this->featureRouteOptimization = (bool) ($plan->features['route_optimization'] ?? false);
         $this->backupFrequencyHours = array_key_exists('backup_frequency_hours', $plan->limits)
             ? (string) ($plan->limits['backup_frequency_hours'] ?? '')
             : '24';
@@ -174,6 +195,8 @@ class Form extends Component
             'notifications' => $this->featureNotifications,
             'ai_agent' => $this->featureAiAgent,
             'backup' => $this->featureBackup,
+            'agenda' => $this->featureAgenda,
+            'route_optimization' => $this->featureRouteOptimization,
         ];
         $limits = [
             'max_admins' => $this->maxAdmins,

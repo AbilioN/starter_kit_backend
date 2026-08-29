@@ -6,6 +6,7 @@ use App\Application\Services\AdminFactory;
 use App\Application\UseCases\Admin\Authorization\AuthorizeActionUseCase;
 use App\Application\UseCases\Admin\Authorization\CheckAdminPermissionUseCase;
 use App\Application\UseCases\Agenda\BuildAgendaUseCase;
+use App\Helpers\Settings;
 use App\Http\Controllers\Controller;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
@@ -35,6 +36,23 @@ class AgendaController extends Controller
     {
         $admin = AdminFactory::createFromModel($request->user());
         $this->authorize->execute($admin, 'appointment-read');
+
+        // Free on every plan, so this is a vertical hiding a screen it has no
+        // use for rather than a paywall. Refused with a machine-readable code:
+        // a feature that is off must SAY so, not answer with an empty diary —
+        // the silent-skip mistake that made the AI chat look broken for three
+        // days in August.
+        // Absence means ON, matching the plan form: a tenant provisioned
+        // before the agenda existed has no such row, and defaulting it off
+        // would take the feature away from everyone who predates it.
+        if (! (bool) Settings::get('features.agenda', true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The agenda is not enabled for this workspace.',
+                'error' => 'feature_disabled',
+                'feature' => 'agenda',
+            ], 403);
+        }
 
         $validated = $request->validate([
             'view' => ['sometimes', 'in:day,week,month'],

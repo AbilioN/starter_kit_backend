@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Application\Services\AdminFactory;
 use App\Application\UseCases\Admin\Authorization\AuthorizeActionUseCase;
 use App\Application\UseCases\Routing\OptimizeRouteUseCase;
+use App\Helpers\Settings;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
 use DomainException;
@@ -31,6 +32,20 @@ class RouteController extends Controller
     {
         $admin = AdminFactory::createFromModel($request->user());
         $this->authorize->execute($admin, 'route-optimize');
+
+        // The commercial gate, distinct from the RBAC one above. `route-optimize`
+        // answers "may this person plan rounds"; this answers "did this
+        // workspace buy the feature at all". Both are needed: MADCRM excludes
+        // sales reps from routing on a tenant that pays for it, and that stays
+        // expressible only while the two are separate.
+        if (! Settings::isEnabled('features.route_optimization')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Route optimisation is not included in this workspace\'s plan.',
+                'error' => 'feature_disabled',
+                'feature' => 'route_optimization',
+            ], 403);
+        }
 
         $data = $request->validate([
             'appointment_ids' => ['required', 'array', 'min:2'],

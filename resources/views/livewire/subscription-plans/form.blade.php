@@ -117,6 +117,19 @@
                     <input type="checkbox" wire:model="featureBackup" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-600">
                     Backups
                 </label>
+                <label class="flex items-center gap-2 text-sm text-slate-700">
+                    <input type="checkbox" wire:model="featureAgenda" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-600">
+                    Agenda
+                </label>
+                <label class="flex items-start gap-2 text-sm text-slate-700">
+                    <input type="checkbox" wire:model="featureRouteOptimization" class="mt-1 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600">
+                    <span>
+                        Distance &amp; route optimisation
+                        <span class="block text-xs text-slate-500">
+                            Metered when the tenant uses the platform's maps key.
+                        </span>
+                    </span>
+                </label>
             </div>
         </div>
 
