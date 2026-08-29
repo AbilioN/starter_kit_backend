@@ -135,6 +135,13 @@ class Form extends Component
                 'model' => $this->configModel ?: null,
                 'system_prompt' => $this->configSystemPrompt ?: null,
             ],
+            // A key and nothing else. The routing provider is chosen by whether
+            // one resolves at all — a tenant with no maps provider falls back to
+            // the local optimiser rather than losing the feature, so there is no
+            // "which engine" field to fill in.
+            'maps' => [
+                'api_key' => $this->configApiKey,
+            ],
             // Deliberately a separate destination from the `storage` type, even
             // though the fields are the same shape: a backup sitting in the
             // bucket it exists to protect is not a backup.

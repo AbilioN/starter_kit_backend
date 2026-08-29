@@ -171,6 +171,27 @@
                     </div>
                 </div>
             </div>
+        @elseif ($type === 'maps')
+            <div class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-900/5">
+                <h2 class="text-sm font-semibold text-slate-900">Maps Credentials</h2>
+                <p class="mt-1 text-xs text-slate-500">
+                    A Google Maps Platform key with the <strong>Directions API</strong> enabled.
+                    Restrict it by <strong>IP address</strong>, not HTTP referrer — routing is
+                    called from this server, never from a browser.
+                </p>
+                <div class="mt-4 grid grid-cols-1 gap-5">
+                    <div>
+                        <label for="configApiKey" class="block text-sm font-medium text-slate-700">API Key</label>
+                        <input type="password" id="configApiKey" wire:model="configApiKey" autocomplete="new-password"
+                               class="mt-1.5 block w-full rounded-md border-0 px-3 py-2 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm font-mono">
+                        @error('configApiKey') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
+                        <p class="mt-1.5 text-xs text-slate-500">
+                            Leave a tenant without a maps provider to use the built-in optimiser instead:
+                            it costs nothing and needs no key, but its distances are straight-line estimates.
+                        </p>
+                    </div>
+                </div>
+            </div>
         @else
             <div class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-900/5">
                 <h2 class="text-sm font-semibold text-slate-900">OpenAI Credentials</h2>
