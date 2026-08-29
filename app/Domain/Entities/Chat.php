@@ -11,7 +11,13 @@ class Chat
         public readonly string $id,
         public readonly string $name,
         public readonly string $type,
-        public readonly string $description,
+        // Nullable, because the column is and because CreatePrivateChatUseCase
+        // never sets one — a private chat is between two people and has nothing
+        // to describe. Requiring a string here made every private chat created
+        // through the app fatal on the way back out: toEntityFromReciever()
+        // passes the column straight through, so `GET /api/chats` answered 500
+        // for anyone who had one.
+        public readonly ?string $description,
         public readonly string $createdBy,
         public readonly ?string $createdByType = null,
         public readonly ?DateTime $createdAt = null,

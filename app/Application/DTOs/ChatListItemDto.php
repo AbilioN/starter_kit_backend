@@ -8,7 +8,9 @@ class ChatListItemDto
         public readonly string $id,
         public readonly string $name,
         public readonly string $type,
-        public readonly string $description,
+        // Nullable for the same reason the entity's is: a private chat has no
+        // description, and the value flows straight through from it.
+        public readonly ?string $description,
         public readonly ?LastMessageDto $lastMessage,
         public readonly int $unreadCount,
         public readonly int $participantsCount,

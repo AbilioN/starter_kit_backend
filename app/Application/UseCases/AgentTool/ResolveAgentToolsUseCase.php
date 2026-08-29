@@ -2,7 +2,8 @@
 
 namespace App\Application\UseCases\AgentTool;
 
-use App\Domain\AgentTools\AgentToolRegistry;
+use App\Domain\AgentTools\ToolSchema;
+use App\Domain\AgentTools\AdminToolRegistry;
 use App\Models\AgentTool as AgentToolModel;
 use Illuminate\Support\Facades\Log;
 
@@ -20,7 +21,7 @@ use Illuminate\Support\Facades\Log;
  */
 class ResolveAgentToolsUseCase
 {
-    public function __construct(private AgentToolRegistry $registry) {}
+    public function __construct(private AdminToolRegistry $registry) {}
 
     /**
      * @return array{specs: array<int, array>, names: array<int, string>}
@@ -66,7 +67,7 @@ class ResolveAgentToolsUseCase
                     // The row's description wins: it is the operator-editable
                     // knob that steers which tool the model reaches for.
                     'description' => $row->description ?: $handler->description(),
-                    'parameters' => $parameters,
+                    'parameters' => ToolSchema::forWire($parameters),
                 ],
             ];
 

@@ -83,4 +83,9 @@ return [
 
     'endpoint' => env('AGENT_TOOLS_ENDPOINT', 'http://webserver/api/internal/agent/tool-call'),
 
+    // The end-user agent's callback. Which of the two a turn is given is decided
+    // server-side from the actor type, so the worker never has to know what kind
+    // of person started it.
+    'user_endpoint' => env('AGENT_TOOLS_USER_ENDPOINT', 'http://webserver/api/internal/agent/user/tool-call'),
+
 ];

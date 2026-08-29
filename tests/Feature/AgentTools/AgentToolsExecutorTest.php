@@ -4,7 +4,7 @@ namespace Tests\Feature\AgentTools;
 
 use App\Domain\AgentTools\AgentGrant;
 use App\Domain\AgentTools\AgentGrantStoreInterface;
-use App\Domain\AgentTools\AgentToolRegistry;
+use App\Domain\AgentTools\AdminToolRegistry;
 use App\Models\Admin;
 use App\Models\AgentTool;
 use Illuminate\Support\Facades\Redis;
@@ -39,7 +39,7 @@ class AgentToolsExecutorTest extends TenantTestCase
         $tenant = $this->actingAsTenant('agenttools');
         $this->tenantId = $tenant->id;
 
-        $registry = app(AgentToolRegistry::class);
+        $registry = app(AdminToolRegistry::class);
         $registry->register(new StubReadTool());
         $registry->register(new StubMutatingTool());
         $registry->register(new StubPermissionedTool());

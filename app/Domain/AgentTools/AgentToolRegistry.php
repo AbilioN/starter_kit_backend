@@ -9,12 +9,17 @@ namespace App\Domain\AgentTools;
  * rather than instantiated — `app($columnValue)` would turn a text column into
  * arbitrary class instantiation.
  *
+ * Abstract on purpose: a registry is always either the admin one or the user
+ * one (AdminToolRegistry / UserToolRegistry). Making the distinction a type
+ * rather than a constructor flag is what stops the two catalogues meeting at an
+ * injection point.
+ *
  * Registration is an explicit list in AgentToolServiceProvider, not tag-based
  * discovery. Nothing in this codebase is tag-discovered, and here it would mean
  * a class becomes callable by an AI agent merely by existing in a folder.
  * Adding a tool should be a visible line in a diff.
  */
-final class AgentToolRegistry
+abstract class AgentToolRegistry
 {
     /** @var array<string, AgentToolInterface> keyed by tool name */
     private array $byName = [];

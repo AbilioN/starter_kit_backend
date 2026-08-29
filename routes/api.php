@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\Admin\SettingController;
 use App\Http\Controllers\Api\Chat\ChatController;
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\Internal\AgentToolController;
+use App\Http\Controllers\Api\Internal\UserAgentToolController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\UserProfileController;
 use App\Http\Controllers\Api\Auth\ForgotPasswordController;
@@ -77,8 +78,15 @@ Route::prefix('public')->group(function () {
 // there is no $request->user() — which is always the case here. It neither
 // crashes nor protects this route, so ExecuteAgentToolUseCase enforces the
 // read-only rule itself. See docs/11 §8 step 7.
-Route::middleware(['agent.worker'])
-    ->post('/internal/agent/tool-call', AgentToolController::class);
+Route::middleware(['agent.worker'])->group(function () {
+    // Admin agent: curated catalogue, authorized by RBAC slug.
+    Route::post('/internal/agent/tool-call', AgentToolController::class);
+
+    // End-user agent: a separate route on purpose. It reads a different
+    // registry, so it cannot resolve an admin tool even if asked by name —
+    // the boundary is structural rather than a conditional (docs/15 §4).
+    Route::post('/internal/agent/user/tool-call', UserAgentToolController::class);
+});
 
 Route::middleware(['tenant.identify'])->group(function () {
 

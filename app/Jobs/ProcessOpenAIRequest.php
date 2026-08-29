@@ -20,6 +20,7 @@ use App\Models\Tenant;
 use App\Application\UseCases\AgentTool\ComposeAgentSystemPromptUseCase;
 use App\Application\UseCases\AgentTool\IssueAgentGrantUseCase;
 use App\Application\UseCases\AgentTool\ResolveAgentToolsUseCase;
+use App\Application\UseCases\AgentTool\ResolveUserAgentToolsUseCase;
 use App\Domain\AgentTools\AgentGrant;
 use App\Domain\Services\TenantInfrastructureResolverInterface;
 use App\Events\MessageSent;
@@ -74,7 +75,14 @@ class ProcessOpenAIRequest implements ShouldQueue
             // same as the agent profile above — attaching a tool takes effect on
             // the very next message. Empty whenever the feature is off, the
             // agent has no profile, or nothing is attached.
-            $tools = app(ResolveAgentToolsUseCase::class)->execute($assistant['agent_profile_id'] ?? null);
+            // Which set depends on who is asking. An admin's is curated per
+            // agent profile; an end user's is static (docs/15 §3). The actor
+            // type comes from chat_user, the source of truth for participant
+            // type — never from the message.
+            $actorType = $this->resolveActorType();
+            $tools = $actorType === 'user'
+                ? app(ResolveUserAgentToolsUseCase::class)->execute()
+                : app(ResolveAgentToolsUseCase::class)->execute($assistant['agent_profile_id'] ?? null);
             $persona = $agentProfileConfig['system_prompt'] ?? $aiConfig['system_prompt'] ?? null;
 
             // Prepare the request data
@@ -390,8 +398,13 @@ class ProcessOpenAIRequest implements ShouldQueue
 
     /**
      * Handle a job failure.
+     *
+     * Typed Throwable, not Exception: Laravel passes whatever was thrown, and a
+     * TypeError is an Error. A narrower signature here replaces the real
+     * failure with a confusing one about this method's own argument — which is
+     * exactly what happened while building agent tools.
      */
-    public function failed(Exception $exception): void
+    public function failed(\Throwable $exception): void
     {
         Log::error('OpenAI request job failed permanently', [
             'chat_id' => $this->chatId,

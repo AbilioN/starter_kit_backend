@@ -29,7 +29,13 @@ class IssueAgentGrantUseCase
 
         return [
             'token' => $this->grants->issue($grant, $ttl),
-            'endpoint' => (string) config('agent_tools.endpoint'),
+            // Chosen from the actor type, server-side. The worker posts wherever
+            // its grant points, so it never learns what kind of person started
+            // the turn — and a user's grant can only ever reach the user
+            // endpoint, whose registry holds no admin tool at all.
+            'endpoint' => (string) ($grant->actorType === 'user'
+                ? config('agent_tools.user_endpoint')
+                : config('agent_tools.endpoint')),
             'expires_at' => now()->addSeconds($ttl)->toIso8601String(),
         ];
     }
