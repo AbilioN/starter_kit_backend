@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasTenantFields;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +12,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Appointment extends Model
 {
-    use HasUuids, SoftDeletes;
+    // HasTenantFields hides every cf_* column from serialisation. It ships
+    // with the models rather than with the read path, because this controller
+    // returns the raw model as `data` from three methods — so the columns must
+    // never be visible in the window between the reconciler creating them and
+    // the projector existing.
+    use HasTenantFields, HasUuids, SoftDeletes;
 
     protected $fillable = [
         'subject_type', 'subject_id',

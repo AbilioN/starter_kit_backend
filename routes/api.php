@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\Auth\AdminRegisterController;
 use App\Http\Controllers\Api\Admin\AgendaController;
 use App\Http\Controllers\Api\Admin\AppointmentController;
 use App\Http\Controllers\Api\Admin\RouteController;
+use App\Http\Controllers\Api\Admin\CustomFieldController;
 use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\Admin\RoleController;
@@ -221,12 +222,30 @@ Route::middleware(['tenant.identify'])->group(function () {
             // cards and their menus) for the requested view/date/grouping.
             Route::get('/agenda', [AgendaController::class, 'index']);
 
+            // Reading one record, so the panel's edit dialog has something to
+            // open with. Its response carries the custom-field context too, so
+            // the form draws its controls without a second request.
+            Route::get('/appointments/{id}', [AppointmentController::class, 'show']);
             Route::post('/appointments', [AppointmentController::class, 'store']);
             Route::patch('/appointments/{id}', [AppointmentController::class, 'update']);
             // Its own route: the one-click change a triage screen makes
             // constantly should not require sending the rest of the record.
             Route::patch('/appointments/{id}/status', [AppointmentController::class, 'changeStatus']);
             Route::delete('/appointments/{id}', [AppointmentController::class, 'destroy']);
+
+            // Tenant-defined fields — the CONFIGURATION screen only.
+            //
+            // Reading a field's values is not here: an entity's own endpoint
+            // carries its custom fields as context, so the panel never makes a
+            // second request to draw a form or a card. This controller exists
+            // for the separate, larger, differently-permissioned job of
+            // inventing them.
+            //
+            // Literal segments before any {parameter}, matching the
+            // /templates/fields precedent.
+            Route::get('/custom-fields', [CustomFieldController::class, 'index']);
+            Route::post('/custom-fields', [CustomFieldController::class, 'store']);
+            Route::post('/custom-fields/{host}/reconcile', [CustomFieldController::class, 'reconcile']);
 
             // Route optimisation, server-side (key, ledger and cache all stay
             // out of the browser).

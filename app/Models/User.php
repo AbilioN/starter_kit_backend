@@ -12,12 +12,19 @@ use App\Domain\Entities\User as UserEntity;
 use App\Domain\Entities\ChatUser;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Models\Concerns\HasTenantFields;
 use App\Traits\HasAuditLog;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasUuids, HasApiTokens, HasFactory, Notifiable, HasAuditLog, SoftDeletes;
+    // HasTenantFields hides every cf_* column from serialisation. It matters
+    // most HERE: User uses HasAuditLog, which strips $hidden before writing
+    // oldValues/newValues into audit_logs — a table that is immutable by
+    // cross-cutting decision. Custom fields are exactly where a tenant puts a
+    // national ID or a medical note, and without this they would be copied
+    // into a table nobody can ever clean.
+    use HasApiTokens, HasAuditLog, HasFactory, HasTenantFields, HasUuids, Notifiable, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.

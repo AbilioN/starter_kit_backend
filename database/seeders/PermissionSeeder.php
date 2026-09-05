@@ -329,5 +329,39 @@ class PermissionSeeder extends Seeder
             'action' => 'manage',
             'route' => 'template/manage',
         ]);
+
+        // Custom field permissions.
+        //
+        // firstOrCreate, not create, and that is the whole point: the tenant
+        // migration 2026_09_04_000002 also inserts these two, because a
+        // seeder that runs only inside tenant:provision reaches no existing
+        // tenant. Provisioning migrates first and seeds second, so with
+        // create() the seeder would hit the unique slug index and kill
+        // provisioning for every new tenant — including the public signup
+        // path. Both writers being idempotent is what lets them coexist.
+        //
+        // Two slugs, not four: creating a definition runs DDL, which is one
+        // privilege rather than a create/update/delete triad.
+        Permission::firstOrCreate(
+            ['slug' => 'custom-field-read'],
+            [
+                'name' => 'View Custom Fields',
+                'description' => 'Allows viewing custom field definitions',
+                'resource' => 'custom-field',
+                'action' => 'read',
+                'route' => 'custom-field/read',
+            ],
+        );
+
+        Permission::firstOrCreate(
+            ['slug' => 'custom-field-manage'],
+            [
+                'name' => 'Manage Custom Fields',
+                'description' => 'Allows creating, editing and retiring custom fields, which changes the tenant database schema',
+                'resource' => 'custom-field',
+                'action' => 'manage',
+                'route' => 'custom-field/manage',
+            ],
+        );
     }
 }

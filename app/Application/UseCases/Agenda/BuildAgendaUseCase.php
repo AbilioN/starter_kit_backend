@@ -2,6 +2,8 @@
 
 namespace App\Application\UseCases\Agenda;
 
+use App\Application\CustomFields\FieldViewer;
+use App\Application\UseCases\CustomField\ProjectCustomFieldsUseCase;
 use App\Domain\Agenda\AppointmentActionRegistry;
 use App\Models\Appointment;
 use Carbon\CarbonImmutable;
@@ -29,11 +31,18 @@ class BuildAgendaUseCase
     private const DAY_START_HOUR = 7;
     private const DAY_END_HOUR = 20;
 
-    public function __construct(private AppointmentActionRegistry $actions) {}
+    public function __construct(
+        private AppointmentActionRegistry $actions,
+        private ProjectCustomFieldsUseCase $customFields,
+    ) {}
 
     /**
      * @param  callable(?string): bool  $allows  whether the viewer may use an
      *         action requiring a given slug
+     * @param  FieldViewer  $viewer  who is reading, for tenant-defined fields.
+     *         Threaded explicitly rather than held on the instance, matching
+     *         how $allows is already passed — and because a viewer stored on
+     *         a service is one container binding away from crossing tenants.
      */
     public function execute(
         string $view,
@@ -41,6 +50,7 @@ class BuildAgendaUseCase
         array $filters,
         ?string $groupBy,
         callable $allows,
+        FieldViewer $viewer,
     ): array {
         [$from, $to] = $this->window($view, $date);
 
@@ -58,13 +68,19 @@ class BuildAgendaUseCase
             'iso_week' => (int) $date->isoWeek(),
             'group_by' => $groupBy,
             'filters' => $filters,
+
+            // Sent once, with the screen that needs it, so the panel does not
+            // make a second request to find out what the chips on the cards
+            // mean. Resolved for this reader: a field they may not see is not
+            // described here either.
+            'custom_fields' => $this->customFields->context('appointments', $viewer, 'card.badges'),
             'totals' => $this->counts($appointments),
             'groups' => collect($groups)->map(fn (Collection $rows, string $key) => [
                 // Never a blank heading: an unlabelled bucket reads as a bug.
                 'key' => $key === '' ? null : $key,
                 'label' => $key === '' ? null : ($key === '__none__' ? '[Unassigned]' : $key),
                 'totals' => $this->counts($rows),
-                ...$this->project($view, $from, $to, $rows, $allows),
+                ...$this->project($view, $from, $to, $rows, $allows, $viewer),
             ])->values()->all(),
         ];
     }
@@ -132,13 +148,14 @@ class BuildAgendaUseCase
         CarbonImmutable $to,
         Collection $rows,
         callable $allows,
+        FieldViewer $viewer,
     ): array {
         return $view === 'day'
-            ? ['hours' => $this->hours($from, $rows, $allows)]
-            : ['days' => $this->days($view, $from, $to, $rows, $allows)];
+            ? ['hours' => $this->hours($from, $rows, $allows, $viewer)]
+            : ['days' => $this->days($view, $from, $to, $rows, $allows, $viewer)];
     }
 
-    private function days(string $view, CarbonImmutable $from, CarbonImmutable $to, Collection $rows, callable $allows): array
+    private function days(string $view, CarbonImmutable $from, CarbonImmutable $to, Collection $rows, callable $allows, FieldViewer $viewer): array
     {
         $days = [];
 
@@ -160,14 +177,14 @@ class BuildAgendaUseCase
                 // of a month is a wall nobody reads.
                 'appointments' => $view === 'month'
                     ? null
-                    : $onThisDay->map(fn (Appointment $a) => $this->card($a, $allows))->values()->all(),
+                    : $onThisDay->map(fn (Appointment $a) => $this->card($a, $allows, $viewer))->values()->all(),
             ];
         }
 
         return $days;
     }
 
-    private function hours(CarbonImmutable $day, Collection $rows, callable $allows): array
+    private function hours(CarbonImmutable $day, Collection $rows, callable $allows, FieldViewer $viewer): array
     {
         $hours = [];
 
@@ -190,7 +207,7 @@ class BuildAgendaUseCase
                     default => $hour.'h',
                 },
                 ...$this->counts($inBucket),
-                'appointments' => $inBucket->map(fn (Appointment $a) => $this->card($a, $allows))->values()->all(),
+                'appointments' => $inBucket->map(fn (Appointment $a) => $this->card($a, $allows, $viewer))->values()->all(),
             ];
         }
 
@@ -201,7 +218,7 @@ class BuildAgendaUseCase
      * The card is a small dossier plus its menu — built once, on the server, so
      * the client has nothing to assemble and no rule to re-implement.
      */
-    private function card(Appointment $appointment, callable $allows): array
+    private function card(Appointment $appointment, callable $allows, FieldViewer $viewer): array
     {
         return [
             'id' => $appointment->id,
@@ -237,6 +254,22 @@ class BuildAgendaUseCase
                 'id' => $appointment->subject_id,
             ] : null,
             'actions' => $this->actions->menuFor($appointment, $allows),
+
+            // The tenant's own values — the "supplements" list the MADCRM
+            // agenda study describes ("extra fields a vertical adds — surface
+            // areas, product strips…"), and the reason appointments was the
+            // first host.
+            //
+            // COMPACT on purpose: {field, key, value, text} and nothing else.
+            // How each field looks travels once, in `custom_fields` at the top
+            // of the response. A week is around a hundred cards, and repeating
+            // a label, an icon and two colours on each of them would make the
+            // tenant's presentation config most of the payload.
+            //
+            // Only the badge slot: a card is a scan-many surface, and a field
+            // with no slot belongs on the form rather than on every card of
+            // the week.
+            'custom' => $this->customFields->values('appointments', $appointment, $viewer, 'card.badges'),
         ];
     }
 }

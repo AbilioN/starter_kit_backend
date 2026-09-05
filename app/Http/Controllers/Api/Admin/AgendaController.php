@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Application\CustomFields\FieldViewerFactory;
 use App\Application\Services\AdminFactory;
 use App\Application\UseCases\Admin\Authorization\AuthorizeActionUseCase;
 use App\Application\UseCases\Admin\Authorization\CheckAdminPermissionUseCase;
@@ -30,6 +31,7 @@ class AgendaController extends Controller
         private BuildAgendaUseCase $buildAgenda,
         private AuthorizeActionUseCase $authorize,
         private CheckAdminPermissionUseCase $checkPermission,
+        private FieldViewerFactory $viewers,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -76,6 +78,11 @@ class AgendaController extends Controller
             // card never offers an action that would be refused when clicked.
             allows: fn (?string $slug) => $slug === null
                 || $this->checkPermission->execute($admin, $slug),
+            // Built here, once per request, and never memoised on the
+            // container: a viewer held by a singleton on a long-lived Horizon
+            // worker would carry one tenant's admin into the next tenant's
+            // job — the settings-cache bug with a worse blast radius.
+            viewer: $this->viewers->forAdmin($request->user()),
         );
 
         return response()->json(['success' => true, 'data' => $agenda]);

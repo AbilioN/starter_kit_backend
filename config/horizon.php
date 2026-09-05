@@ -29,7 +29,13 @@ return [
     'defaults' => [
         'supervisor-1' => [
             'connection' => 'redis',
-            'queue' => ['default', 'message_processing', 'notifications'],
+            // `schema` is where ReconcileTenantFieldSchema runs. It MUST be
+            // listed: a job dispatched to a queue no supervisor consumes is
+            // never processed and never fails — the definition sits on
+            // `pending` for ever while the health check reports a degradation
+            // with no cause. Adding a queue also needs
+            // `docker compose restart horizon`, which reads this once at boot.
+            'queue' => ['default', 'message_processing', 'notifications', 'schema'],
             'balance' => 'auto',
             'autoScalingStrategy' => 'time',
             'maxProcesses' => 5,
