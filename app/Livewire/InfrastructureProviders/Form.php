@@ -6,6 +6,7 @@ use App\Application\UseCases\GodAdmin\CreateInfrastructureProviderUseCase;
 use App\Application\UseCases\GodAdmin\UpdateInfrastructureProviderUseCase;
 use App\Domain\Repositories\InfrastructureProviderRepositoryInterface;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 
 class Form extends Component
@@ -51,6 +52,17 @@ class Form extends Component
     // ai only
     public string $configApiKey = '';
 
+    /**
+     * The tenant's own OpenAI-compatible endpoint.
+     *
+     * Without a field here `config.base_url` was settable only by hand in the
+     * database, and — worse — silently destroyed by any later edit of this
+     * provider, because save() rebuilds the whole config array and the
+     * repository replaces the column rather than merging. The tenant's traffic
+     * would quietly revert to api.openai.com.
+     */
+    public string $configBaseUrl = '';
+
     public string $configModel = '';
 
     public string $configSystemPrompt = '';
@@ -94,6 +106,7 @@ class Form extends Component
         $this->configPathPrefix = $config['path_prefix'] ?? 'backups';
         $this->configDriver = $config['driver'] ?? 's3';
         $this->configApiKey = $config['api_key'] ?? '';
+        $this->configBaseUrl = $config['base_url'] ?? '';
         $this->configModel = $config['model'] ?? '';
         $this->configSystemPrompt = $config['system_prompt'] ?? '';
     }
@@ -110,7 +123,22 @@ class Form extends Component
             'configAppId' => 'required_if:type,broadcasting|string',
             'configCluster' => 'required_if:type,broadcasting|string',
             'configBucket' => 'required_if:type,storage|required_if:type,backup|string',
-            'configApiKey' => 'required_if:type,ai|string',
+            // Required only when this provider is pointed at OpenAI itself.
+            // A self-hosted OpenAI-compatible server usually needs no
+            // credential, and the worker never substitutes this platform's own
+            // key for a tenant-named endpoint — so demanding one here would
+            // force an operator to invent a fake value for the exact case the
+            // field exists to support.
+            //
+            // Not `required_if:type,ai|required_without:configBaseUrl`: both
+            // are "required" rules and Laravel ANDs them, so the second could
+            // never relax the first.
+            'configApiKey' => [
+                Rule::requiredIf(fn () => $this->type === 'ai' && $this->configBaseUrl === ''),
+                'nullable',
+                'string',
+            ],
+            'configBaseUrl' => 'nullable|url',
         ]);
 
         $config = match ($this->type) {
@@ -132,6 +160,10 @@ class Form extends Component
             ],
             'ai' => [
                 'api_key' => $this->configApiKey,
+                // Travels with the key because the two are one decision, and
+                // when it is set the model below is the one that must be used:
+                // a model name belongs to an endpoint.
+                'base_url' => $this->configBaseUrl ?: null,
                 'model' => $this->configModel ?: null,
                 'system_prompt' => $this->configSystemPrompt ?: null,
             ],

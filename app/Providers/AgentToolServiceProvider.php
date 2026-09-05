@@ -33,6 +33,11 @@ class AgentToolServiceProvider extends ServiceProvider
      */
     private const ADMIN_HANDLERS = [
         \App\Application\AgentTools\CountUsersTool::class,
+        // Answers questions about the fields THIS workspace invented, which is
+        // the one thing no amount of general knowledge can cover. It reads
+        // through ProjectCustomFieldsUseCase so a field hidden from the
+        // actor's roles is not described to them by the assistant either.
+        \App\Application\AgentTools\ListCustomFieldsTool::class,
     ];
 
     /**

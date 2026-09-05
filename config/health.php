@@ -28,6 +28,23 @@ return [
         'max_depth' => (int) env('HEALTH_AI_MAX_DEPTH', 20),
         'max_age_seconds' => (int) env('HEALTH_AI_MAX_AGE_SECONDS', 120),
 
+        // Written by the Python worker when a provider call fails in a way
+        // nobody here can retry away — no credits, a bad key — and DELETED by
+        // it on the next success. A cross-repo contract, like the heartbeat:
+        // renaming it on one side silently blinds the other.
+        //
+        // This is the only check that can see a billing outage. Everything
+        // else about the bus stays perfectly healthy through one: the queues
+        // drain, the worker answers, the heartbeat is seconds old — and every
+        // reply is an error the user is told to retry.
+        // A literal, deliberately, exactly like `heartbeat_key` five lines
+        // below. An env() here is overridable on THIS side only — the worker's
+        // own name for it is PROVIDER_ERROR_KEY — so renaming it in one .env
+        // leaves the check reading a key nobody writes, with no error on
+        // either side and the one signal that can see a billing outage
+        // permanently dark.
+        'provider_error_key' => 'ai_worker:provider_error',
+
         // Written by the Python worker's heartbeat thread. Absent or stale
         // means the worker is gone — which, with an empty queue, is otherwise
         // indistinguishable from a healthy idle worker.

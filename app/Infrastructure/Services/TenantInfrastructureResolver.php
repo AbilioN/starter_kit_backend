@@ -213,6 +213,12 @@ class TenantInfrastructureResolver implements TenantInfrastructureResolverInterf
             'api_key' => $config['api_key'] ?? null,
             'model' => $config['model'] ?? null,
             'system_prompt' => $config['system_prompt'] ?? null,
+            // An OpenAI-COMPATIBLE endpoint, which is not the same as "OpenAI".
+            // Ollama, llama.cpp, vLLM and every hosted gateway speak the same
+            // /v1/chat/completions, tool calling included, so this one value is
+            // what lets a workspace run against a self-hosted model without the
+            // worker learning anything about it. Null keeps api.openai.com.
+            'base_url' => $config['base_url'] ?? null,
         ];
     }
 

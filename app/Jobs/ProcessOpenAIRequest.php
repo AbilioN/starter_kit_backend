@@ -105,6 +105,12 @@ class ProcessOpenAIRequest implements ShouldQueue
                 // the tenant's own BYOK credential (infrastructure_providers,
                 // type=ai) or null (Python worker's global .env default).
                 'api_key' => $aiConfig['api_key'] ?? null,
+                // Where to spend it. Travels with the key because the two are
+                // one decision: a tenant pointed at a self-hosted model has a
+                // different endpoint AND a different credential (usually
+                // none). Null lets the worker's own .env decide, which is how
+                // a local development stack runs the whole agent for free.
+                'base_url' => $aiConfig['base_url'] ?? null,
                 // model/system_prompt: this specific agent's own profile
                 // wins when set (read live from the landlord agent_profiles
                 // table, never copied - an edit there takes effect on the
@@ -112,7 +118,18 @@ class ProcessOpenAIRequest implements ShouldQueue
                 // else null (Python worker falls back further: its own
                 // .env model, and assistant_name/description below for the
                 // prompt).
-                'model' => $agentProfileConfig['model'] ?? $aiConfig['model'] ?? null,
+                //
+                // UNLESS the tenant named its own endpoint. A model name
+                // belongs to an endpoint: every profile this kit seeds pins an
+                // OpenAI name, and asking a self-hosted vLLM for `gpt-4o-mini`
+                // is a 404 on every single turn. Worse, silently — a 404 is
+                // not in the worker's unrecoverable set, so the user is told
+                // to try again forever and readiness stays green. base_url and
+                // model come from the same provider row and resolving them
+                // with opposite precedence is what made that reachable.
+                'model' => isset($aiConfig['base_url'])
+                    ? ($aiConfig['model'] ?? $agentProfileConfig['model'] ?? null)
+                    : ($agentProfileConfig['model'] ?? $aiConfig['model'] ?? null),
                 'system_prompt' => $this->composeSystemPrompt($persona, $assistant, $tools['specs']),
                 'assistant_name' => $assistant['name'] ?? null,
                 'assistant_description' => $assistant['description'] ?? null,

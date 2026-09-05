@@ -312,15 +312,93 @@ class CheckSystemHealthUseCase
                 $problems[] = "queue depth {$depth}";
             }
 
+            // The one condition every other signal here is blind to. When the
+            // provider refuses for billing or a bad key, the bus stays
+            // perfectly healthy — queues drain, the worker answers in
+            // milliseconds, the heartbeat is fresh — and every answer is an
+            // error. Without this the outage is only visible in the worker's
+            // stdout, and the person in the chat is told to try again.
+            $providerError = $this->providerError($config['provider_error_key'] ?? null);
+
+            if ($providerError !== []) {
+                $status = self::DEGRADED;
+
+                foreach ($providerError as $scope => $error) {
+                    $problems[] = 'provider refusing requests for '.$scope
+                        .' ('.($error['code'] ?? 'unknown').')';
+                }
+            }
+
             return array_filter([
                 'status' => $status,
                 'depth' => $depth,
                 'response_depth' => (int) Redis::llen($config['response_queue']),
                 'oldest_request_age_seconds' => $oldestAge,
                 'worker_heartbeat_age_seconds' => $heartbeatAge,
+                'provider_error' => $providerError ?: null,
                 'problems' => $problems ?: null,
             ], fn ($value) => $value !== null);
         });
+    }
+
+    /**
+     * Which tenants the worker currently cannot get an answer for, keyed by
+     * tenant id — empty once each has had a call succeed again.
+     *
+     * The worker removes a tenant's field on ITS next success, so this reports
+     * the CURRENT state rather than "it happened once", which is what makes it
+     * safe to degrade on and what stops an alert from needing to be silenced
+     * by hand after somebody tops the account up.
+     *
+     * ## Why a hash, and why `detail` never leaves here
+     *
+     * The credential and the endpoint are per tenant, so a refusal is a fact
+     * about one workspace. A single flat key made a healthy tenant's next
+     * success erase a broken tenant's outage.
+     *
+     * `detail` is deliberately dropped. This payload is returned by
+     * `GET /api/health/ready`, which is registered with NO authentication, no
+     * throttle and no tenant middleware — and the provider's own 401 body
+     * quotes the key as a prefix plus its last four characters, while a 429
+     * names the organisation. `code` is what an operator acts on; the prose
+     * stays in the worker's log and in Redis, where reaching it already means
+     * having credentials. The worker redacts it there too.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private function providerError(?string $key): array
+    {
+        if ($key === null) {
+            return [];
+        }
+
+        try {
+            $raw = Redis::hgetall($key);
+        } catch (\Throwable) {
+            // Never let this check be the thing that breaks the health check.
+            return [];
+        }
+
+        if (! is_array($raw)) {
+            return [];
+        }
+
+        $out = [];
+
+        foreach ($raw as $scope => $json) {
+            $decoded = is_string($json) ? json_decode($json, true) : null;
+
+            if (! is_array($decoded)) {
+                continue;
+            }
+
+            $out[(string) $scope] = array_filter([
+                'code' => $decoded['code'] ?? 'unknown',
+                'at' => $decoded['at'] ?? null,
+            ], fn ($value) => $value !== null);
+        }
+
+        return $out;
     }
 
     /**

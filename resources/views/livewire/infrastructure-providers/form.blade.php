@@ -203,6 +203,13 @@
                         @error('configApiKey') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
                     </div>
                     <div>
+                        <label for="configBaseUrl" class="block text-sm font-medium text-slate-700">Base URL (optional)</label>
+                        <input type="text" id="configBaseUrl" wire:model="configBaseUrl" placeholder="https://llm.customer.example/v1"
+                               class="mt-1.5 block w-full rounded-md border-0 px-3 py-2 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm font-mono">
+                        <p class="mt-1.5 text-xs text-slate-500">Any OpenAI-compatible endpoint. Blank means api.openai.com. When set, the API key above is optional and this platform's own key is never sent there &mdash; and the Model below must be one this endpoint actually serves.</p>
+                        @error('configBaseUrl') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
                         <label for="configModel" class="block text-sm font-medium text-slate-700">Model (optional)</label>
                         <input type="text" id="configModel" wire:model="configModel" placeholder="gpt-4o-mini"
                                class="mt-1.5 block w-full rounded-md border-0 px-3 py-2 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm font-mono">
