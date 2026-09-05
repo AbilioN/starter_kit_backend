@@ -38,6 +38,13 @@ class AgentToolServiceProvider extends ServiceProvider
         // through ProjectCustomFieldsUseCase so a field hidden from the
         // actor's roles is not described to them by the assistant either.
         \App\Application\AgentTools\ListCustomFieldsTool::class,
+        // The business core. Until this, the assistant could see two things
+        // about a workspace and neither was what the product is for.
+        \App\Application\AgentTools\ListAppointmentsTool::class,
+        // The tenant's own written rules. Its user-side sibling declares no
+        // permission — correct there, a hole here — so this is a separate
+        // class over the same use case.
+        \App\Application\AgentTools\SearchDocumentsTool::class,
     ];
 
     /**

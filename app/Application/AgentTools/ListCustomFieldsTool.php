@@ -7,6 +7,7 @@ use App\Application\UseCases\CustomField\ProjectCustomFieldsUseCase;
 use App\Domain\AgentTools\AgentToolContext;
 use App\Domain\AgentTools\AgentToolInterface;
 use App\Domain\AgentTools\AgentToolResult;
+use App\Domain\AgentTools\Exceptions\AgentToolFailure;
 use App\Domain\CustomFields\CustomFieldHostRegistry;
 use App\Models\Admin;
 use App\Models\CustomFieldDefinition;
@@ -92,7 +93,20 @@ final class ListCustomFieldsTool implements AgentToolInterface
 
     public function execute(array $arguments, AgentToolContext $context): AgentToolResult
     {
-        $viewer = $this->viewers->forAdmin(Admin::find($context->actorId));
+        $actor = $context->actorType === 'admin' ? Admin::find($context->actorId) : null;
+
+        if ($actor === null) {
+            // Fail CLOSED. The executor already refuses a grant whose actor
+            // cannot be resolved — because this tool declares a permission —
+            // but that guard lives in another class and holds only while
+            // permission() stays non-null. forAdmin(null) returns
+            // FieldViewer::system(), which bypasses every hide rule, so the
+            // cost of that assumption ever breaking is describing every hidden
+            // field to whoever is chatting.
+            throw AgentToolFailure::permissionDenied($this->permission());
+        }
+
+        $viewer = $this->viewers->forAdmin($actor);
 
         $requested = $arguments['entity'] ?? null;
         $hostKeys = $requested !== null ? [$requested] : $this->hosts->keys();

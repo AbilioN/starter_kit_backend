@@ -126,4 +126,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(function (\App\Domain\Exceptions\CustomFieldConflictException $e, $request) use ($jsonOnly, $envelope) {
             return $jsonOnly($request) ? $envelope($e->getMessage(), 409) : null;
         });
+
+        // A file the extractor could not read, or one with no text in it — a
+        // scan, usually. 422 rather than 500: the submission is what is wrong,
+        // and the message names the fix.
+        $exceptions->render(function (\App\Domain\Exceptions\DocumentExtractionException $e, $request) use ($jsonOnly, $envelope) {
+            return $jsonOnly($request) ? $envelope($e->getMessage(), 422) : null;
+        });
     })->create();

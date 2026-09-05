@@ -8,6 +8,8 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Redis;
+use App\Domain\Repositories\SettingRepositoryInterface;
+use App\Http\Requests\Admin\UpdateSettingRequest;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use App\Jobs\Middleware\EstablishTenantConnection;
@@ -83,7 +85,17 @@ class ProcessOpenAIRequest implements ShouldQueue
             $tools = $actorType === 'user'
                 ? app(ResolveUserAgentToolsUseCase::class)->execute()
                 : app(ResolveAgentToolsUseCase::class)->execute($assistant['agent_profile_id'] ?? null);
-            $persona = $agentProfileConfig['system_prompt'] ?? $aiConfig['system_prompt'] ?? null;
+            // Three sources, LAYERED rather than chosen between. It used to be
+            // `??`, which made them alternatives — and since every seeded
+            // agent profile carries a prompt, a tenant's own instructions were
+            // never read at all. Order is not arbitrary: the operator's
+            // persona carries the platform's rules and goes first; the
+            // tenant's go after, because in a conflict the more specific
+            // instruction should be the one the model read most recently.
+            $persona = $this->layerPersona(
+                $agentProfileConfig['system_prompt'] ?? $aiConfig['system_prompt'] ?? null,
+                $this->tenantInstructions($actorType),
+            );
 
             // Prepare the request data
             $requestData = [
@@ -208,6 +220,95 @@ class ProcessOpenAIRequest implements ShouldQueue
      * worker's own fallback would never fire — silently dropping the assistant's
      * persona from every tool-enabled agent.
      */
+    /**
+     * The tenant's own standing instructions — "we are an events venue, never
+     * quote a price, the small hall seats 40".
+     *
+     * A tenant setting rather than the `ai` infrastructure provider config,
+     * because this is the tenant's to write: which GPU answers them is an
+     * operational decision with a bill attached, and lives GodAdmin-side.
+     *
+     * Capped when it is written, not here — but read defensively anyway, since
+     * an un-migrated tenant simply has no row and must behave exactly as it
+     * did before this existed.
+     */
+    private function tenantInstructions(string $actorType): ?string
+    {
+        // `ai.instructions` reaches everyone the assistant serves.
+        // `ai.instructions_internal` is added only for STAFF turns — the same
+        // split `agent_documents.audience` makes, and for the same reason: the
+        // panel invites "what the assistant must never do", and a tenant will
+        // reasonably write a floor price there. Anything that is not an admin
+        // is treated as an end user, fail-closed, so a future actor type
+        // nobody updated this for sees the public half only.
+        $keys = $actorType === 'admin'
+            ? ['ai.instructions', 'ai.instructions_internal']
+            : ['ai.instructions'];
+
+        $parts = [];
+
+        foreach ($keys as $key) {
+            $value = $this->settingValue($key);
+
+            if ($value !== null) {
+                $parts[] = $value;
+            }
+        }
+
+        return $parts === [] ? null : implode("\n\n", $parts);
+    }
+
+    private function settingValue(string $key): ?string
+    {
+        try {
+            $value = app(SettingRepositoryInterface::class)->findByKey($key)?->value;
+        } catch (\Throwable $e) {
+            // A missing table on a tenant nobody has migrated yet must not
+            // take the whole turn down; the assistant simply answers without
+            // the tenant's own voice.
+            Log::warning('could not read an ai instruction setting', [
+                'key' => $key,
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+
+        if (! is_string($value) || trim($value) === '') {
+            return null;
+        }
+
+        $value = trim($value);
+
+        // A hard ceiling, because this text is concatenated into the system
+        // prompt of every single message. The request that writes it refuses
+        // beyond this, but a seeder, a console command or a direct database
+        // edit is not that request — and the failure here would be a quietly
+        // enormous prompt on every turn rather than an error anyone sees.
+        if (mb_strlen($value) > UpdateSettingRequest::AI_INSTRUCTIONS_MAX) {
+            Log::warning('an ai instruction setting exceeds the cap and was truncated for this turn', [
+                'key' => $key,
+                'length' => mb_strlen($value),
+                'cap' => UpdateSettingRequest::AI_INSTRUCTIONS_MAX,
+            ]);
+
+            $value = mb_substr($value, 0, UpdateSettingRequest::AI_INSTRUCTIONS_MAX);
+        }
+
+        return $value;
+    }
+
+    /** Neither layer may overwrite the other. */
+    private function layerPersona(?string $operatorPersona, ?string $tenantInstructions): ?string
+    {
+        $parts = array_filter([
+            $operatorPersona !== null && trim($operatorPersona) !== '' ? trim($operatorPersona) : null,
+            $tenantInstructions,
+        ]);
+
+        return $parts === [] ? null : implode("\n\n", $parts);
+    }
+
     private function composeSystemPrompt(?string $persona, array $assistant, array $toolSpecs): ?string
     {
         if ($toolSpecs === []) {

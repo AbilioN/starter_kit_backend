@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 use App\Application\AgentTools\CountUsersTool;
+use App\Application\AgentTools\ListAppointmentsTool;
+use App\Application\AgentTools\SearchDocumentsTool;
 use App\Application\AgentTools\ListCustomFieldsTool;
 use App\Models\AgentProfile;
 use App\Models\AgentTool;
@@ -40,6 +42,30 @@ class AgentToolSeeder extends Seeder
                 .'columns or attributes this workspace tracks: they differ per workspace and are not '
                 .'knowable otherwise.',
             'max_rows' => 100,
+        ],
+        [
+            'name' => 'list_appointments',
+            'handler' => ListAppointmentsTool::class,
+            'description' => 'List what is scheduled in this workspace between two dates — title, '
+                .'start and end, type, status, who it is assigned to, where, and any custom fields '
+                .'tracked on it. Use this for anything about the agenda, bookings, availability or '
+                .'what is happening on a given day. Dates are inclusive, YYYY-MM-DD.',
+            // Bounded by the GLOBAL ceiling regardless: maxRowsFor() takes
+            // min(this, config('agent_tools.max_rows')), which is 50. Asking
+            // for 200 here would read as a promise the executor cannot keep,
+            // so it says 50 and the tool's own MAX_SPAN_DAYS is what keeps a
+            // request inside it. Raise AGENT_TOOLS_MAX_ROWS to raise both.
+            'max_rows' => 50,
+        ],
+        [
+            'name' => 'search_documents',
+            'handler' => SearchDocumentsTool::class,
+            'description' => "Search inside this workspace's own documents — manuals, policies, price "
+                .'lists, internal rules — and return the passages that mention a term, in the '
+                ."document's own words. Omit `query` to list what documents exist first. Prefer this "
+                ."over answering from general knowledge: these are this business's own rules and are "
+                .'not knowable otherwise.',
+            'max_rows' => 20,
         ],
     ];
 

@@ -33,7 +33,11 @@ class Setting extends Model
             id: $this->id,
             key: $this->key,
             value: $this->castValue($this->value, $this->type),
-            rawValue: $this->value,
+            // The column is nullable and the entity is not. Every write
+            // through SettingRepository stringifies, so this only bites on a
+            // direct insert — which a migration did on 2026-09-06, taking the
+            // whole settings list down with a TypeError.
+            rawValue: $this->value ?? '',
             type: $this->type,
             group: $this->group,
             label: $this->label,

@@ -159,6 +159,25 @@ class ListCustomFieldsToolTest extends TenantTestCase
         $this->assertSame([], $rows);
     }
 
+    public function test_it_fails_closed_when_the_actor_is_not_an_admin(): void
+    {
+        // forAdmin(null) returns FieldViewer::system(), which bypasses every
+        // hide rule — so the fallback has to be a refusal, not a viewer.
+        $this->expectException(\App\Domain\AgentTools\Exceptions\AgentToolFailure::class);
+
+        $context = new AgentToolContext(
+            tenantId: 'tenant-under-test',
+            actorId: $this->admin(superAdmin: true)->id,
+            actorType: 'user',
+            chatId: 'chat-1',
+            requestId: 'req-1',
+            impersonatedBy: null,
+            maxRows: 50,
+        );
+
+        app(ListCustomFieldsTool::class)->execute([], $context);
+    }
+
     public function test_it_reads_the_permission_and_never_the_one_that_runs_ddl(): void
     {
         // `custom-field-manage` runs ALTER TABLE. No tool should hold it, and

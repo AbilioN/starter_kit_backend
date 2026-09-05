@@ -142,6 +142,9 @@ class UserAgentToolsTest extends TenantTestCase
             'description' => 'Primeiros passos.',
             'content' => 'Para entrar, você precisa do nome do workspace da sua empresa.',
             'is_active' => true,
+            // Explicit since 2026-09-06: `internal` is the default, so a
+            // document reaches end users only when somebody says so.
+            'audience' => AgentDocument::AUDIENCE_PUBLISHED,
         ]);
 
         $this->callTool(self::USER_ENDPOINT, 'list_documents')
@@ -151,6 +154,28 @@ class UserAgentToolsTest extends TenantTestCase
         $this->callTool(self::USER_ENDPOINT, 'search_documents', arguments: ['query' => 'workspace'])
             ->assertOk()
             ->assertJsonPath('result.0.document', 'Guia de Início Rápido');
+    }
+
+    public function test_an_internal_document_is_invisible_to_an_end_user(): void
+    {
+        // The reason the audience column exists. Both document tools are
+        // reachable by end users, so before this a restaurant's supplier
+        // contracts would have been searchable by every customer the moment a
+        // tenant could upload one.
+        AgentDocument::create([
+            'title' => 'Margens por fornecedor',
+            'content' => 'O fornecedor A cobra 40 por cento acima do B.',
+            'is_active' => true,
+            'audience' => AgentDocument::AUDIENCE_INTERNAL,
+        ]);
+
+        $this->callTool(self::USER_ENDPOINT, 'search_documents', arguments: ['query' => 'fornecedor'])
+            ->assertOk()
+            ->assertJsonPath('row_count', 0);
+
+        $this->callTool(self::USER_ENDPOINT, 'list_documents')
+            ->assertOk()
+            ->assertJsonPath('row_count', 0);
     }
 
     public function test_an_inactive_document_is_not_searchable(): void

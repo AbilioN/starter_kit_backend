@@ -47,6 +47,11 @@ class DomainServiceProvider extends ServiceProvider
         $this->app->bind(RegistrationServiceInterface::class, RegistrationService::class);
         $this->app->bind(EmailVerificationServiceInterface::class, EmailVerificationService::class);
         $this->app->bind(StorageServiceInterface::class, StorageService::class);
+        // First thing in the product that READS a PDF — mpdf only writes them.
+        $this->app->bind(
+            \App\Domain\Services\DocumentTextExtractorInterface::class,
+            \App\Infrastructure\Services\PdfDocumentTextExtractor::class,
+        );
     }
 
     public function boot(): void

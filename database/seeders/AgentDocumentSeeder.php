@@ -36,6 +36,10 @@ class AgentDocumentSeeder extends Seeder
                     'file_path' => $path,
                     'content' => $document['content'],
                     'is_active' => true,
+                // Published: these are the manual/FAQ/terms the table was made
+                // for. Without it the column default (`internal`) applies and the
+                // end-user agent cannot see a single one of them.
+                'audience' => \App\Models\AgentDocument::AUDIENCE_PUBLISHED,
                 ],
             );
 

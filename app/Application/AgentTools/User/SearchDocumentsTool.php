@@ -5,7 +5,7 @@ namespace App\Application\AgentTools\User;
 use App\Domain\AgentTools\AgentToolContext;
 use App\Domain\AgentTools\AgentToolInterface;
 use App\Domain\AgentTools\AgentToolResult;
-use App\Models\AgentDocument;
+use App\Application\UseCases\AgentDocument\SearchAgentDocumentsUseCase;
 
 /**
  * Finds passages in the tenant's published documents.
@@ -22,6 +22,8 @@ use App\Models\AgentDocument;
  */
 final class SearchDocumentsTool implements AgentToolInterface
 {
+    public function __construct(private SearchAgentDocumentsUseCase $search) {}
+
     /** Characters of context returned either side of a match. */
     private const EXCERPT_RADIUS = 320;
 
@@ -64,53 +66,9 @@ final class SearchDocumentsTool implements AgentToolInterface
 
     public function execute(array $arguments, AgentToolContext $context): AgentToolResult
     {
-        $query = trim((string) $arguments['query']);
-
-        $documents = AgentDocument::query()
-            ->where('is_active', true)
-            // LIKE with escaped wildcards: a query containing % or _ must be a
-            // literal search, not a pattern the model can widen.
-            ->where('content', 'like', '%'.addcslashes($query, '%_\\').'%')
-            ->limit($context->maxRows)
-            ->get(['title', 'content']);
-
-        $rows = [];
-
-        foreach ($documents as $document) {
-            foreach ($this->excerpts($document->content, $query) as $excerpt) {
-                $rows[] = ['document' => $document->title, 'excerpt' => $excerpt];
-            }
-        }
-
-        return AgentToolResult::rows($rows, $context->maxRows);
-    }
-
-    /**
-     * Up to two passages per document. More than that from one source starts
-     * crowding out the other documents that also matched, which is usually
-     * where the better answer is.
-     *
-     * @return array<int, string>
-     */
-    private function excerpts(string $content, string $query): array
-    {
-        $excerpts = [];
-        $offset = 0;
-
-        while (count($excerpts) < 2) {
-            $position = mb_stripos($content, $query, $offset);
-
-            if ($position === false) {
-                break;
-            }
-
-            $start = max(0, $position - self::EXCERPT_RADIUS);
-            $excerpt = trim(mb_substr($content, $start, self::EXCERPT_RADIUS * 2));
-
-            $excerpts[] = ($start > 0 ? '…' : '').$excerpt.'…';
-            $offset = $position + mb_strlen($query);
-        }
-
-        return $excerpts;
+        return AgentToolResult::rows(
+            $this->search->excerpts((string) $arguments['query'], $context->actorType, $context->maxRows),
+            $context->maxRows,
+        );
     }
 }

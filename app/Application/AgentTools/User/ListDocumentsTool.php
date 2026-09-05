@@ -5,7 +5,7 @@ namespace App\Application\AgentTools\User;
 use App\Domain\AgentTools\AgentToolContext;
 use App\Domain\AgentTools\AgentToolInterface;
 use App\Domain\AgentTools\AgentToolResult;
-use App\Models\AgentDocument;
+use App\Application\UseCases\AgentDocument\SearchAgentDocumentsUseCase;
 
 /**
  * What the tenant has published, so the model knows what it can consult.
@@ -17,6 +17,8 @@ use App\Models\AgentDocument;
  */
 final class ListDocumentsTool implements AgentToolInterface
 {
+    public function __construct(private SearchAgentDocumentsUseCase $search) {}
+
     public function name(): string
     {
         return 'list_documents';
@@ -44,17 +46,9 @@ final class ListDocumentsTool implements AgentToolInterface
 
     public function execute(array $arguments, AgentToolContext $context): AgentToolResult
     {
-        $rows = AgentDocument::query()
-            ->where('is_active', true)
-            ->orderBy('title')
-            ->limit($context->maxRows)
-            ->get(['title', 'description'])
-            ->map(fn (AgentDocument $doc) => [
-                'title' => $doc->title,
-                'description' => $doc->description,
-            ])
-            ->all();
-
-        return AgentToolResult::rows($rows, $context->maxRows);
+        return AgentToolResult::rows(
+            $this->search->catalogue($context->actorType, $context->maxRows),
+            $context->maxRows,
+        );
     }
 }

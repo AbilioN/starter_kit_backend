@@ -84,7 +84,24 @@ class SettingController extends Controller
             $admin = AdminFactory::createFromModel($request->user());
             $this->authorizeAction->execute($admin, 'setting-update');
 
-            $pairs = $request->validate(['settings' => 'required|array', 'settings.*.key' => 'required|string', 'settings.*.value' => 'required']);
+            $pairs = $request->validate([
+                'settings' => 'required|array',
+                'settings.*.key' => 'required|string',
+                'settings.*.value' => 'required',
+            ]);
+
+            // This endpoint validated with its own inline rules and so walked
+            // straight past UpdateSettingRequest's cap — a bulk write could
+            // store megabytes into a key that is concatenated into every
+            // system prompt. Same rules, one source.
+            foreach ($pairs['settings'] as $index => $pair) {
+                if (in_array($pair['key'] ?? null, UpdateSettingRequest::AI_INSTRUCTION_KEYS, true)) {
+                    validator(
+                        ['value' => $pair['value'] ?? null],
+                        ['value' => UpdateSettingRequest::rulesForKey($pair['key'])],
+                    )->validate();
+                }
+            }
 
             $keyValues = collect($pairs['settings'])->pluck('value', 'key')->all();
             $this->updateSetting->executeMany($keyValues);

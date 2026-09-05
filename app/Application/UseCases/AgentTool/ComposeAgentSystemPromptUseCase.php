@@ -47,13 +47,48 @@ class ComposeAgentSystemPromptUseCase
         $template = $this->template();
 
         return str_replace(
-            ['{{TOOLS}}', '{{MAX_CALLS}}', '{{MAX_ROUNDS}}'],
+            ['{{TOOLS}}', '{{MAX_CALLS}}', '{{MAX_ROUNDS}}', '{{TODAY}}'],
             [
                 $this->renderTools($toolSpecs),
                 (string) config('agent_tools.max_tool_calls'),
                 (string) config('agent_tools.max_rounds'),
+                $this->today(),
             ],
             $template,
+        );
+    }
+
+    /**
+     * A model has no clock, and without one an agenda tool is unusable.
+     *
+     * Found live on 2026-09-05: asked what was booked "on Saturday the 12th of
+     * September", the model called list_appointments for **2023** — a year it
+     * had no way of knowing was wrong. The tool worked perfectly and the answer
+     * was still useless.
+     *
+     * In the tool block rather than the persona, so a turn with no tools stays
+     * byte-identical to one from before any of this existed — the property this
+     * class's docblock already protects.
+     *
+     * The tenant's own timezone, because "today" in Lisbon is not today in
+     * São Paulo and the agenda is stored in neither.
+     */
+    private function today(): string
+    {
+        $timezone = (string) (\App\Helpers\Settings::get('app.timezone') ?: config('app.timezone', 'UTC'));
+
+        try {
+            $now = \Carbon\CarbonImmutable::now($timezone);
+        } catch (\Throwable) {
+            $now = \Carbon\CarbonImmutable::now('UTC');
+            $timezone = 'UTC';
+        }
+
+        return sprintf(
+            'Today is %s, %s (timezone %s).',
+            $now->format('l'),
+            $now->toDateString(),
+            $timezone,
         );
     }
 

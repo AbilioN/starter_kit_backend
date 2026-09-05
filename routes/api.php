@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\AgentDocumentController;
 use App\Http\Controllers\Api\Admin\AdminController;
 use App\Http\Controllers\Api\Admin\PermissionController;
 use Illuminate\Http\Request;
@@ -214,6 +215,16 @@ Route::middleware(['tenant.identify'])->group(function () {
             // Admin chat management (requires chat-manage permission)
             Route::get('/chats', [AdminChatController::class, 'allChats']);
             Route::get('/chats/{chatId}/messages', [AdminChatController::class, 'chatMessages']);
+
+            // The knowledge a tenant gives its assistant: its own manuals,
+            // policies and rules. `document-read` to look, `document-manage`
+            // to write — the write is what decides whether a document is
+            // internal or published to every end user.
+            Route::get('/agent-documents', [AgentDocumentController::class, 'index']);
+            Route::get('/agent-documents/{id}', [AgentDocumentController::class, 'show']);
+            Route::post('/agent-documents', [AgentDocumentController::class, 'store']);
+            Route::post('/agent-documents/{id}', [AgentDocumentController::class, 'update']);
+            Route::delete('/agent-documents/{id}', [AgentDocumentController::class, 'destroy']);
 
             // AI assistants available to chat with (tenant-scoped, active only)
             Route::get('/assistants', [AssistantController::class, 'index']);
