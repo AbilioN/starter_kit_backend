@@ -87,5 +87,43 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo('/god/login');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Until 2026-09-04 this body was empty, which meant a domain
+        // exception that no controller happened to catch became a 500.
+        // Three controllers were fixed one at a time by adding the catch
+        // (SettingController, FileController, AuditController — see
+        // docs/03-multitenancy-plan.md), and the two newest ones,
+        // AgendaController and AppointmentController, call
+        // AuthorizeActionUseCase with no catch at all: a permission denial
+        // on the agenda answered 500 in production. Fixing it per method
+        // means every future controller has to remember; fixing it here
+        // means the default is right and the per-method catches that
+        // already exist keep working untouched, since they run first.
         //
+        // Gated on the request wanting JSON: these renderers are global,
+        // and routes/god.php runs in the `web` group where a Livewire
+        // screen must keep its HTML error page.
+        $jsonOnly = fn (\Illuminate\Http\Request $request): bool => $request->expectsJson() || $request->is('api/*');
+
+        // The newer envelope — {success:false, message} — matching Setting,
+        // File, Audit and Template. The older {error: …} shape in the RBAC
+        // controllers stays as-is; those methods catch before reaching here.
+        $envelope = fn (string $message, int $status) => response()->json(
+            ['success' => false, 'message' => $message],
+            $status,
+        );
+
+        $exceptions->render(function (\App\Domain\Exceptions\AuthorizationException $e, $request) use ($jsonOnly, $envelope) {
+            return $jsonOnly($request) ? $envelope($e->getMessage(), 403) : null;
+        });
+
+        // 402 Payment Required, matching FileController's existing mapping
+        // for the same exception — a plan cap is a billing answer, not a
+        // permission one.
+        $exceptions->render(function (\App\Domain\Exceptions\PlanLimitExceededException $e, $request) use ($jsonOnly, $envelope) {
+            return $jsonOnly($request) ? $envelope($e->getMessage(), 402) : null;
+        });
+
+        $exceptions->render(function (\App\Domain\Exceptions\CustomFieldConflictException $e, $request) use ($jsonOnly, $envelope) {
+            return $jsonOnly($request) ? $envelope($e->getMessage(), 409) : null;
+        });
     })->create();

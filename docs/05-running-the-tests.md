@@ -72,6 +72,43 @@ overridden from the shell, as above.
 Use `vendor/bin/phpunit`, not `php artisan test` — the artisan wrapper does not
 forward `-c` to PHPUnit, so it silently runs the SQLite config instead.
 
+### The `mysql-ddl` group
+
+```bash
+docker compose exec -T \
+  -e DB_HOST=db \
+  -e LANDLORD_DB_DATABASE=starter_kit_testing_landlord \
+  -e TENANT_DB_DATABASE=starter_kit_testing_tenant \
+  app vendor/bin/phpunit -c phpunit.mysql.xml --group=mysql-ddl
+```
+
+Tests that run **real DDL** — `ALTER TABLE`, `CREATE INDEX` — added with the
+tenant-defined-fields work. They extend `tests/DdlTestCase.php` and use
+`tests/Concerns/RequiresMySql.php`, so they self-skip under the fast run rather
+than testing a SQLite code path production never executes.
+
+They are in the ordinary MySQL run too; the group exists so they can be run
+alone, because each one **provisions and drops its own database** and they are
+correspondingly slow (~25s each).
+
+**Why they need their own database.** The teardown above fires only when a new
+database appeared during the test. A test that merely `ALTER`s a table creates
+none, so the cleanup is skipped — while MySQL has already implicitly committed
+the enclosing transaction. The column would stay for every later test in the
+process, and the symptom would be a hundred unrelated failures downstream.
+`DdlTestCase` sidesteps that by giving each test a throwaway database created
+*after* the "before" list is captured, so the existing net catches it.
+
+Two rules ride in that class's docblock and are not optional: **nothing may be
+seeded into the shared tenant before the connection switch** (repointing purges
+the connection the open transaction lives on), and **assertions read from
+`information_schema`**, not from the transaction — the DDL has committed, so a
+rolled-back transaction proves nothing about what actually happened.
+
+`tests/Feature/System/DdlHarnessTest.php` proves the containment itself: it
+alters a table, asserts the change landed in its own database, and asserts the
+shared `starter_kit_testing_tenant` never saw it.
+
 ---
 
 ## Why the harness has engine-specific code

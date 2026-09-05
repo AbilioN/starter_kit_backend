@@ -2,11 +2,11 @@
 
 namespace App\Infrastructure\Repositories;
 
+use App\Application\Services\TenantCacheKey;
 use App\Domain\Entities\Setting;
 use App\Domain\Repositories\SettingRepositoryInterface;
 use App\Models\Setting as SettingModel;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 
 class SettingRepository implements SettingRepositoryInterface
 {
@@ -58,10 +58,15 @@ class SettingRepository implements SettingRepositoryInterface
      * (config/cache.php) is app-wide, not tenant-aware — without this,
      * the first tenant to read a key (e.g. features.ai_agent) poisons the
      * cache for every other tenant for up to CACHE_TTL.
+     *
+     * The rule now lives in TenantCacheKey rather than here, because
+     * ChangeTenantSubscriptionPlanUseCase writes to the Setting model
+     * directly and has to forget the same keys — and when it computed them
+     * itself it got them wrong, silently, for as long as the code existed.
      */
     private function cacheKey(string $suffix): string
     {
-        return (DB::connection()->getDatabaseName() ?? 'default') . ':' . $suffix;
+        return TenantCacheKey::for($suffix);
     }
 
     public function update(string $key, mixed $value): Setting

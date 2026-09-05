@@ -2,6 +2,7 @@
 
 namespace App\Application\UseCases\Tenant;
 
+use App\Application\Services\TenantCacheKey;
 use App\Application\UseCases\Audit\LogAuditUseCase;
 use App\Application\UseCases\Landlord\LogLandlordAuditUseCase;
 use App\Application\UseCases\Landlord\RecordMockPaymentUseCase;
@@ -91,6 +92,14 @@ class ChangeTenantSubscriptionPlanUseCase
                     'label' => Str::headline($key),
                 ],
             );
+            // Added 2026-09-04. This loop never busted the cache at all —
+            // only syncLimitsFromPlan() did — so a GodAdmin moving a tenant
+            // onto a plan that ENABLES a feature saw nothing change for up
+            // to an hour, on the one screen where the change is the whole
+            // point. Every feature gate in the product reads through
+            // Settings::get(): features.ai_agent, features.agenda,
+            // features.route_optimization.
+            $this->bustSettingCache("features.{$key}");
         }
     }
 
@@ -130,18 +139,23 @@ class ChangeTenantSubscriptionPlanUseCase
     }
 
     /**
-     * Mirrors SettingRepository's private cache keys - this use case writes
-     * to the Setting model directly (updateOrCreate/delete) rather than
-     * through SettingRepositoryInterface, so Settings::get() would keep
-     * serving a stale cached value (up to SettingRepository::CACHE_TTL)
-     * without this. Most consequential for max_storage_mb: switching a
-     * tenant to an unlimited plan must take effect immediately, not up to
-     * an hour later.
+     * This use case writes to the Setting model directly (updateOrCreate /
+     * delete) rather than through SettingRepositoryInterface, so
+     * Settings::get() would keep serving a stale cached value (up to
+     * SettingRepository::CACHE_TTL) without this. Most consequential for
+     * max_storage_mb: switching a tenant to an unlimited plan must take
+     * effect immediately, not up to an hour later.
+     *
+     * Fixed 2026-09-04. This method used to forget 'setting:'.$key while
+     * SettingRepository writes '<database name>:setting:'.$key — so it had
+     * never matched anything, and the paragraph above described behaviour
+     * the code did not have. Both sides now build the key in one place
+     * (TenantCacheKey) precisely so they cannot drift again.
      */
     private function bustSettingCache(string $key): void
     {
-        Cache::forget('setting:'.$key);
-        Cache::forget('settings:all');
-        Cache::forget('settings:public');
+        Cache::forget(TenantCacheKey::for('setting:'.$key));
+        Cache::forget(TenantCacheKey::for('settings:all'));
+        Cache::forget(TenantCacheKey::for('settings:public'));
     }
 }
