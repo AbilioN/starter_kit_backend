@@ -38,6 +38,15 @@ class Form extends Component
 
     public int $maxAdmins = 5;
 
+    /**
+     * Blank means unlimited, like the storage and backup ceilings beside it.
+     *
+     * A string rather than an int because "" and 0 must stay distinguishable:
+     * EnforcePlanLimitUseCase reads a null limit as no cap, so a tier typing 0
+     * would forbid every field while a blank one forbids none.
+     */
+    public string $maxCustomFields = '';
+
     public int $maxUsers = 100;
 
     /**
@@ -130,6 +139,12 @@ class Form extends Component
         $this->featureNotifications = (bool) ($plan->features['notifications'] ?? false);
         $this->featureAiAgent = (bool) ($plan->features['ai_agent'] ?? false);
         $this->maxAdmins = (int) ($plan->limits['max_admins'] ?? 5);
+        // In mount() as well as save(), because a limit read only on save is a
+        // limit the first GodAdmin to touch an unrelated field silently wipes —
+        // the exact failure docs/19 records for the agenda feature flag.
+        $this->maxCustomFields = array_key_exists('max_custom_fields', $plan->limits ?? [])
+            ? (string) ($plan->limits['max_custom_fields'] ?? '')
+            : '';
         $this->maxUsers = (int) ($plan->limits['max_users'] ?? 100);
 
         // Key present but null means "unlimited" (see UploadFileUseCase /
@@ -177,6 +192,10 @@ class Form extends Component
         IconResizingServiceInterface $iconResizingService,
     ): void {
         $this->validate([
+            // A 0 here is not "unlimited" — EnforcePlanLimitUseCase reads null
+            // as no cap, so 0 would be a plan that forbids every custom field.
+            // The blade's min="1" is a client-side hint; this is the guard.
+            'maxCustomFields' => ['nullable', 'integer', 'min:1'],
             'name' => 'required|string|max:255',
             'slug' => 'required|string|max:255|regex:/^[a-z0-9-]+$/',
             'priceCents' => 'nullable|integer|min:0',
@@ -200,6 +219,7 @@ class Form extends Component
         ];
         $limits = [
             'max_admins' => $this->maxAdmins,
+            'max_custom_fields' => $this->maxCustomFields === '' ? null : (int) $this->maxCustomFields,
             'max_users' => $this->maxUsers,
             // null = unlimited - see UploadFileUseCase::enforceStorageLimit()
             // and ChangeTenantSubscriptionPlanUseCase::syncLimitsFromPlan(),

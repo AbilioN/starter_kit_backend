@@ -243,6 +243,13 @@
                     @error('backupRetentionDays') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
+                    <label for="maxCustomFields" class="block text-sm font-medium text-slate-700">Custom fields</label>
+                    <input type="number" id="maxCustomFields" wire:model="maxCustomFields" min="1" placeholder="40"
+                           class="mt-1.5 block w-full rounded-md border-0 px-3 py-2 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">
+                    <p class="mt-1.5 text-xs text-slate-500">Blank = uncapped. Counts live, pending and failed definitions, because a retired field never releases its number.</p>
+                    @error('maxCustomFields') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
+                </div>
+                <div>
                     <label for="backupMaxTotalMb" class="block text-sm font-medium text-slate-700">Capacity (MB)</label>
                     <input type="number" id="backupMaxTotalMb" wire:model="backupMaxTotalMb" min="1" placeholder="10240"
                            class="mt-1.5 block w-full rounded-md border-0 px-3 py-2 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm">

@@ -7,6 +7,31 @@ use Illuminate\Database\Seeder;
 
 class SettingSeeder extends Seeder
 {
+    /**
+     * Keys whose VALUE this seeder does not own.
+     *
+     * ProvisionTenantUseCase and ChangeTenantSubscriptionPlanUseCase both
+     * write `features.{key}` from `$plan->features`. Anything listed here is
+     * created by this seeder with a sensible default and never overwritten
+     * again, because the seeder has no idea which plan a tenant is on.
+     */
+    private const PLAN_OWNED_KEYS = [
+        // Authored by the tenant, through the Languages screen. Same rule for
+        // the same reason: this file has no idea which languages a business
+        // runs in, and overwriting them would undo the screen on every
+        // backfill run.
+        'locales.enabled',
+        'locales.default',
+
+        'features.chat',
+        'features.file_upload',
+        'features.notifications',
+        'features.backup',
+        'features.ai_agent',
+        'features.agenda',
+        'features.route_optimization',
+    ];
+
     public function run(): void
     {
         $settings = [
@@ -34,7 +59,7 @@ class SettingSeeder extends Seeder
             // never chose one. Neither says what has actually been translated:
             // only an authored template can be sent, which is why
             // ResolveTemplateLocaleUseCase takes the available list separately.
-            ['key' => 'locales.enabled', 'value' => '["en"]', 'type' => 'array', 'group' => 'general', 'label' => 'Enabled Languages', 'description' => 'Languages this organization publishes templates in.', 'is_public' => true],
+            ['key' => 'locales.enabled', 'value' => '["en","pt","es","fr"]', 'type' => 'array', 'group' => 'general', 'label' => 'Enabled Languages', 'description' => 'Languages this organization publishes templates in.', 'is_public' => true],
             ['key' => 'locales.default', 'value' => 'en', 'type' => 'string', 'group' => 'general', 'label' => 'Default Language', 'description' => 'Used when a recipient has no language of their own.', 'is_public' => true],
 
             // Email
@@ -49,7 +74,30 @@ class SettingSeeder extends Seeder
         ];
 
         foreach ($settings as $setting) {
-            Setting::updateOrCreate(['key' => $setting['key']], $setting);
+            $existing = Setting::where('key', $setting['key'])->first();
+
+            if ($existing === null) {
+                Setting::create($setting);
+
+                continue;
+            }
+
+            // The row exists. Refresh its label and description — those are
+            // the product's words and may improve — but NEVER its value if the
+            // subscription plan owns that key.
+            //
+            // This seeder hardcodes `features.ai_agent => false` and
+            // `features.file_upload => true`, and used to write them with
+            // updateOrCreate. Re-running it therefore reset every tenant's
+            // plan-derived flags to these defaults: on 2026-09-06 three of
+            // four tenants had a setting contradicting their plan, including
+            // two PAYING tenants whose AI was silently switched off. The plan
+            // is the source of truth for these keys; this file is not.
+            $existing->update(
+                in_array($setting['key'], self::PLAN_OWNED_KEYS, true)
+                    ? collect($setting)->except('value')->all()
+                    : $setting,
+            );
         }
     }
 }

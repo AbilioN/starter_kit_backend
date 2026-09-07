@@ -13,6 +13,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateSettingRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class SettingController extends Controller
 {
@@ -90,23 +92,46 @@ class SettingController extends Controller
                 'settings.*.value' => 'required',
             ]);
 
-            // This endpoint validated with its own inline rules and so walked
-            // straight past UpdateSettingRequest's cap — a bulk write could
-            // store megabytes into a key that is concatenated into every
-            // system prompt. Same rules, one source.
-            foreach ($pairs['settings'] as $index => $pair) {
-                if (in_array($pair['key'] ?? null, UpdateSettingRequest::AI_INSTRUCTION_KEYS, true)) {
-                    validator(
-                        ['value' => $pair['value'] ?? null],
-                        ['value' => UpdateSettingRequest::rulesForKey($pair['key'])],
-                    )->validate();
+            // EVERY key goes through the same rules as the single-key
+            // endpoint, not a list of special cases. This endpoint validated
+            // inline and so walked past UpdateSettingRequest entirely: a bulk
+            // write could store megabytes into a key concatenated into every
+            // system prompt, or empty the tenant's language list. Special-casing
+            // one family of keys here would only have left the next family
+            // exposed.
+            // A batch is judged as a whole. `locales.default` is validated
+            // against the offered languages, and validating every pair before
+            // writing any of them meant it was checked against the PRE-write
+            // list — so enabling French and making it the default in one
+            // request was impossible, and a default that had fallen outside
+            // the set would 422 the entire settings tab forever.
+            $incomingEnabled = collect($pairs['settings'])
+                ->firstWhere('key', 'locales.enabled')['value'] ?? null;
+
+            foreach ($pairs['settings'] as $pair) {
+                $key = (string) ($pair['key'] ?? '');
+
+                $rules = ['value' => $key === 'locales.default' && is_array($incomingEnabled)
+                    ? ['required', 'string', Rule::in($incomingEnabled)]
+                    : UpdateSettingRequest::rulesForKey($key)];
+
+                if ($key === 'locales.enabled') {
+                    $rules['value.*'] = ['string', Rule::in(config('app.available_locales', []))];
                 }
+
+                validator(['value' => $pair['value'] ?? null], $rules)->validate();
             }
 
             $keyValues = collect($pairs['settings'])->pluck('value', 'key')->all();
             $this->updateSetting->executeMany($keyValues);
 
             return response()->json(['success' => true, 'message' => 'Settings updated.']);
+        } catch (ValidationException $e) {
+            // Rethrown, not swallowed. The generic handler below turns every
+            // exception into a 500, so a refused value reported itself as a
+            // server fault — validation that answers 500 tells the caller
+            // nothing and tells a monitor the wrong thing.
+            throw $e;
         } catch (AuthorizationException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 403);
         } catch (SettingNotFoundException $e) {

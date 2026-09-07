@@ -190,6 +190,88 @@ class ListAppointmentsToolTest extends TenantTestCase
         $this->assertArrayNotHasKey('cf_1', $rows[0]);
     }
 
+    public function test_it_says_what_an_appointment_is_about(): void
+    {
+        // The one field carrying each vertical's own noun. The agenda card has
+        // returned it since the table existed; this tool did not, so "what is
+        // this appointment for?" had no answer.
+        $client = \App\Models\User::factory()->create(['name' => 'Quinta dos Eventos']);
+
+        $this->makeAppointment([
+            'title' => 'Visita ao espaço',
+            'subject_type' => 'user',
+            'subject_id' => $client->id,
+        ]);
+
+        $rows = $this->runTool($this->admin(superAdmin: true), ['from' => '2026-09-10']);
+
+        $this->assertSame('Quinta dos Eventos', $rows[0]['about'] ?? null);
+    }
+
+    public function test_an_appointment_about_nothing_says_nothing(): void
+    {
+        // The common case — an internal meeting has no subject — and not an
+        // error, so the key is simply absent rather than null or "(none)".
+        $this->makeAppointment();
+
+        $rows = $this->runTool($this->admin(superAdmin: true), ['from' => '2026-09-10']);
+
+        $this->assertArrayNotHasKey('about', $rows[0]);
+    }
+
+    public function test_an_unregistered_subject_type_is_reported_not_resolved(): void
+    {
+        // subject_type holds a string somebody wrote. Resolving it blindly
+        // would instantiate whatever it names — the read-side twin of letting
+        // a tenant name the table the reconciler will ALTER.
+        $this->makeAppointment([
+            'subject_type' => 'App\\Models\\Something',
+            'subject_id' => '00000000-0000-0000-0000-000000000000',
+        ]);
+
+        $rows = $this->runTool($this->admin(superAdmin: true), ['from' => '2026-09-10']);
+
+        $this->assertSame('(unknown type)', $rows[0]['about'] ?? null);
+    }
+
+    public function test_no_global_morph_map_is_registered_for_user(): void
+    {
+        // Registering `'user' => User::class` in Laravel's morph map looks
+        // like tidiness and is a silent data regression: getMorphClass() then
+        // returns 'user', so User WRITES that into every polymorphic column —
+        // including notifications.notifiable_type, which four call sites
+        // filter on the literal FQCN. Every user notification created
+        // afterwards would be invisible in the list, the unread count,
+        // mark-all-read and the agent tool, with older rows still readable.
+        //
+        // enforceMorphMap vs morphMap changes only the READ side; both flip
+        // the write. The notification tests use Notification::fake(), so no
+        // row is ever written and nothing else catches this.
+        $this->assertSame(
+            \App\Models\User::class,
+            (new \App\Models\User)->getMorphClass(),
+            'A morph alias for User silently breaks notification reads.',
+        );
+    }
+
+    public function test_the_subject_label_never_falls_back_to_contact_details(): void
+    {
+        // This tool holds `appointment-read` and nothing else — no user-read,
+        // and `users` has no row-level scope — so the label must not become a
+        // way to read a person's email.
+        $client = \App\Models\User::factory()->create(['name' => '', 'email' => 'privado@example.com']);
+
+        $this->makeAppointment([
+            'subject_type' => 'user',
+            'subject_id' => $client->id,
+        ]);
+
+        $rows = $this->runTool($this->admin(superAdmin: true), ['from' => '2026-09-10']);
+
+        $this->assertSame('(unnamed)', $rows[0]['about'] ?? null);
+        $this->assertStringNotContainsString('privado@example.com', json_encode($rows[0]));
+    }
+
     public function test_a_tenant_label_cannot_shadow_a_core_field(): void
     {
         // The label is a string the tenant chose, and the row has reserved

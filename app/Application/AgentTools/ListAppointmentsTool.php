@@ -9,6 +9,7 @@ use App\Domain\AgentTools\AgentToolInterface;
 use App\Domain\AgentTools\AgentToolResult;
 use App\Domain\AgentTools\Exceptions\AgentToolFailure;
 use App\Models\Admin;
+use App\Application\Services\AppointmentSubjectResolver;
 use App\Models\Appointment;
 use Carbon\CarbonImmutable;
 
@@ -59,6 +60,7 @@ final class ListAppointmentsTool implements AgentToolInterface
     public function __construct(
         private ProjectCustomFieldsUseCase $customFields,
         private FieldViewerFactory $viewers,
+        private AppointmentSubjectResolver $subjects,
     ) {}
 
     public function name(): string
@@ -69,7 +71,8 @@ final class ListAppointmentsTool implements AgentToolInterface
     public function description(): string
     {
         return 'List what is scheduled in this workspace between two dates — the title, when it '
-            .'starts and ends, its type and status, who it is assigned to, where it is, and any '
+            .'starts and ends, its type and status, who it is assigned to, where it is, what it is '
+            .'about, and any '
             .'custom fields this workspace tracks on it. Use this for any question about the '
             .'agenda, bookings, availability or what is happening on a given day. Dates are '
             .'inclusive and in YYYY-MM-DD.';
@@ -115,6 +118,11 @@ final class ListAppointmentsTool implements AgentToolInterface
 
         $viewer = $this->viewers->forAdmin($actor);
 
+        // The resolver is a container singleton and its memo is only valid
+        // within one tenant's database, so a long-lived Horizon worker must
+        // not carry it into the next call.
+        $this->subjects->forget();
+
         [$from, $to] = $this->window($arguments);
 
         $appointments = Appointment::query()
@@ -147,6 +155,11 @@ final class ListAppointmentsTool implements AgentToolInterface
                 'confirmed' => $appointment->status?->counts_as_confirmed,
                 'assigned_to' => $appointment->assignedAdmin?->name,
                 'where' => $this->where($appointment),
+                // What it is ABOUT. The one field carrying each vertical's own
+                // noun, and the assistant was blind to it: the agenda card has
+                // returned it since the table existed and this tool did not,
+                // so "what is this appointment for?" had no answer.
+                'about' => $this->subjects->describe($appointment)['label'] ?? null,
             ];
 
             // Nested under `custom`, NOT merged into the row.

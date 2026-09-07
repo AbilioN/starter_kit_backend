@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Application\Services\TenantLocales;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateSettingRequest extends FormRequest
 {
@@ -24,9 +26,15 @@ class UpdateSettingRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
-            'value' => self::rulesForKey((string) $this->route('key')),
-        ];
+        $rules = ['value' => self::rulesForKey((string) $this->route('key'))];
+
+        if ($this->route('key') === 'locales.enabled') {
+            // Bounded by what the PRODUCT can render. A tenant cannot offer a
+            // language there are no translations for.
+            $rules['value.*'] = ['string', Rule::in(config('app.available_locales', []))];
+        }
+
+        return $rules;
     }
 
     /**
@@ -34,6 +42,24 @@ class UpdateSettingRequest extends FormRequest
      */
     public static function rulesForKey(string $key): array
     {
+        // The languages this organisation operates in. Validated because a
+        // bad value here is not a bad screen — `locales.enabled` decides which
+        // tabs an author is asked to fill, and an entry the product cannot
+        // render would silently swallow everything typed into it.
+        if ($key === 'locales.enabled') {
+            return ['required', 'array', 'min:1'];
+        }
+
+        if ($key === 'locales.default') {
+            // Must be OFFERED, not merely renderable: a default outside the
+            // enabled set marks a tab that is never drawn.
+            return [
+                'required',
+                'string',
+                Rule::in(app(TenantLocales::class)->enabled()),
+            ];
+        }
+
         if (! in_array($key, self::AI_INSTRUCTION_KEYS, true)) {
             return ['required'];
         }

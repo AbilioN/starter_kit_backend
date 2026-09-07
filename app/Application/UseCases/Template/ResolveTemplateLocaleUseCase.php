@@ -2,7 +2,7 @@
 
 namespace App\Application\UseCases\Template;
 
-use App\Helpers\Settings;
+use App\Application\Services\TenantLocales;
 
 /**
  * Decides which language a template is sent in.
@@ -27,6 +27,22 @@ use App\Helpers\Settings;
 class ResolveTemplateLocaleUseCase
 {
     /**
+     * Optional, and constructed on demand when absent.
+     *
+     * The container injects it normally. But this class is also subclassed
+     * anonymously in a unit test that stubs `tenantDefault()` to keep the
+     * cascade real without a database, and a REQUIRED dependency broke that —
+     * seven tests, for a collaborator that reads settings and holds no state
+     * of its own, so building one costs nothing.
+     */
+    public function __construct(private ?TenantLocales $locales = null) {}
+
+    private function locales(): TenantLocales
+    {
+        return $this->locales ??= new TenantLocales();
+    }
+
+    /**
      * @param  array<int, string>  $available  locales that have an authored translation
      * @param  string|null  $preferred  the recipient's own locale, when known
      */
@@ -48,27 +64,22 @@ class ResolveTemplateLocaleUseCase
     }
 
     /**
-     * The languages this tenant offers. Not the same as the languages its
-     * templates are written in — this is what the authoring UI shows as tabs,
-     * including empty ones still to be filled in.
+     * The languages this tenant offers.
+     *
+     * Delegated to TenantLocales, which is the same question templates, custom
+     * fields and the language switcher all ask. Kept here as a passthrough so
+     * the existing call sites do not all have to change at once.
      *
      * @return array<int, string>
      */
     public function enabledLocales(): array
     {
-        $raw = Settings::get('locales.enabled');
-
-        $locales = is_string($raw) ? array_map('trim', explode(',', $raw)) : (array) $raw;
-        $locales = array_values(array_filter($locales, fn ($locale) => $locale !== '' && $locale !== null));
-
-        // A tenant that never configured languages still runs one, and the
-        // authoring UI needs a tab to draw.
-        return $locales !== [] ? $locales : [$this->tenantDefault()];
+        return $this->locales()->enabled();
     }
 
     public function tenantDefault(): string
     {
-        return (string) (Settings::get('locales.default') ?: config('app.locale', 'en'));
+        return $this->locales()->default();
     }
 
     /**

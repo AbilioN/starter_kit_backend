@@ -51,6 +51,12 @@ class SubscriptionPlanSeeder extends Seeder
             ],
             'limits' => [
                 'max_admins' => 2,
+                // Enough to try the feature and feel its shape; not enough
+                // to run a vertical on. Read by CreateFieldDefinitionUseCase
+                // through EnforcePlanLimitUseCase, which treats null as no
+                // cap — so a tier that means "unlimited" writes null, never
+                // a large number.
+                'max_custom_fields' => 10,
                 'max_users' => 50,
                 'max_storage_mb' => 512,
                 'backup_frequency_hours' => null,
@@ -72,6 +78,7 @@ class SubscriptionPlanSeeder extends Seeder
             ],
             'limits' => [
                 'max_admins' => 10,
+                'max_custom_fields' => 40,
                 'max_users' => 1000,
                 'max_storage_mb' => 10240,
                 'backup_frequency_hours' => 24,
@@ -93,6 +100,7 @@ class SubscriptionPlanSeeder extends Seeder
             ],
             'limits' => [
                 'max_admins' => null,
+                'max_custom_fields' => null,
                 'max_users' => null,
                 'max_storage_mb' => null,
                 'backup_frequency_hours' => 24,

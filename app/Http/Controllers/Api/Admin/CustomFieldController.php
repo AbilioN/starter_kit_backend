@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Application\Services\AdminFactory;
+use App\Application\Services\TenantLocales;
 use App\Application\UseCases\Admin\Authorization\AuthorizeActionUseCase;
 use App\Application\UseCases\CustomField\CreateFieldDefinitionUseCase;
 use App\Domain\CustomFields\CustomFieldHostRegistry;
@@ -54,7 +55,7 @@ class CustomFieldController extends Controller
      * shipping locales beside the field catalogue, so tabs and variables
      * cannot disagree.
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request, TenantLocales $locales): JsonResponse
     {
         $admin = AdminFactory::createFromModel($request->user());
         $this->authorize->execute($admin, 'custom-field-read');
@@ -76,7 +77,13 @@ class CustomFieldController extends Controller
                     ->orderBy('name')
                     ->get(['id', 'slug', 'name'])
                     ->all(),
-                'locales' => config('app.available_locales', []),
+                // The tenant's OWN languages, not the platform's four. An
+                // organisation running in two should be asked for two — the
+                // templates editor already worked this way and this screen did
+                // not, which is the kind of disagreement a tenant reads as a
+                // bug. `available` rides along because a label authored before
+                // a locale was switched off must still be rendered and saved.
+                'locales' => $locales->forAuthoring(),
             ],
         ]);
     }
